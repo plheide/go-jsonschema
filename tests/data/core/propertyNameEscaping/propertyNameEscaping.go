@@ -28,7 +28,7 @@ type PropertyNameEscaping struct {
 func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw PropertyNameEscaping: %w", err)
 	}
 	if _, ok := raw["a\"b"]; raw != nil && !ok {
 		return fmt.Errorf("field a\"b in PropertyNameEscaping: required")
@@ -55,7 +55,7 @@ func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 func (j *PropertyNameEscaping) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw PropertyNameEscaping: %w", err)
 	}
 	if _, ok := raw["a\"b"]; raw != nil && !ok {
 		return fmt.Errorf("field a\"b in PropertyNameEscaping: required")
