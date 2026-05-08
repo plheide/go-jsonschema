@@ -32,7 +32,7 @@ func (j *IntegerFormat) UnmarshalJSON(value []byte) error {
 	type Plain IntegerFormat
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IntegerFormat: %w", err)
 	}
 	if plain.BoundedWithFormat != nil && 100 < *plain.BoundedWithFormat {
 		return fmt.Errorf("field %s: must be <= %v", "boundedWithFormat", 100)
@@ -49,7 +49,7 @@ func (j *IntegerFormat) UnmarshalYAML(value *yaml.Node) error {
 	type Plain IntegerFormat
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IntegerFormat: %w", err)
 	}
 	if plain.BoundedWithFormat != nil && 100 < *plain.BoundedWithFormat {
 		return fmt.Errorf("field %s: must be <= %v", "boundedWithFormat", 100)
