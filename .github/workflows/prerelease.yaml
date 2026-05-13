@@ -34,7 +34,7 @@ jobs:
         with:
           distribution: goreleaser
           version: 2.15.4
-          args: release --verbose --clean
+          args: release --verbose --clean --skip=docker
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GO_VERSION: 1.25.10
