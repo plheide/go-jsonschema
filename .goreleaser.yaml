@@ -32,9 +32,10 @@ changelog:
       - "^docs:"
       - "^test:"
 release:
-  github:
-    owner: omissis
-    name: go-jsonschema
+  # github.{owner,name} omitted so goreleaser auto-detects from the
+  # GITHUB_REPOSITORY env (in CI) or the git remote URL (locally) —
+  # this lets the fork's release land on plheide/go-jsonschema instead
+  # of the upstream omissis/go-jsonschema namespace.
   name_template: "{{ .Tag }}"
   prerelease: auto
 homebrew_casks:
