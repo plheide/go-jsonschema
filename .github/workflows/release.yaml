@@ -42,5 +42,5 @@ jobs:
           version: 2.15.4
           args: release --verbose --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GO_VERSION: 1.25.10
