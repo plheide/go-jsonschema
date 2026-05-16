@@ -1,26 +1,28 @@
 package generator
 
 import (
+	"slices"
+
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
-// oneOfKind is a bit-set of JSON kinds that the variants of a primitive
-// `oneOf` cover. `integer` is intentionally not represented here: schemas
-// that include an `integer` variant are routed away from the wrapper path
+// primitiveKind is a bit-set of JSON kinds the wrapper-type emission
+// strategy can dispatch on. Used by both the primitive `oneOf` path and
+// the multi-type union path. `integer` is intentionally not represented
+// here: schemas including `integer` are routed away from the wrapper path
 // because the wire-level JSON token kind cannot distinguish `1` from `1.5`,
-// and silently widening `oneOf:[string,integer]` to accept `1.5` would
-// violate the schema.
-type oneOfKind uint8
+// and silently widening would violate the schema.
+type primitiveKind uint8
 
 const (
-	oneOfKindString oneOfKind = 1 << iota
-	oneOfKindNumber
-	oneOfKindBoolean
-	oneOfKindNull
+	primitiveKindString primitiveKind = 1 << iota
+	primitiveKindNumber
+	primitiveKindBoolean
+	primitiveKindNull
 )
 
-func (k oneOfKind) has(other oneOfKind) bool { return k&other == other }
+func (k primitiveKind) has(other primitiveKind) bool { return k&other == other }
 
 // isPrimitiveOneOf reports whether t is a `oneOf` whose variants are all
 // simple JSON primitives suitable for the wrapper-type emission strategy.
@@ -59,7 +61,7 @@ func isPrimitiveOneOf(t *schemas.Type) bool {
 			return false
 		}
 
-		if variantHasValidationConstraints(variant) {
+		if primitiveHasValidationConstraints(variant) {
 			return false
 		}
 
@@ -82,12 +84,14 @@ func isPrimitiveOneOf(t *schemas.Type) bool {
 	return true
 }
 
-// variantHasValidationConstraints reports whether a primitive `oneOf` variant
-// declares any constraint that the wrapper-type emission strategy can't
-// honor. The wrapper only dispatches on the JSON token kind, so a variant
-// that needs e.g. `format`, `minimum`, or `pattern` checked would silently
-// pass invalid values if routed through this path.
-func variantHasValidationConstraints(v *schemas.Type) bool {
+// primitiveHasValidationConstraints reports whether a schema declares any
+// constraint that the primitive-wrapper emission strategy can't honor.
+// Called on both single oneOf variants AND multi-type union schemas (the
+// constraint set is the same in both contexts). The wrapper only
+// dispatches on the JSON token kind, so anything needing e.g. `format`,
+// `minimum`, or `pattern` checked would silently pass invalid values if
+// routed through this path.
+func primitiveHasValidationConstraints(v *schemas.Type) bool {
 	if v.Format != "" || v.Pattern != "" {
 		return true
 	}
@@ -117,35 +121,143 @@ func variantHasValidationConstraints(v *schemas.Type) bool {
 // primitiveOneOfKinds returns the set of JSON kinds the variants of t cover.
 // Caller must have already filtered out schemas containing `integer` via
 // isPrimitiveOneOf — this function only handles the surviving primitive set.
-func primitiveOneOfKinds(t *schemas.Type) oneOfKind {
-	var kinds oneOfKind
+func primitiveOneOfKinds(t *schemas.Type) primitiveKind {
+	var kinds primitiveKind
 
 	for _, variant := range t.OneOf {
 		switch variant.Type[0] {
 		case schemas.TypeNameString:
-			kinds |= oneOfKindString
+			kinds |= primitiveKindString
 		case schemas.TypeNameNumber:
-			kinds |= oneOfKindNumber
+			kinds |= primitiveKindNumber
 		case schemas.TypeNameBoolean:
-			kinds |= oneOfKindBoolean
+			kinds |= primitiveKindBoolean
 		case schemas.TypeNameNull:
-			kinds |= oneOfKindNull
+			kinds |= primitiveKindNull
 		}
 	}
 
 	return kinds
 }
 
-// generateOneOfPrimitive emits a wrapper type and the methods needed to
-// round-trip a primitive `oneOf` schema. The generated type stores the
-// decoded value in `value any` and tracks whether the wrapper has been
-// populated (by Unmarshal{JSON,YAML}) in `present bool` so that three
-// states stay distinct: untouched / decoded `null` / decoded primitive.
-// Without `present` the helpers and `omitzero` round-trip would conflate
-// the first two — explicit nulls would silently become "missing".
-// UnmarshalJSON dispatches on the JSON token kind so that overlapping
-// schemas (e.g. number+integer) cannot match more than one variant by
-// accident.
+// isPrimitiveMultiTypeUnion reports whether t uses the multi-type-union
+// shape — a single Type node whose `type` slice holds multiple primitive
+// names — AND every other condition needed for the wrapper-type emission
+// strategy applies. Semantically equivalent to a primitive `oneOf` of the
+// same types from the wire's POV; routed through the same emit helpers.
+//
+// Declines on:
+//   - the `["X", "null"]` shape — the existing pointer-to-X path at
+//     schema_generator.go:1441 is better Go ergonomics for nullable
+//     scalars; this detection only fires for genuine multi-type unions
+//     (2+ non-null types or 3+ types total).
+//   - `integer` in the type list — same reason as the oneOf path:
+//     wire-level JSON tokens cannot distinguish 1 from 1.5.
+//   - mixed with composition keywords, ref, enum, const.
+//   - validation constraints on the union schema itself
+//     (`format`/`minimum`/etc. would silently not be enforced).
+//   - duplicate kinds (defensive — JSON Schema spec requires unique
+//     entries in `type`, but the parser doesn't enforce).
+//   - non-primitive types in the union (e.g. `["string", "object"]`).
+func isPrimitiveMultiTypeUnion(t *schemas.Type) bool {
+	if t == nil || len(t.Type) < 2 {
+		return false
+	}
+
+	if len(t.OneOf)+len(t.AnyOf)+len(t.AllOf) > 0 {
+		return false
+	}
+
+	if t.Ref != "" || t.Enum != nil || t.Const != nil {
+		return false
+	}
+
+	if primitiveHasValidationConstraints(t) {
+		return false
+	}
+
+	// Decline the `["X", "null"]` nullable-scalar shape so the existing
+	// pointer path at schema_generator.go:1441 keeps producing the more
+	// idiomatic *X.
+	if len(t.Type) == 2 && slices.Contains(t.Type, schemas.TypeNameNull) {
+		return false
+	}
+
+	seen := make(map[string]struct{}, len(t.Type))
+
+	for _, kind := range t.Type {
+		switch kind {
+		case schemas.TypeNameString,
+			schemas.TypeNameNumber,
+			schemas.TypeNameBoolean,
+			schemas.TypeNameNull:
+		default:
+			return false
+		}
+
+		if _, dup := seen[kind]; dup {
+			return false
+		}
+
+		seen[kind] = struct{}{}
+	}
+
+	return true
+}
+
+// primitiveMultiTypeKinds returns the set of JSON kinds the multi-type
+// union covers. Caller must have already filtered out unsupported types
+// via isPrimitiveMultiTypeUnion — this function only handles the
+// surviving primitive set.
+func primitiveMultiTypeKinds(t *schemas.Type) primitiveKind {
+	var kinds primitiveKind
+
+	for _, kind := range t.Type {
+		switch kind {
+		case schemas.TypeNameString:
+			kinds |= primitiveKindString
+		case schemas.TypeNameNumber:
+			kinds |= primitiveKindNumber
+		case schemas.TypeNameBoolean:
+			kinds |= primitiveKindBoolean
+		case schemas.TypeNameNull:
+			kinds |= primitiveKindNull
+		}
+	}
+
+	return kinds
+}
+
+// generateOneOfPrimitive routes a primitive `oneOf` schema through the
+// shared emitPrimitiveWrapper. The wrapper stores the decoded value in
+// `value any` and tracks population in `present bool` so untouched /
+// decoded-null / decoded-primitive stay distinct (without `present` the
+// helpers and `omitzero` round-trip would conflate the first two —
+// explicit nulls would silently become "missing"). UnmarshalJSON
+// dispatches on the JSON token kind so overlapping schemas (e.g.
+// number+integer) cannot match more than one variant by accident.
+//
+// Precondition documented on emitPrimitiveWrapper (OnlyModels guard).
+func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	return g.emitPrimitiveWrapper(t, scope, primitiveOneOfKinds(t))
+}
+
+// generatePrimitiveMultiTypeUnion routes a multi-type-union schema —
+// `{"type": ["string", "number", ...]}` — through the same shared wrapper
+// emit as primitive `oneOf`. The two shapes are wire-equivalent (a single
+// JSON value satisfying any of the listed types), so the generated Go
+// type, methods, and round-trip semantics are identical; only the entry
+// point differs.
+//
+// Precondition documented on emitPrimitiveWrapper (OnlyModels guard).
+func (g *schemaGenerator) generatePrimitiveMultiTypeUnion(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	return g.emitPrimitiveWrapper(t, scope, primitiveMultiTypeKinds(t))
+}
+
+// emitPrimitiveWrapper builds the wrapper struct + methods for the kind
+// set, parameterized only by the schema's name/description (via t) and
+// the resolved kinds. Both `oneOf` (variants in t.OneOf) and multi-type
+// (kinds in t.Type) entry points compute their kinds and dispatch here.
 //
 // Precondition: callers MUST NOT invoke this in `OnlyModels` mode — the
 // wrapper struct has unexported `value`/`present` fields and is unusable
@@ -154,15 +266,15 @@ func primitiveOneOfKinds(t *schemas.Type) oneOfKind {
 // this wrapper isn't. Callers in `generateDeclaredType` already gate on
 // `!g.config.OnlyModels`; this function panics rather than silently
 // emitting a broken type if that guard is ever bypassed.
-func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+func (g *schemaGenerator) emitPrimitiveWrapper(
+	t *schemas.Type, scope nameScope, kinds primitiveKind,
+) (codegen.Type, error) {
 	if g.config.OnlyModels {
 		// Defensive: should be unreachable per the contract above.
 		// Panicking here turns a future routing bug (silent broken
 		// codegen) into a loud failure at codegen time.
-		panic("generateOneOfPrimitive called in OnlyModels mode; caller must guard")
+		panic("emitPrimitiveWrapper called in OnlyModels mode; caller must guard")
 	}
-
-	kinds := primitiveOneOfKinds(t)
 
 	name := g.output.uniqueTypeName(scope)
 	if g.config.StructNameFromTitle && t.Title != "" {
@@ -219,28 +331,28 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 	}
 
 	addMethod("Value", emitOneOfPrimitiveValue(name))
-	addMethod("IsZero", emitOneOfPrimitiveIsZero(name))
+	addMethod("IsZero", emitOneOfPrimitiveIsZero(name, kinds.has(primitiveKindNull)))
 
-	if kinds.has(oneOfKindString) {
+	if kinds.has(primitiveKindString) {
 		addMethod("AsString", emitOneOfPrimitiveAsString(name))
 	}
 
-	if kinds.has(oneOfKindNumber) {
+	if kinds.has(primitiveKindNumber) {
 		addMethod("AsNumber", emitOneOfPrimitiveAsNumber(name))
 	}
 
-	if kinds.has(oneOfKindBoolean) {
+	if kinds.has(primitiveKindBoolean) {
 		addMethod("AsBool", emitOneOfPrimitiveAsBool(name))
 	}
 
-	if kinds.has(oneOfKindNull) {
+	if kinds.has(primitiveKindNull) {
 		addMethod("IsNull", emitOneOfPrimitiveIsNull(name))
 	}
 
 	return &codegen.NamedType{Decl: decl}, nil
 }
 
-func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds primitiveKind) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("UnmarshalJSON implements json.Unmarshaler.")
 		out.Printlnf("func (j *%s) UnmarshalJSON(value []byte) error {", typeName)
@@ -248,7 +360,7 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 
 		out.Printlnf("dec := json.NewDecoder(bytes.NewReader(value))")
 
-		if kinds.has(oneOfKindNumber) {
+		if kinds.has(primitiveKindNumber) {
 			out.Printlnf("dec.UseNumber()")
 		}
 
@@ -256,7 +368,7 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 		out.Printlnf("if err != nil { return err }")
 		out.Printlnf("switch tok.(type) {")
 
-		if kinds.has(oneOfKindString) {
+		if kinds.has(primitiveKindString) {
 			out.Printlnf("case string:")
 			out.Indent(1)
 			out.Printlnf("var v string")
@@ -265,7 +377,7 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindNumber) {
+		if kinds.has(primitiveKindNumber) {
 			out.Printlnf("case json.Number:")
 			out.Indent(1)
 			out.Printlnf("var v float64")
@@ -274,7 +386,7 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindBoolean) {
+		if kinds.has(primitiveKindBoolean) {
 			out.Printlnf("case bool:")
 			out.Indent(1)
 			out.Printlnf("var v bool")
@@ -283,7 +395,7 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindNull) {
+		if kinds.has(primitiveKindNull) {
 			out.Printlnf("case nil:")
 			out.Indent(1)
 			// Validate the full payload to reject trailing garbage like
@@ -310,13 +422,13 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 	}
 }
 
-func emitOneOfPrimitiveMarshalJSON(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveMarshalJSON(typeName string, kinds primitiveKind) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("MarshalJSON implements json.Marshaler.")
 		out.Printlnf("func (j *%s) MarshalJSON() ([]byte, error) {", typeName)
 		out.Indent(1)
 
-		if kinds.has(oneOfKindNull) {
+		if kinds.has(primitiveKindNull) {
 			// Unset (no Unmarshal call has touched j) → emit null. The
 			// receiver's surrounding struct is responsible for using
 			// `omitzero` if it wants to omit the field entirely.
@@ -348,7 +460,7 @@ func emitOneOfPrimitiveMarshalJSON(typeName string, kinds oneOfKind) func(*codeg
 	}
 }
 
-func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds primitiveKind) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("UnmarshalYAML implements yaml.Unmarshaler.")
 		out.Printlnf("func (j *%s) UnmarshalYAML(value *yaml.Node) error {", typeName)
@@ -360,7 +472,7 @@ func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*cod
 		out.Printlnf("}")
 		out.Printlnf("switch value.Tag {")
 
-		if kinds.has(oneOfKindString) {
+		if kinds.has(primitiveKindString) {
 			out.Printlnf(`case "!!str":`)
 			out.Indent(1)
 			out.Printlnf("var v string")
@@ -369,7 +481,7 @@ func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*cod
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindNumber) {
+		if kinds.has(primitiveKindNumber) {
 			out.Printlnf(`case "!!int", "!!float":`)
 			out.Indent(1)
 			out.Printlnf("var v float64")
@@ -378,7 +490,7 @@ func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*cod
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindBoolean) {
+		if kinds.has(primitiveKindBoolean) {
 			out.Printlnf(`case "!!bool":`)
 			out.Indent(1)
 			out.Printlnf("var v bool")
@@ -387,7 +499,7 @@ func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*cod
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindNull) {
+		if kinds.has(primitiveKindNull) {
 			out.Printlnf(`case "!!null":`)
 			out.Indent(1)
 			out.Printlnf("j.value = nil")
@@ -408,13 +520,13 @@ func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*cod
 	}
 }
 
-func emitOneOfPrimitiveMarshalYAML(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveMarshalYAML(typeName string, kinds primitiveKind) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("MarshalYAML implements yaml.Marshaler.")
 		out.Printlnf("func (j *%s) MarshalYAML() (interface{}, error) {", typeName)
 		out.Indent(1)
 
-		if kinds.has(oneOfKindNull) {
+		if kinds.has(primitiveKindNull) {
 			// Unset → emit null. Explicit null also yields nil (yaml.v3
 			// emits `null` for a nil interface).
 			out.Printlnf("if j == nil || !j.present { return nil, nil }")
@@ -453,13 +565,21 @@ func emitOneOfPrimitiveValue(typeName string) func(*codegen.Emitter) error {
 	}
 }
 
-func emitOneOfPrimitiveIsZero(typeName string) func(*codegen.Emitter) error {
+// emitOneOfPrimitiveIsZero emits the IsZero accessor + its docstring. The
+// `see IsNull` cross-reference is conditional on hasNull because IsNull is
+// only emitted when the union includes `null` (see line 348-349); without
+// the condition the docstring would point at a non-existent method on
+// non-nullable wrappers.
+func emitOneOfPrimitiveIsZero(typeName string, hasNull bool) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
-		out.Commentf(
-			"IsZero reports whether the wrapper has not been populated by " +
-				"Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. " +
-				"Note: an explicitly-decoded JSON `null` is NOT zero — see IsNull.",
-		)
+		comment := "IsZero reports whether the wrapper has not been populated by " +
+			"Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag."
+
+		if hasNull {
+			comment += " Note: an explicitly-decoded JSON `null` is NOT zero — see IsNull."
+		}
+
+		out.Commentf(comment)
 		out.Printlnf("func (j *%s) IsZero() bool {", typeName)
 		out.Indent(1)
 		out.Printlnf("return j == nil || !j.present")
