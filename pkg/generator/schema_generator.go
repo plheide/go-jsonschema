@@ -288,6 +288,15 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return g.generateEnumType(t, scope)
 	}
 
+	// OnlyModels skips emitting Unmarshal/Marshal helpers, but the primitive
+	// `oneOf` wrapper has no other API surface (only an unexported `value`
+	// field), so without those methods consumers can't construct, inspect,
+	// or unmarshal the type. Fall back to the regular generation path in
+	// that mode so the resulting type stays usable.
+	if isPrimitiveOneOf(t) && !g.config.OnlyModels {
+		return g.generateOneOfPrimitive(t, scope)
+	}
+
 	name := g.output.uniqueTypeName(scope)
 
 	if g.config.StructNameFromTitle && t.Title != "" {
@@ -635,41 +644,6 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
 		}
-	}
-
-	// generateUnmarshalBody wraps the raw-map decode error with type
-	// context via `fmt.Errorf`, so fmt must be imported whenever the body
-	// emits the raw-decode branch — even when no hasError validator is
-	// present. The branch fires when (a) the struct has an
-	// additionalProperties field, or (b) any validator declares
-	// beforeJSONUnmarshal/requiresRawAfter (the latter covers
-	// `defaultValidator`, which has hasError=false but still triggers
-	// raw decoding).
-	needsRawDecode := false
-
-	for _, v := range validators {
-		d := v.desc()
-		if d.beforeJSONUnmarshal || d.requiresRawAfter {
-			needsRawDecode = true
-
-			break
-		}
-	}
-
-	if !needsRawDecode {
-		if structType, ok := decl.Type.(*codegen.StructType); ok {
-			for _, f := range structType.Fields {
-				if f.Name == additionalProperties {
-					needsRawDecode = true
-
-					break
-				}
-			}
-		}
-	}
-
-	if needsRawDecode {
-		g.output.file.Package.AddImport("fmt", "")
 	}
 
 	for _, formatter := range g.formatters {
@@ -1333,6 +1307,20 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	return prop.Default
 }
 
+// needsDeclaredType reports whether a schema must be routed through
+// generateDeclaredType rather than inlined.
+//
+// Every composition form that emits a named wrapper or holder needs a full
+// declaration: inlining one would collapse it to interface{} and drop the
+// generated methods along with it. Keeping the whole decision here means
+// generateTypeInline spends a single branch on the family rather than one per
+// form, and later forms extend this predicate instead of adding another branch
+// to an already-large function.
+func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
+	// A primitive `oneOf` carries no top-level `type`.
+	return len(t.OneOf) > 0 && isPrimitiveOneOf(t)
+}
+
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
@@ -1353,6 +1341,15 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if len(t.AllOf) > 0 {
 			return g.generateAllOfType(t, scope)
+		}
+
+		// Composition forms that emit a named wrapper or holder must be
+		// routed to generateDeclaredType before the `len(t.Type) == 0`
+		// bail-out below, since they carry no top-level `type` and would
+		// otherwise be emitted as interface{}. Collected in one predicate so
+		// this function keeps a single branch for the whole family.
+		if g.needsDeclaredType(t) {
+			return g.generateDeclaredType(t, scope)
 		}
 
 		if len(t.Type) == 0 {
