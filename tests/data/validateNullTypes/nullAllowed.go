@@ -8,7 +8,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type NullAllowed struct {
 	// Nullable corresponds to the JSON schema field "nullable".
-	Nullable NullAllowedNullable `json:"nullable,omitempty,omitzero" yaml:"nullable,omitempty" mapstructure:"nullable,omitempty"`
+	Nullable *string `json:"nullable,omitempty,omitzero" yaml:"nullable,omitempty" mapstructure:"nullable,omitempty"`
 
 	// Strict corresponds to the JSON schema field "strict".
 	Strict *string `json:"strict,omitempty,omitzero" yaml:"strict,omitempty" mapstructure:"strict,omitempty"`
@@ -16,8 +16,6 @@ type NullAllowed struct {
 	// no type keyword at all
 	Untyped interface{} `json:"untyped,omitempty,omitzero" yaml:"untyped,omitempty" mapstructure:"untyped,omitempty"`
 }
-
-type NullAllowedNullable *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NullAllowed) UnmarshalJSON(value []byte) error {
