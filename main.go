@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -21,6 +23,20 @@ const (
 	// (--strict-additional-properties, --validate-formats). Centralized so the
 	// linter (goconst) sees a single canonical reference.
 	flagValueOff = "off"
+
+	// shortCommitLen is how much of a commit hash --version shows, the same
+	// length Go uses for the revision in a pseudo-version.
+	shortCommitLen = 12
+)
+
+// Build metadata stamped by goreleaser through -ldflags -X (see
+// .goreleaser.yaml). All three are empty in a plain `go build` or
+// `go install`, and versionString falls back to the build info the go
+// command embeds in every binary.
+var (
+	version   string
+	gitCommit string
+	buildTime string
 )
 
 var (
@@ -67,8 +83,9 @@ var (
 	errKnownSchemaDuplicate = errors.New("--known-schema: duplicate URL")
 
 	rootCmd = &cobra.Command{
-		Use:   "go-jsonschema FILE ...",
-		Short: "Generates Go code from JSON Schema files.",
+		Use:     "go-jsonschema FILE ...",
+		Short:   "Generates Go code from JSON Schema files.",
+		Version: versionString(),
 		Run: func(_ *cobra.Command, args []string) {
 			if len(args) == 0 {
 				abort("No arguments specified. Run with --help for usage.")
@@ -303,6 +320,57 @@ map field instead, or when patternProperties is present, which suppresses
 enforcement with a warning).`)
 
 	abortWithErr(rootCmd.Execute())
+}
+
+// versionString is what --version prints after "go-jsonschema version".
+func versionString() string {
+	info, _ := debug.ReadBuildInfo()
+
+	return formatVersion(version, gitCommit, buildTime, info)
+}
+
+// formatVersion prefers goreleaser's stamps and falls back to the module
+// version and VCS revision recorded in info, which may be nil. The toolchain
+// and platform always come from the runtime: goreleaser also stamps
+// main.goVersion and main.osArch, but those are a pinned version string and an
+// architecture without its OS, so they are not declared.
+func formatVersion(stampedVersion, stampedCommit, stampedTime string, info *debug.BuildInfo) string {
+	ver, commit := stampedVersion, stampedCommit
+
+	switch {
+	case ver != "" && !strings.HasPrefix(ver, "v"):
+		// goreleaser's {{.Version}} drops the tag's leading v; restore it so a
+		// release binary and `go install` of the same tag print the same thing.
+		ver = "v" + ver
+	case ver == "" && info != nil:
+		ver = info.Main.Version
+	}
+
+	if ver == "" {
+		ver = "(devel)"
+	}
+
+	if commit == "" && info != nil {
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" {
+				commit = setting.Value
+			}
+		}
+	}
+
+	details := []string{}
+
+	if commit != "" {
+		details = append(details, "commit "+commit[:min(len(commit), shortCommitLen)])
+	}
+
+	if stampedTime != "" {
+		details = append(details, "built "+stampedTime)
+	}
+
+	details = append(details, runtime.Version(), runtime.GOOS+"/"+runtime.GOARCH)
+
+	return ver + " (" + strings.Join(details, ", ") + ")"
 }
 
 // parseStrictAdditionalProperties interprets the --strict-additional-properties
