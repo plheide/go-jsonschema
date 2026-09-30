@@ -9,26 +9,32 @@ import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "strings"
 
-type IntAdditionalProperties struct {
-	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+// A property named "-" beside typed additionalProperties. Once the decoder binds
+// "-" to its field, the generated pruning must treat it as a declared key, or its
+// value is copied into the catch-all map as well.
+type DashPropertyNameAdditional struct {
+	// Dash corresponds to the JSON schema field "-".
+	Dash string `json:"-," yaml:"-" mapstructure:"-"`
 
-	AdditionalProperties map[string]int `mapstructure:",remain"`
+	AdditionalProperties map[string]string `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *IntAdditionalProperties) UnmarshalJSON(value []byte) error {
+func (j *DashPropertyNameAdditional) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw IntAdditionalProperties: %w", err)
+		return fmt.Errorf("unmarshal raw DashPropertyNameAdditional: %w", err)
 	}
-	type Plain IntAdditionalProperties
+	if _, ok := raw["-"]; raw != nil && !ok {
+		return fmt.Errorf("field - in DashPropertyNameAdditional: required")
+	}
+	type Plain DashPropertyNameAdditional
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal IntAdditionalProperties: %w", err)
+		return fmt.Errorf("unmarshal DashPropertyNameAdditional: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
-		plain.AdditionalProperties = map[string]int{}
+		plain.AdditionalProperties = map[string]string{}
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -51,25 +57,28 @@ func (j *IntAdditionalProperties) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for IntAdditionalProperties: %w", err)
+		return fmt.Errorf("decode additional properties for DashPropertyNameAdditional: %w", err)
 	}
-	*j = IntAdditionalProperties(plain)
+	*j = DashPropertyNameAdditional(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *IntAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
+func (j *DashPropertyNameAdditional) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw IntAdditionalProperties: %w", err)
+		return fmt.Errorf("unmarshal raw DashPropertyNameAdditional: %w", err)
 	}
-	type Plain IntAdditionalProperties
+	if _, ok := raw["-"]; raw != nil && !ok {
+		return fmt.Errorf("field - in DashPropertyNameAdditional: required")
+	}
+	type Plain DashPropertyNameAdditional
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal IntAdditionalProperties: %w", err)
+		return fmt.Errorf("unmarshal DashPropertyNameAdditional: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
-		plain.AdditionalProperties = map[string]int{}
+		plain.AdditionalProperties = map[string]string{}
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -92,8 +101,8 @@ func (j *IntAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for IntAdditionalProperties: %w", err)
+		return fmt.Errorf("decode additional properties for DashPropertyNameAdditional: %w", err)
 	}
-	*j = IntAdditionalProperties(plain)
+	*j = DashPropertyNameAdditional(plain)
 	return nil
 }
