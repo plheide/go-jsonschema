@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A property named \"-\" beside typed additionalProperties. Once the decoder binds \"-\" to its field, the generated pruning must treat it as a declared key, or its value is copied into the catch-all map as well.",
+  "properties": {
+    "-": {
+      "type": "string",
+      "goJSONSchema": { "identifier": "Dash" }
+    }
+  },
+  "required": ["-"],
+  "additionalProperties": { "type": "string" }
+}
