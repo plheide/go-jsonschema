@@ -1627,6 +1627,16 @@ func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []strin
 	// reports it as absent and the field silently falls back to its Go name.
 	quotedName := goQuotedBody(name)
 
+	// encoding/json reads a tag of exactly "-" as "always omit this field", so
+	// a property literally named "-" keeps its key only through the trailing
+	// comma the package documents for that case. With options after the name
+	// ("-,omitempty") it is already a key. yaml.v3 cannot take the same fix: it
+	// rejects the empty option at runtime, so the yaml tag keeps "-" and that
+	// property stays unbindable in YAML.
+	if name == "-" && omitJson == "" {
+		omitJson = ","
+	}
+
 	for _, tag := range g.config.Tags {
 		switch tag {
 		case "json":
