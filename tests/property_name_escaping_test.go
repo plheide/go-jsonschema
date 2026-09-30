@@ -79,3 +79,38 @@ func TestPropertyNameEscapingJSONRoundTrip(t *testing.T) {
 	require.NoError(t, json.Unmarshal(encoded, &out))
 	assert.Equal(t, in, out)
 }
+
+// TestDashPropertyNameJSONRoundTrip covers a property literally named "-".
+// encoding/json reads a tag of exactly "-" as "always omit this field", so
+// with `json:"-"` the value never reached the field on decode — the required
+// check saw the key in the raw map and passed — and vanished on encode,
+// leaving a document the type's own required check then rejected.
+func TestDashPropertyNameJSONRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	var decoded testEscaping.DashPropertyName
+	require.NoError(t, json.Unmarshal([]byte(`{"-":"x"}`), &decoded))
+	assert.Equal(t, "x", decoded.Dash)
+
+	encoded, err := json.Marshal(decoded)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"-":"x"}`, string(encoded))
+
+	var again testEscaping.DashPropertyName
+	require.NoError(t, json.Unmarshal(encoded, &again), "the type must re-decode its own output")
+	assert.Equal(t, decoded, again)
+}
+
+// TestDashPropertyNamePrunedFromAdditionalProperties checks the generated
+// pruning agrees with the decoder. It used to skip any field whose tag name
+// was "-", so once `json:"-,"` let the decoder bind the property, its key would
+// still have been copied into the catch-all map as well.
+func TestDashPropertyNamePrunedFromAdditionalProperties(t *testing.T) {
+	t.Parallel()
+
+	var decoded testEscaping.DashPropertyNameAdditional
+	require.NoError(t, json.Unmarshal([]byte(`{"-":"x","extra":"y"}`), &decoded))
+
+	assert.Equal(t, "x", decoded.Dash)
+	assert.Equal(t, map[string]string{"extra": "y"}, decoded.AdditionalProperties)
+}

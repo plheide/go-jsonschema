@@ -39,10 +39,11 @@ func (j *ObjectWithPropsAdditionalProperties) UnmarshalJSON(value []byte) error 
 		if f.Name == "AdditionalProperties" {
 			continue
 		}
-		name := strings.Split(f.Tag.Get("json"), ",")[0]
-		if name == "-" {
+		tag := f.Tag.Get("json")
+		if tag == "-" {
 			continue
 		}
+		name := strings.Split(tag, ",")[0]
 		if name == "" {
 			name = f.Name
 		}
@@ -79,10 +80,11 @@ func (j *ObjectWithPropsAdditionalProperties) UnmarshalYAML(value *yaml.Node) er
 		if f.Name == "AdditionalProperties" {
 			continue
 		}
-		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
-		if name == "-" {
+		tag := f.Tag.Get("yaml")
+		if tag == "-" {
 			continue
 		}
+		name := strings.Split(tag, ",")[0]
 		if name == "" {
 			name = strings.ToLower(f.Name)
 		}
