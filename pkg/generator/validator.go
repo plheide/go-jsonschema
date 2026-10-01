@@ -369,14 +369,24 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 
 	// Special handling for pointer-to-integer types (e.g., *int or NamedType wrapping *int).
 	// We need to create a temp variable and take its address.
-	if v.isPointerToInteger() {
+	//
+	// The temp is declared with the pointee's own type, not left to `:=` on an
+	// int literal: once a width can come from `format` or --min-sized-ints the
+	// field may be a *int64 or *uint8, and `&` on an int temp would not be
+	// assignable to it.
+	if elem, ok := pointerToIntegerElem(v.defaultValueType); ok {
 		if f, ok := v.defaultValue.(float64); ok {
-			intVal := int(f)
-			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
-			tmpEmitter.Printlnf("defaultInt := %d", intVal)
-			tmpEmitter.Printlnf(`%s = &defaultInt`, getPlainName(v.fieldName))
+			typeEmitter := codegen.NewEmitter(out.MaxLineLength())
+			if err := elem.Generate(typeEmitter); err == nil {
+				tmpVarName := "default" + v.fieldName
+				tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+				tmpEmitter.Printlnf(
+					"var %s %s = %d", tmpVarName, strings.TrimSpace(typeEmitter.String()), int(f),
+				)
+				tmpEmitter.Printlnf(`%s = &%s`, getPlainName(v.fieldName), tmpVarName)
 
-			return tmpEmitter.String(), nil
+				return tmpEmitter.String(), nil
+			}
 		}
 	}
 
@@ -434,33 +444,51 @@ func isIntegerType(t codegen.Type) bool {
 	case *codegen.NamedType:
 		return isIntegerType(tt.Decl.Type)
 	case codegen.PrimitiveType:
-		return tt.Type == typeInt
+		return isGoIntegerTypeName(tt.Type)
 	}
 
 	return false
 }
 
-func (v *defaultValidator) isPointerToInteger() bool {
-	return isPointerToInteger(v.defaultValueType)
+// isGoIntegerTypeName reports whether name is one of Go's integer types.
+//
+// Checking for the literal "int" is not enough: a schema can pin the width
+// with `format: int64`, and `--min-sized-ints` derives one from the declared
+// bounds. Missing those left integer defaults going through litter.Sdump as
+// float64, emitting `plain.Version = 0.0` against an int64 field.
+func isGoIntegerTypeName(name string) bool {
+	switch name {
+	case typeInt, "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64":
+		return true
+
+	default:
+		return false
+	}
 }
 
-func isPointerToInteger(t codegen.Type) bool {
+// pointerToIntegerElem returns the integer type a pointer-to-integer field
+// points at, so a default can be placed in a temp of exactly that type.
+func pointerToIntegerElem(t codegen.Type) (codegen.Type, bool) {
 	switch tt := t.(type) {
 	case codegen.NamedType:
-		return isPointerToInteger(tt.Decl.Type)
+		return pointerToIntegerElem(tt.Decl.Type)
+
 	case *codegen.NamedType:
-		return isPointerToInteger(tt.Decl.Type)
+		return pointerToIntegerElem(tt.Decl.Type)
+
 	case codegen.PointerType:
-		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
-			return pt.Type == typeInt
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok && isGoIntegerTypeName(pt.Type) {
+			return pt, true
 		}
+
 	case *codegen.PointerType:
-		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
-			return pt.Type == typeInt
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok && isGoIntegerTypeName(pt.Type) {
+			return pt, true
 		}
 	}
 
-	return false
+	return nil, false
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
