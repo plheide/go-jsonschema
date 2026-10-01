@@ -152,15 +152,14 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	var def *schemas.Type
 
 	if defName != "" {
-		// TODO: Support nested definitions.
-		var ok bool
+		var rerr error
 
-		def, ok = schema.Definitions[defName]
-		if !ok {
-			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
+		def, rerr = resolveRefPath(schema.Definitions, defName)
+		if rerr != nil {
+			return nil, fmt.Errorf("%w: %q (from ref %q)", rerr, defName, t.Ref)
 		}
 
-		defName = g.caser.Identifierize(defName)
+		defName = sg.avoidInProgressName(def, g.caser.Identifierize(refPathTypeName(defName)))
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
@@ -258,6 +257,34 @@ func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, erro
 	}
 
 	return defName, fileName, nil
+}
+
+// avoidInProgressName returns name unless it is held by a declaration still
+// being generated for a different schema - the root, say, while its fields are
+// walked. isUniqueTypeName treats an in-progress name as free (the allOf and
+// anyOf merges rely on that), so a nested ref named after its path would take
+// the name and the other declaration would be silently dropped. A schema
+// re-entering itself never needs this: generateDeclaredType answers from
+// declsBySchema first. The suffixed name carries the usual collision warning.
+func (g *schemaGenerator) avoidInProgressName(def *schemas.Type, name string) string {
+	if _, cached := g.output.declsBySchema[def]; cached {
+		return name
+	}
+
+	if decl, taken := g.output.declsByName[name]; !taken || decl.Type != nil {
+		return name
+	}
+
+	for n := 1; ; n++ {
+		suffixed := fmt.Sprintf("%s_%d", name, n)
+		if _, ok := g.output.declsByName[suffixed]; !ok {
+			g.warner(fmt.Sprintf(
+				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed,
+			))
+
+			return suffixed
+		}
+	}
 }
 
 //nolint:gocyclo // todo: reduce cyclomatic complexity
