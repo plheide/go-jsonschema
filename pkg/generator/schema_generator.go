@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 	"unicode"
@@ -522,13 +523,14 @@ func (g *schemaGenerator) structFieldValidators(
 				})
 
 				break
-			} else if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
+			} else if maxItems, hasMax := effectiveMaxItems(f.SchemaType); f.SchemaType.MinItems != 0 || hasMax {
 				validators = append(validators, &arrayValidator{
-					fieldName:  f.Name,
-					jsonName:   f.JSONName,
-					arrayDepth: arrayDepth,
-					minItems:   f.SchemaType.MinItems,
-					maxItems:   f.SchemaType.MaxItems,
+					fieldName:   f.Name,
+					jsonName:    f.JSONName,
+					arrayDepth:  arrayDepth,
+					minItems:    f.SchemaType.MinItems,
+					maxItems:    maxItems,
+					maxItemsSet: hasMax,
 				})
 			}
 
@@ -580,6 +582,101 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 	}
 }
 
+// itemsSchema resolves the element schema for an array, covering both draft-07
+// forms of `items`. The single-schema form is returned as-is.
+//
+// For the tuple form, a one-element tuple — the common "a tuple of exactly one"
+// idiom, usually paired with minItems/maxItems 1 — maps cleanly onto that
+// element's type, so the array is generated as a properly typed slice. A
+// heterogeneous tuple has no faithful Go slice representation, so it warns and
+// returns nil, leaving the caller to fall back to an untyped array. Positional
+// types and `additionalItems` are not otherwise enforced.
+func (g *schemaGenerator) itemsSchema(t *schemas.Type, scope nameScope) *schemas.Type {
+	if len(t.TupleItems) == 0 {
+		return t.Items
+	}
+
+	// Only a CLOSED one-element tuple describes every element. Left open,
+	// `items: [A]` constrains position 0 and leaves positions 1+ to any
+	// type, so collapsing it to []A would reject data the schema allows.
+	if len(t.TupleItems) == 1 && tupleIsClosed(t) {
+		return t.TupleItems[0]
+	}
+
+	g.warner(fmt.Sprintf(
+		"Array %s uses a tuple for items that does not describe a single "+
+			"element type; positional types are not modelled and it will be "+
+			"represented as an untyped array",
+		scope.string(),
+	))
+
+	return nil
+}
+
+// tupleIsClosed reports whether a tuple forbids elements beyond the ones it
+// lists, either by capping the length with maxItems or by disallowing extras
+// with `additionalItems: false`.
+func tupleIsClosed(t *schemas.Type) bool {
+	if t.MaxItems == len(t.TupleItems) {
+		return true
+	}
+
+	return isFalseSchema(t.AdditionalItems)
+}
+
+// effectiveMaxItems returns the array length cap a schema implies, including
+// the one a closed tuple carries without saying so.
+//
+// `items: [A], additionalItems: false` permits at most len(items) elements, but
+// expresses that through `additionalItems` rather than `maxItems`. itemsSchema
+// collapses exactly that shape to []A, so without this the generated slice
+// would accept more elements than the schema allows — `["a", "b"]` would decode
+// cleanly against a tuple that admits one element.
+func effectiveMaxItems(t *schemas.Type) (int, bool) {
+	// Presence is returned separately from the value because a closed tuple
+	// can legitimately cap the array at zero: `items: [], additionalItems:
+	// false` leaves every element "additional" and so forbidden, admitting
+	// only the empty array. Reporting that as a bare 0 is indistinguishable
+	// from "no maximum" and emits no check at all.
+	// `additionalItems` only has meaning alongside the tuple form of `items`
+	// (draft-07 §6.4.2); with a single-schema `items` it applies to nothing
+	// and must not cap the array. TupleItems is non-nil exactly when the
+	// tuple form was parsed, which is what distinguishes `items: []` — a
+	// closed tuple of zero members — from `items: {...}`.
+	tupleClosed := t.TupleItems != nil && isFalseSchema(t.AdditionalItems)
+
+	tupleMax := 0
+	if tupleClosed {
+		tupleMax = len(t.TupleItems)
+	}
+
+	switch {
+	case !tupleClosed:
+		return t.MaxItems, t.MaxItems != 0
+
+	case t.MaxItems == 0:
+		return tupleMax, true
+
+	default:
+		// Both cap the array, so the tighter one wins. A schema may well
+		// declare `maxItems: 3` beside a one-member closed tuple; the
+		// tuple still admits one element, and taking maxItems on its own
+		// would let two more through.
+		return min(t.MaxItems, tupleMax), true
+	}
+}
+
+// isFalseSchema reports whether t is the JSON Schema `false`.
+//
+// Type.UnmarshalJSON decodes `false` as a `not` of the empty (always-true)
+// schema, i.e. Type{Not: &Type{}}. Testing merely for a non-nil Not would also
+// match a real constraint such as {"not": {"type": "integer"}}, which still
+// permits values — treating that as closed would wrongly collapse a tuple to a
+// single element type and reject data the schema allows.
+func isFalseSchema(t *schemas.Type) bool {
+	return t != nil && t.Not != nil && reflect.DeepEqual(*t.Not, schemas.Type{})
+}
+
 func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if ext := t.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
@@ -603,11 +700,12 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 
 	switch typeName {
 	case schemas.TypeNameArray:
-		if t.Items == nil {
+		items := g.itemsSchema(t, scope)
+		if items == nil {
 			return arrayTypeVal, nil
 		}
 
-		elemType, err := g.generateType(t.Items, g.singularScope(scope))
+		elemType, err := g.generateType(items, g.singularScope(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -1243,10 +1341,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type = emptyInterfaceTypeVal
 
-			if t.Items != nil {
+			if items := g.itemsSchema(t, scope); items != nil {
 				var err error
 
-				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
+				theType, err = g.generateTypeInline(items, g.singularScope(scope))
 				if err != nil {
 					return nil, err
 				}
