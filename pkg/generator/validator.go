@@ -44,6 +44,8 @@ var (
 	_ validator = new(requiredValidator)
 	_ validator = new(readOnlyValidator)
 	_ validator = new(nullTypeValidator)
+	_ validator = new(nonNullValidator)
+	_ validator = new(nonNullContainerValidator)
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
 	_ validator = new(stringValidator)
@@ -72,6 +74,131 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) error 
 }
 
 func (v *requiredValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+	}
+}
+
+// nonNullValidator rejects a property that is present with an explicit null
+// where the schema constrains its type to something other than null.
+//
+// This is a `type` assertion, not a `required` one. Per draft-07 §6.5.3,
+// `required` tests presence by name — `{"x": null}` satisfies it — and keywords
+// are vacuously true for instances of a type they do not target. So the null is
+// invalid only because `type` says so, and only when `type` is actually
+// declared and excludes null.
+//
+// Go cannot tell omitted from present-but-null after decoding (both leave the
+// zero value), hence the check against the raw map before unmarshalling.
+type nonNullValidator struct {
+	jsonName string
+	declName string
+	// caseVariants are the other properties whose names differ from jsonName
+	// only in case. encoding/json gives a key spelled exactly like one of them
+	// to that property, never to this one.
+	caseVariants []string
+	// exactOnly is set when a case variant comes earlier in the struct:
+	// encoding/json then hands every inexact match to that earlier field, so
+	// only the exact key is ever this field's.
+	exactOnly bool
+}
+
+func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
+	// The key-matching rule has to be the decoder's own, or the check
+	// disagrees with what was actually assigned.
+	//
+	// encoding/json matches a JSON key to a struct field without regard to
+	// case, so an exact lookup of `age` misses `{"Age": null}` — which the
+	// decode still assigns, leaving the check that exists to reject it unfired.
+	//
+	// yaml.v3 matches case-sensitively, so the same leniency there would
+	// reject `Age: null` when the field was never assigned at all and the
+	// document may well be valid.
+	if format == formatJSON && !v.exactOnly {
+		// `fieldValue` is deliberately not named `value`: that is the
+		// UnmarshalJSON parameter, and shadowing it reads as a bug.
+		//
+		// Where the payload carries two differently-cased spellings and one is
+		// null, this rejects it. encoding/json is no more specific for that
+		// input, and refusing an ambiguous payload is the safer answer for a
+		// validation flag.
+		out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
+		out.Indent(1)
+		out.Printlnf(`if fieldValue != nil || !strings.EqualFold(fieldName, %q) {`, v.jsonName)
+		out.Indent(1)
+		out.Printlnf("continue")
+		out.Indent(-1)
+		out.Printlnf("}")
+
+		if len(v.caseVariants) > 0 {
+			quoted := make([]string, len(v.caseVariants))
+			for i, name := range v.caseVariants {
+				quoted[i] = fmt.Sprintf("%q", name)
+			}
+
+			out.Printlnf("switch fieldName {")
+			out.Printlnf("case %s:", strings.Join(quoted, ", "))
+			out.Indent(1)
+			out.Printlnf("continue")
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
+	} else {
+		out.Printlnf(`if fieldValue, ok := %s[%q]; ok && fieldValue == nil {`, varNameRawMap, v.jsonName)
+		out.Indent(1)
+	}
+
+	out.Printlnf(
+		`return fmt.Errorf("field %s in %s: must not be null")`,
+		goStringText(v.jsonName), goStringText(v.declName),
+	)
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	return nil
+}
+
+func (v *nonNullValidator) desc() *validatorDesc {
+	d := &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+	}
+
+	// `strings` is only reached by the JSON branch, but the descriptor is
+	// format-agnostic and an unused import would not compile — the JSON
+	// unmarshaler is always generated alongside the YAML one. An exact-only
+	// check uses the plain map lookup in both branches, so it needs none.
+	if !v.exactOnly {
+		d.imports = []packageImport{{qualifiedName: "strings"}}
+	}
+
+	return d
+}
+
+// nonNullContainerValidator rejects a null instance where the schema's own
+// `type` excludes null. The raw map decodes to nil for a `null` payload, which
+// is indistinguishable from an empty object after unmarshalling.
+//
+// This is the container counterpart to nonNullValidator, and likewise a `type`
+// assertion: for a null instance the object keywords (`required`,
+// `minProperties`) are vacuously true, so `type` is the only thing that can
+// reject it.
+type nonNullContainerValidator struct {
+	declName string
+}
+
+func (v *nonNullContainerValidator) generate(out *codegen.Emitter, format string) error {
+	out.Printlnf(`if %s == nil {`, varNameRawMap)
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("%s: must not be null")`, v.declName)
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	return nil
+}
+
+func (v *nonNullContainerValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: true,
