@@ -372,9 +372,16 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
 
+		// Null checks precede the required ones: those deliberately pass for a
+		// null instance (the keyword is vacuous off-type), so the container
+		// check is what turns a null into the type error it actually is.
+		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, true)...)
+
 		for _, f := range tt.RequiredJSONFields {
 			validators = append(validators, &requiredValidator{f, decl.Name})
 		}
+
+		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, false)...)
 
 		for _, f := range tt.Fields {
 			if f.DefaultValue != nil {
@@ -432,6 +439,118 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+// nullTypeValidators builds the opt-in `type` checks for explicit nulls. The
+// container check and the per-property checks are requested separately because
+// they bracket the required checks: the container one must run before them, the
+// property ones after.
+//
+// Returns nothing unless ValidateNullTypes is set.
+func (g *schemaGenerator) nullTypeValidators(
+	t *schemas.Type,
+	tt *codegen.StructType,
+	declName string,
+	container bool,
+) []validator {
+	if !g.config.ValidateNullTypes {
+		return nil
+	}
+
+	if container {
+		if !schemaExcludesNull(t) {
+			return nil
+		}
+
+		return []validator{&nonNullContainerValidator{declName}}
+	}
+
+	var out []validator
+
+	for i, f := range tt.Fields {
+		if !g.schemaExcludesNullResolved(f.SchemaType) {
+			continue
+		}
+
+		v := &nonNullValidator{jsonName: f.JSONName, declName: declName}
+
+		// encoding/json binds a key to the field with exactly that name, and
+		// only otherwise to the first field whose name matches it regardless
+		// of case. Properties differing only in case split the keys between
+		// them that way, so the check has to split them the same way.
+		for j, other := range tt.Fields {
+			if j == i || !strings.EqualFold(other.JSONName, f.JSONName) {
+				continue
+			}
+
+			v.caseVariants = append(v.caseVariants, other.JSONName)
+			v.exactOnly = v.exactOnly || j < i
+		}
+
+		out = append(out, v)
+	}
+
+	return out
+}
+
+// maxNullCheckRefHops bounds the reference chain walked while deciding whether a
+// property admits null. A schema may legitimately point a `$ref` at another
+// `$ref`, and a cyclic chain must not hang the generator.
+const maxNullCheckRefHops = 16
+
+// schemaExcludesNullResolved answers schemaExcludesNull for a property, looking
+// through any `$ref` first.
+//
+// StructField.SchemaType keeps the reference as written, and a reference
+// declares no `type` of its own — so unresolved, a `$ref` to
+// `{"type": "string"}` looks like a schema that constrains nothing and no check
+// is emitted, while the same type written inline gets one.
+//
+// Resolved by walking this schema's definitions rather than through
+// resolveRef, which generates the referenced type as a side effect. A
+// reference this cannot follow — into another document, or to a definition
+// that is not there — keeps the previous answer rather than forcing one.
+func (g *schemaGenerator) schemaExcludesNullResolved(t *schemas.Type) bool {
+	for hops := 0; t != nil && t.Ref != "" && hops < maxNullCheckRefHops; hops++ {
+		resolved := g.localRefTarget(t)
+		if resolved == nil {
+			return false
+		}
+
+		t = resolved
+	}
+
+	return schemaExcludesNull(t)
+}
+
+// localRefTarget returns the schema a same-document `$ref` points at, or nil
+// when it points elsewhere or cannot be followed. Nothing is generated.
+func (g *schemaGenerator) localRefTarget(t *schemas.Type) *schemas.Type {
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil || fileName != "" || defName == "" {
+		return nil
+	}
+
+	def, err := resolveRefPath(g.schema.Definitions, defName)
+	if err != nil {
+		return nil
+	}
+
+	return def
+}
+
+// schemaExcludesNull reports whether a schema declares a `type` that does not
+// admit null, which is the only situation where an explicit null is invalid.
+//
+// A schema with no `type` constrains nothing, and a nullable union such as
+// `{"type": ["string", "null"]}` admits null deliberately; both must keep
+// accepting it.
+func schemaExcludesNull(t *schemas.Type) bool {
+	if t == nil || len(t.Type) == 0 {
+		return false
+	}
+
+	return !slices.Contains(t.Type, schemas.TypeNameNull)
 }
 
 //nolint:gocyclo // todo: reduce cyclomatic complexity
