@@ -17,6 +17,16 @@
       "description": "A backtick would terminate the raw string literal the tag list is emitted inside — a compile error in the generated file, not a mangled tag, so there is nothing sensible to escape it to.",
       "type": "string",
       "x-measurement": "has ` backtick"
+    },
+    "overridden": {
+      "description": "goJSONSchema.extraTags is this field's own instruction, and it already sets the tag x-measurement maps to. reflect reads only the first entry for a key, so the extension is skipped, with a warning, and the field keeps its own tag.",
+      "type": "string",
+      "x-measurement": "Volume_Flowrate",
+      "goJSONSchema": {
+        "extraTags": {
+          "slb-measurement": "Mass_Flowrate"
+        }
+      }
     }
   }
 }
