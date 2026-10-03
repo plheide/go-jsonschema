@@ -133,9 +133,12 @@ func generateUnmarshalBody(
 			// tag isn't silently dropped. The synthetic AdditionalProperties
 			// field carries no meaningful tag and must be skipped — otherwise
 			// `delete(raw, "AdditionalProperties")` would eat that input key.
-			// A field tagged `json:"-"` (or `yaml:"-"`) is also skipped so a
-			// legitimate additional-property key literally named "-" is
-			// preserved.
+			// A field whose whole tag is `json:"-"` (or `yaml:"-"`) is ignored
+			// by the decoder, so it is skipped here too and a legitimate
+			// additional-property key literally named "-" is preserved. The test
+			// is on the whole tag, not the name before the comma: a property
+			// literally named "-" is tagged `json:"-,"`, which the decoder does
+			// bind, so its key must be pruned like any other declared one.
 			//
 			// Match the way the decoder for this format actually binds keys
 			// to fields, so pruning removes exactly what the decoder consumed:
@@ -166,8 +169,9 @@ func generateUnmarshalBody(
 			out.Indent(1)
 			out.Printlnf("f := st.Field(i)")
 			out.Printlnf(`if f.Name == %q { continue }`, additionalProperties)
-			out.Printlnf(`name := strings.Split(f.Tag.Get(%q), ",")[0]`, tagName)
-			out.Printlnf(`if name == "-" { continue }`)
+			out.Printlnf(`tag := f.Tag.Get(%q)`, tagName)
+			out.Printlnf(`if tag == "-" { continue }`)
+			out.Printlnf(`name := strings.Split(tag, ",")[0]`)
 			out.Printlnf(`if name == "" { name = %s }`, untaggedName)
 			out.Printlnf("for k := range %s {", varNameRawMap)
 			out.Indent(1)
