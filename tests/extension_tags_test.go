@@ -151,6 +151,45 @@ func TestExtensionTagsBehaviour(t *testing.T) {
 		}
 	})
 
+	t.Run("a key the tag already carries is refused", func(t *testing.T) {
+		t.Parallel()
+
+		// reflect reads only the first entry for a key, so a repeated key
+		// compiles and is never seen: x-measurement=json would sit unread
+		// behind the field's own json tag.
+		for _, tc := range []struct {
+			mapping map[string]string
+			want    string
+		}{
+			{
+				map[string]string{"x-measurement": "json"},
+				"--extension-tag x-measurement=json repeats a key already emitted by --tags",
+			},
+			{
+				map[string]string{"x-measurement": "unit", "x-precision": "unit"},
+				"--extension-tag x-precision=unit repeats a key already emitted by --extension-tag x-measurement=unit",
+			},
+		} {
+			cfg := extensionTagConfig()
+			cfg.ExtensionTags = tc.mapping
+
+			_, err := generator.New(cfg)
+			require.ErrorContains(t, err, "duplicate struct tag key")
+			require.ErrorContains(t, err, tc.want)
+		}
+	})
+
+	t.Run("a field's own extraTags key is kept over an extension", func(t *testing.T) {
+		t.Parallel()
+
+		joined := strings.Join(generateCapturingWarningsWithConfig(
+			t, extensionTagConfig(), "./data/extensionTags/extensionTagsSkipped.json",
+		), "\n")
+
+		assert.Contains(t, joined, `Property "overridden" declares x-measurement, `+
+			`but its goJSONSchema.extraTags already sets the slb-measurement tag`)
+	})
+
 	t.Run("no configured extensions leaves output untouched", func(t *testing.T) {
 		t.Parallel()
 
@@ -199,4 +238,12 @@ func TestExtensionTagsRoundTrip(t *testing.T) {
 
 	_, present := unmapped.Tag.Lookup("x-not-configured")
 	assert.False(t, present, "an unmapped extension must not be emitted")
+
+	// A field whose goJSONSchema.extraTags already sets the key keeps that
+	// entry and gains no second one, which reflect would never read.
+	overridden, ok := reflect.TypeFor[testExtensionTags.ExtensionTagsSkipped]().FieldByName("Overridden")
+	require.True(t, ok)
+
+	assert.Equal(t, "Mass_Flowrate", overridden.Tag.Get("slb-measurement"))
+	assert.Equal(t, 1, strings.Count(string(overridden.Tag), "slb-measurement:"))
 }
