@@ -30,6 +30,8 @@ var (
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
 	errCannotGenerateSources          = errors.New("cannot generate sources")
+	errInvalidExtensionTagKey         = errors.New("invalid struct tag key")
+	errDuplicateExtensionTagKey       = errors.New("duplicate struct tag key")
 )
 
 type Generator struct {
@@ -51,6 +53,10 @@ type qualifiedDefinition struct {
 }
 
 func New(config Config) (*Generator, error) {
+	if err := checkExtensionTagKeys(config.ExtensionTags, config.Tags); err != nil {
+		return nil, err
+	}
+
 	formatters := []formatter{
 		&jsonFormatter{},
 	}
