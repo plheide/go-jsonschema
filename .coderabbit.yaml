@@ -2,6 +2,11 @@
 # Only non-default settings are listed here; everything else uses CR defaults.
 
 reviews:
+  # REVIEW-ONLY BRANCH, never merged: layer p4's 125 generated goldens push
+  # its PR past CodeRabbit's 100-file limit. The goldens are checked
+  # against the generator by the golden tests.
+  path_filters:
+    - "!tests/data/**/*.go"
   auto_review:
     # Auto-review PRs that target non-default base branches too — needed
     # for stacked PRs where intermediate branches target each other
