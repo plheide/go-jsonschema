@@ -509,6 +509,16 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			validators = append(validators, v)
 		}
 
+		// Attach the conditional-discriminator validator when the schema
+		// matches the allOf+if/then[/else] pattern. Detection is repeated
+		// here (also runs in generateType) — the cost is negligible for
+		// non-matching schemas, and re-detecting avoids threading state
+		// through generateType's return signature.
+		if cd, ok := g.detectConditionalDiscriminator(t); ok && !g.config.OnlyModels {
+			cd.declName = decl.Name
+			validators = append(validators, cd)
+		}
+
 		for _, f := range tt.Fields {
 			if f.DefaultValue != nil {
 				if f.Name == additionalProperties {
@@ -1204,6 +1214,19 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		}
 
 		return dt, nil
+	}
+
+	// Conditional-discriminator pattern: allOf of {if: {<K>: const}, then,
+	// else?} keyed on a single discriminator property's const value.
+	// Bypass the AllOf merge (which would lose the parent's struct shape)
+	// and emit the struct as a regular object — the per-discriminator
+	// conditional checks attach as a runtime validator in
+	// generateDeclaredType.
+	if _, ok := g.detectConditionalDiscriminator(t); ok {
+		tCopy := *t
+		tCopy.AllOf = nil
+
+		return g.generateStructType(&tCopy, scope)
 	}
 
 	if len(t.AllOf) > 0 {
@@ -1964,6 +1987,12 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.AllOf) > 0 {
+			// The conditional-discriminator pattern compiles to a validator
+			// that attaches only on a declared type, so it skips the merge.
+			if _, ok := g.detectConditionalDiscriminator(t); ok {
+				return g.generateDeclaredType(t, scope)
+			}
+
 			return g.generateAllOfType(t, scope)
 		}
 
