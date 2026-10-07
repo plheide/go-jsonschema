@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 var (
@@ -315,6 +316,208 @@ func TestStrictAdditionalPropertiesAlways(t *testing.T) {
 	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesStrict
 
 	testExamples(t, cfg, "./data/strictAdditionalPropertiesAlways")
+}
+
+func TestKnownSchema(t *testing.T) {
+	t.Parallel()
+
+	// Pre-load the canonical schema and seed the loader cache keyed by the
+	// $id URL the consumer references. The URL is unreachable on principle
+	// (no DNS / no listener); a successful generation proves the cache short-
+	// circuits before any HTTP fetch is attempted.
+	canonical, err := schemas.FromJSONFile("./data/knownSchema/canonical/canonical.json")
+	if err != nil {
+		t.Fatalf("preload canonical: %v", err)
+	}
+
+	cfg := basicConfig
+	cfg.Cache = map[string]*schemas.Schema{
+		"https://example.com/canonical/v1/canonical.json": canonical,
+	}
+
+	testExampleFile(t, cfg, "./data/knownSchema/consumer/consumer.json")
+}
+
+// TestKnownSchemaFragmentRef proves the cache short-circuits even when the
+// consumer's $ref carries a fragment (#/$defs/...). The cache key is the
+// URL without fragment; the loader hands back the pre-loaded *Schema and
+// the generator's existing fragment-resolution logic walks into $defs.
+func TestKnownSchemaFragmentRef(t *testing.T) {
+	t.Parallel()
+
+	canonical, err := schemas.FromJSONFile("./data/knownSchemaFragment/canonical/canonical.json")
+	if err != nil {
+		t.Fatalf("preload canonical: %v", err)
+	}
+
+	cfg := basicConfig
+	cfg.Cache = map[string]*schemas.Schema{
+		"https://example.com/canonical/v1/canonical-fragment.json": canonical,
+	}
+
+	testExampleFile(t, cfg, "./data/knownSchemaFragment/consumer/consumer.json")
+}
+
+func TestSchemaPackageWithAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/header",
+			PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
+			OutputName:  "../header/v1/header.go",
+			ImportAlias: "headerv1",
+		},
+		{
+			SchemaID:    "https://example.com/jobs",
+			PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
+			OutputName:  "../jobs/v1/jobs.go",
+			ImportAlias: "jobsv1",
+		},
+	}
+	testExampleFile(t, cfg, "./data/schemaPackageAlias/consumer/consumer.json")
+}
+
+func TestSchemaPackageRejectsInvalidImportAlias(t *testing.T) {
+	t.Parallel()
+
+	// "1bad" is not a Go identifier. "_" and "init" are, but a blank import
+	// cannot be referred to and Go reserves init for functions.
+	for _, alias := range []string{"1bad", "_", "init"} {
+		t.Run(alias, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := basicConfig
+			cfg.SchemaMappings = []generator.SchemaMapping{
+				{
+					SchemaID:    "https://example.com/schema",
+					PackageName: "example.com/foo/v1",
+					ImportAlias: alias,
+				},
+			}
+
+			_, err := generator.New(cfg)
+			if err == nil {
+				t.Fatal("expected New to reject invalid ImportAlias, got nil")
+			}
+
+			if !errors.Is(err, generator.ErrInvalidImportAlias) {
+				t.Errorf("expected ErrInvalidImportAlias, got %v", err)
+			}
+		})
+	}
+}
+
+// TestSchemaPackageRejectsImportAliasCollision: a file that would import two
+// packages under one name fails to generate, naming both, rather than emitting
+// code that does not compile. The consumer fixture imports header/v1 and
+// jobs/v1, whose derived names are both "v1"; consumerRequired also imports
+// encoding/json, which an alias of "json" collides with.
+func TestSchemaPackageRejectsImportAliasCollision(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name        string
+		consumer    string
+		headerAlias string
+		jobsAlias   string
+	}{
+		{name: "two derived names", consumer: "consumer"},
+		{name: "an explicit alias against a derived name", consumer: "consumer", jobsAlias: "v1"},
+		{name: "two explicit aliases", consumer: "consumer", headerAlias: "same", jobsAlias: "same"},
+		{name: "an alias against a standard import", consumer: "consumerRequired", headerAlias: "json", jobsAlias: "jobsv1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := basicConfig
+			cfg.SchemaMappings = []generator.SchemaMapping{
+				{
+					SchemaID:    "https://example.com/header",
+					PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
+					OutputName:  "../header/v1/header.go",
+					ImportAlias: tc.headerAlias,
+				},
+				{
+					SchemaID:    "https://example.com/jobs",
+					PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
+					OutputName:  "../jobs/v1/jobs.go",
+					ImportAlias: tc.jobsAlias,
+				},
+			}
+
+			g, err := generator.New(cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := g.DoFile("./data/schemaPackageAlias/" + tc.consumer + "/" + tc.consumer + ".json"); err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := g.Sources(); !errors.Is(err, generator.ErrImportAliasCollision) {
+				t.Errorf("expected ErrImportAliasCollision, got %v", err)
+			}
+		})
+	}
+}
+
+// TestSchemaPackageRejectsConflictingImportAlias asserts New() rejects two
+// SchemaMappings that bind the same PackageName to different aliases —
+// resolveImportAlias would silently pick whichever it iterates over first
+// and ignore the other. CR finding from fork PR #15.
+func TestSchemaPackageRejectsConflictingImportAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schemaA",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1",
+		},
+		{
+			SchemaID:    "https://example.com/schemaB",
+			PackageName: "example.com/foo/v1", // same package
+			ImportAlias: "different",          // conflicting alias
+		},
+	}
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject conflicting aliases, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrConflictingImportAlias) {
+		t.Errorf("expected ErrConflictingImportAlias, got %v", err)
+	}
+}
+
+// TestSchemaPackageAcceptsRedundantImportAlias confirms the conflict guard
+// only fires on DIFFERENT aliases for the same package — two mappings with
+// the SAME alias are redundant but legal (both happen to want the same
+// override, so resolveImportAlias picks consistently).
+func TestSchemaPackageAcceptsRedundantImportAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schemaA",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1",
+		},
+		{
+			SchemaID:    "https://example.com/schemaB",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1", // same alias — no conflict
+		},
+	}
+
+	if _, err := generator.New(cfg); err != nil {
+		t.Fatalf("expected redundant-but-matching aliases to be accepted, got %v", err)
+	}
 }
 
 func TestStrictAdditionalPropertiesRejectsUnknownMode(t *testing.T) {
