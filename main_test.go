@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"reflect"
+	"runtime"
+	"runtime/debug"
 	"testing"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
@@ -240,4 +242,65 @@ func TestLoadKnownSchemas(t *testing.T) {
 			t.Fatalf("expected `messageId` property to be parsed from YAML, got %v", sc.Properties)
 		}
 	})
+}
+
+func TestFormatVersion(t *testing.T) {
+	t.Parallel()
+
+	platform := runtime.Version() + ", " + runtime.GOOS + "/" + runtime.GOARCH
+
+	// A build from a git checkout: Go records a pseudo-version and the revision.
+	checkoutBuild := &debug.BuildInfo{
+		Main:     debug.Module{Version: "v0.25.0-rc.4.0.20260929120000-ba97a279564f+dirty"},
+		Settings: []debug.BuildSetting{{Key: "vcs.revision", Value: "ba97a279564f536d74225a38bc211fd8f4b5fe47"}},
+	}
+
+	// `go install module@tag` builds from the module zip: a version, no VCS.
+	installedFromTag := &debug.BuildInfo{Main: debug.Module{Version: "v0.25.0-rc.5"}}
+
+	for _, tc := range []struct {
+		name        string
+		stampedVer  string
+		stampedRev  string
+		stampedTime string
+		info        *debug.BuildInfo
+		want        string
+	}{
+		{
+			name:        "goreleaser stamps win over build info and regain the tag's v",
+			stampedVer:  "0.25.0-rc.5",
+			stampedRev:  "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+			stampedTime: "2026-09-30T10:00:00Z",
+			info:        checkoutBuild,
+			want:        "v0.25.0-rc.5 (commit 1a2b3c4d5e6f, built 2026-09-30T10:00:00Z, " + platform + ")",
+		},
+		{
+			name:       "a stamped version that already has its v is left alone",
+			stampedVer: "v0.25.0",
+			want:       "v0.25.0 (" + platform + ")",
+		},
+		{
+			name: "go install from a tag reports the module version",
+			info: installedFromTag,
+			want: "v0.25.0-rc.5 (" + platform + ")",
+		},
+		{
+			name: "a checkout build reports its pseudo-version and revision",
+			info: checkoutBuild,
+			want: "v0.25.0-rc.4.0.20260929120000-ba97a279564f+dirty (commit ba97a279564f, " + platform + ")",
+		},
+		{
+			name: "no build info at all",
+			want: "(devel) (" + platform + ")",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := formatVersion(tc.stampedVer, tc.stampedRev, tc.stampedTime, tc.info)
+			if got != tc.want {
+				t.Fatalf("got  %q\nwant %q", got, tc.want)
+			}
+		})
+	}
 }
