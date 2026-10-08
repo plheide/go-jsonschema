@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 // extensionTags renders the configured `x-` extensions declared on prop as

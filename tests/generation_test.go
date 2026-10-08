@@ -13,8 +13,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/atombender/go-jsonschema/pkg/generator"
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/generator"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 var (
@@ -136,12 +136,12 @@ func TestCrossPackage(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",
-			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
+			PackageName: "github.com/plheide/go-jsonschema/tests/helpers/schema",
 			OutputName:  "schema.go",
 		},
 		{
 			SchemaID:    "https://example.com/other",
-			PackageName: "github.com/atombender/go-jsonschema/tests/data/crossPackage/other",
+			PackageName: "github.com/plheide/go-jsonschema/tests/data/crossPackage/other",
 			OutputName:  "../other/other.go",
 		},
 	}
@@ -155,12 +155,12 @@ func TestCrossPackageAllOf(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",
-			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
+			PackageName: "github.com/plheide/go-jsonschema/tests/helpers/schema",
 			OutputName:  "schema.go",
 		},
 		{
 			SchemaID:    "https://example.com/other",
-			PackageName: "github.com/atombender/go-jsonschema/tests/data/crossPackageAllOf/other",
+			PackageName: "github.com/plheide/go-jsonschema/tests/data/crossPackageAllOf/other",
 			OutputName:  "../other/other.go",
 		},
 	}
@@ -174,12 +174,12 @@ func TestCrossPackageNoOutput(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",
-			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
+			PackageName: "github.com/plheide/go-jsonschema/tests/helpers/schema",
 			OutputName:  "schema.go",
 		},
 		{
 			SchemaID:    "https://example.com/other",
-			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/other",
+			PackageName: "github.com/plheide/go-jsonschema/tests/helpers/other",
 		},
 	}
 	testExampleFile(t, cfg, "./data/crossPackageNoOutput/schema/schema.json")
@@ -365,13 +365,13 @@ func TestSchemaPackageWithAlias(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/header",
-			PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
+			PackageName: "github.com/plheide/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
 			OutputName:  "../header/v1/header.go",
 			ImportAlias: "headerv1",
 		},
 		{
 			SchemaID:    "https://example.com/jobs",
-			PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
+			PackageName: "github.com/plheide/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
 			OutputName:  "../jobs/v1/jobs.go",
 			ImportAlias: "jobsv1",
 		},
@@ -435,13 +435,13 @@ func TestSchemaPackageRejectsImportAliasCollision(t *testing.T) {
 			cfg.SchemaMappings = []generator.SchemaMapping{
 				{
 					SchemaID:    "https://example.com/header",
-					PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
+					PackageName: "github.com/plheide/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
 					OutputName:  "../header/v1/header.go",
 					ImportAlias: tc.headerAlias,
 				},
 				{
 					SchemaID:    "https://example.com/jobs",
-					PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
+					PackageName: "github.com/plheide/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
 					OutputName:  "../jobs/v1/jobs.go",
 					ImportAlias: tc.jobsAlias,
 				},

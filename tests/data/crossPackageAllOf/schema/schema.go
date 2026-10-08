@@ -2,7 +2,7 @@
 
 package schema
 
-import other "github.com/atombender/go-jsonschema/tests/data/crossPackageAllOf/other"
+import other "github.com/plheide/go-jsonschema/tests/data/crossPackageAllOf/other"
 
 type Name string
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 // warnFallback emits a structured warning when a schema is about to be

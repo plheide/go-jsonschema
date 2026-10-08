@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	testAddlNot "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlNot"
+	testAddlNot "github.com/plheide/go-jsonschema/tests/data/strictAdditionalProperties/addlNot"
 )
 
 // TestStrictAdditionalPropertiesRespectSchemaNot pins that respect-schema mode

@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/atombender/go-jsonschema/pkg/codegen"
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/codegen"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 // isTryEachOneOfCandidate reports whether a `oneOf` qualifies for the

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/atombender/go-jsonschema/pkg/codegen"
+	"github.com/plheide/go-jsonschema/pkg/codegen"
 )
 
 // hasAdditionalPropertiesField reports whether the generated struct will

@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/atombender/go-jsonschema/pkg/cmputil"
-	"github.com/atombender/go-jsonschema/pkg/codegen"
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/cmputil"
+	"github.com/plheide/go-jsonschema/pkg/codegen"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 var (

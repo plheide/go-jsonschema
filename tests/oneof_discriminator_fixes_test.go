@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	testAnimal "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/animal"
-	testCaseCollision "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/caseCollision"
-	testNumericKind "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/numericKind"
-	testNumericNull "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/numericNull"
-	testSelfReference "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/selfReference"
+	testAnimal "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/animal"
+	testCaseCollision "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/caseCollision"
+	testNumericKind "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/numericKind"
+	testNumericNull "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/numericNull"
+	testSelfReference "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/selfReference"
 )
 
 // TestOnlyModelsOneOfDiscriminated: under OnlyModels no holder is built, so a

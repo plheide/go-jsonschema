@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	testInField "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/inField"
-	testNumString "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/numString"
-	testTemporal "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/temporalVariant"
+	testInField "github.com/plheide/go-jsonschema/tests/data/oneOfPrimitive/inField"
+	testNumString "github.com/plheide/go-jsonschema/tests/data/oneOfPrimitive/numString"
+	testTemporal "github.com/plheide/go-jsonschema/tests/data/oneOfPrimitive/temporalVariant"
 )
 
 // TestOneOfPrimitiveMarshalByValue marshals a parent holding a required wrapper
