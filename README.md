@@ -157,7 +157,7 @@ only specific validations remain to be fully implemented.
     * [x] `enum`
     * [x] `type` (single)
     * [x] `type` (multiple; **note**: partial support, limited validation)
-    * [ ] `const`
+    * [x] `const`
   * [X] Numeric validation (§6.2)
     * [X] `multipleOf`
     * [X] `maximum`
@@ -198,7 +198,7 @@ only specific validations remain to be fully implemented.
     * [x] Dates and times
     * [x] Email addresses (opt-in via `Config.FormatValidation`)
     * [x] Hostnames (opt-in via `Config.FormatValidation`)
-    * [ ] IP addresses
+    * [x] IP addresses (`ipv4` and `ipv6`, typed as `net/netip.Addr`)
     * [x] Resource identifiers — `uri`, `uri-reference` (opt-in via `Config.FormatValidation`)
     * [ ] URI-template
     * [ ] JSON pointers
