@@ -7,19 +7,22 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-type NumStringBool struct {
-	// Value corresponds to the JSON schema field "value".
-	Value NumStringBoolValue `json:"value" yaml:"value" mapstructure:"value"`
+type EmbeddedInStruct struct {
+	// Label corresponds to the JSON schema field "label".
+	Label string `json:"label" yaml:"label" mapstructure:"label"`
+
+	// ValueOptional corresponds to the JSON schema field "valueOptional".
+	ValueOptional *EmbeddedInStructValueOptional `json:"valueOptional,omitempty,omitzero" yaml:"valueOptional,omitempty" mapstructure:"valueOptional,omitempty"`
 }
 
-type NumStringBoolValue struct {
+type EmbeddedInStructValueOptional struct {
 	value interface{}
 
 	present bool
 }
 
 // AsBool returns the value as a bool and reports whether it was a bool.
-func (j *NumStringBoolValue) AsBool() (bool, bool) {
+func (j *EmbeddedInStructValueOptional) AsBool() (bool, bool) {
 	if j == nil || !j.present {
 		return false, false
 	}
@@ -28,7 +31,7 @@ func (j *NumStringBoolValue) AsBool() (bool, bool) {
 }
 
 // AsNumber returns the value as a float64 and reports whether it was numeric.
-func (j *NumStringBoolValue) AsNumber() (float64, bool) {
+func (j *EmbeddedInStructValueOptional) AsNumber() (float64, bool) {
 	if j == nil || !j.present {
 		return 0, false
 	}
@@ -37,7 +40,7 @@ func (j *NumStringBoolValue) AsNumber() (float64, bool) {
 }
 
 // AsString returns the value as a string and reports whether it was a string.
-func (j *NumStringBoolValue) AsString() (string, bool) {
+func (j *EmbeddedInStructValueOptional) AsString() (string, bool) {
 	if j == nil || !j.present {
 		return "", false
 	}
@@ -47,34 +50,34 @@ func (j *NumStringBoolValue) AsString() (string, bool) {
 
 // IsZero reports whether the wrapper has not been populated by
 // Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag.
-func (j *NumStringBoolValue) IsZero() bool {
+func (j *EmbeddedInStructValueOptional) IsZero() bool {
 	return j == nil || !j.present
 }
 
 // MarshalJSON implements json.Marshaler.
-func (j NumStringBoolValue) MarshalJSON() ([]byte, error) {
+func (j EmbeddedInStructValueOptional) MarshalJSON() ([]byte, error) {
 	if !j.present {
-		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal unset value (schema does not allow null)")
+		return nil, fmt.Errorf("EmbeddedInStructValueOptional: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
-		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal nil value (schema does not allow null)")
+		return nil, fmt.Errorf("EmbeddedInStructValueOptional: cannot marshal nil value (schema does not allow null)")
 	}
 	return json.Marshal(j.value)
 }
 
 // MarshalYAML implements yaml.Marshaler.
-func (j NumStringBoolValue) MarshalYAML() (interface{}, error) {
+func (j EmbeddedInStructValueOptional) MarshalYAML() (interface{}, error) {
 	if !j.present {
-		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal unset value (schema does not allow null)")
+		return nil, fmt.Errorf("EmbeddedInStructValueOptional: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
-		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal nil value (schema does not allow null)")
+		return nil, fmt.Errorf("EmbeddedInStructValueOptional: cannot marshal nil value (schema does not allow null)")
 	}
 	return j.value, nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *NumStringBoolValue) UnmarshalJSON(value []byte) error {
+func (j *EmbeddedInStructValueOptional) UnmarshalJSON(value []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(value))
 	dec.UseNumber()
 	tok, err := dec.Token()
@@ -101,16 +104,16 @@ func (j *NumStringBoolValue) UnmarshalJSON(value []byte) error {
 		}
 		j.value = v
 	default:
-		return fmt.Errorf("NumStringBoolValue: unsupported JSON value of type %T", tok)
+		return fmt.Errorf("EmbeddedInStructValueOptional: unsupported JSON value of type %T", tok)
 	}
 	j.present = true
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NumStringBoolValue) UnmarshalYAML(value *yaml.Node) error {
+func (j *EmbeddedInStructValueOptional) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind != yaml.ScalarNode {
-		return fmt.Errorf("NumStringBoolValue: expected scalar YAML node")
+		return fmt.Errorf("EmbeddedInStructValueOptional: expected scalar YAML node")
 	}
 	switch value.Tag {
 	case "!!str", "!!timestamp":
@@ -132,14 +135,14 @@ func (j *NumStringBoolValue) UnmarshalYAML(value *yaml.Node) error {
 		}
 		j.value = v
 	default:
-		return fmt.Errorf("NumStringBoolValue: unsupported YAML scalar tag %q", value.Tag)
+		return fmt.Errorf("EmbeddedInStructValueOptional: unsupported YAML scalar tag %q", value.Tag)
 	}
 	j.present = true
 	return nil
 }
 
 // Value returns the decoded primitive payload.
-func (j *NumStringBoolValue) Value() any {
+func (j *EmbeddedInStructValueOptional) Value() any {
 	if j == nil {
 		return nil
 	}
@@ -147,37 +150,37 @@ func (j *NumStringBoolValue) Value() any {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *NumStringBool) UnmarshalJSON(value []byte) error {
+func (j *EmbeddedInStruct) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw NumStringBool: %w", err)
+		return fmt.Errorf("unmarshal raw EmbeddedInStruct: %w", err)
 	}
-	if _, ok := raw["value"]; raw != nil && !ok {
-		return fmt.Errorf("field value in NumStringBool: required")
+	if _, ok := raw["label"]; raw != nil && !ok {
+		return fmt.Errorf("field label in EmbeddedInStruct: required")
 	}
-	type Plain NumStringBool
+	type Plain EmbeddedInStruct
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal NumStringBool: %w", err)
+		return fmt.Errorf("unmarshal EmbeddedInStruct: %w", err)
 	}
-	*j = NumStringBool(plain)
+	*j = EmbeddedInStruct(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NumStringBool) UnmarshalYAML(value *yaml.Node) error {
+func (j *EmbeddedInStruct) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NumStringBool: %w", err)
+		return fmt.Errorf("unmarshal raw EmbeddedInStruct: %w", err)
 	}
-	if _, ok := raw["value"]; raw != nil && !ok {
-		return fmt.Errorf("field value in NumStringBool: required")
+	if _, ok := raw["label"]; raw != nil && !ok {
+		return fmt.Errorf("field label in EmbeddedInStruct: required")
 	}
-	type Plain NumStringBool
+	type Plain EmbeddedInStruct
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NumStringBool: %w", err)
+		return fmt.Errorf("unmarshal EmbeddedInStruct: %w", err)
 	}
-	*j = NumStringBool(plain)
+	*j = EmbeddedInStruct(plain)
 	return nil
 }
