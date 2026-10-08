@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+# pre-push guard for the fork, installed by scripts/fork/install-hooks.sh.
+#
+# For pushes to plheide/go-jsonschema it refuses:
+#   - pushing main: main changes only through reviewed pull requests;
+#   - deleting a feat/* branch: that closes the upstream pull request it heads;
+#   - pushing a tag whose go.mod does not declare the fork's module path:
+#     that version cannot be installed from the fork, and as the newest
+#     release it would break `go install ...@latest`. Every upstream tag is
+#     one, and so is a fork tag on a commit from before the module path
+#     changed. The check reads the tagged commit, so it needs no upstream ref.
+# `git push --no-verify` skips the guard.
+
+set -o errexit -o nounset -o pipefail
+
+url=${2:-}
+
+# GitHub ignores case in owner and repository names, so the match does too.
+# tr rather than ${url,,}, which bash 3.2 (macOS) does not have.
+url=$(tr '[:upper:]' '[:lower:]' <<< "${url}")
+
+# The fork in any URL form git takes (https, ssh, scp-like or a local path),
+# but not a repository whose name merely starts the same.
+fork_url='(^|[/:])plheide/go-jsonschema(\.git)?/?$'
+if [[ ! "${url}" =~ ${fork_url} ]]; then
+  exit 0
+fi
+
+zero=0000000000000000000000000000000000000000
+fork_module=github.com/plheide/go-jsonschema
+status=0
+
+# module_of prints the module path that go.mod declares at the commit an
+# object points to, or nothing when there is no go.mod.
+module_of() {
+  local gomod
+  gomod=$(git show "$1^{commit}:go.mod" 2> /dev/null) || return 0
+  awk '$1 == "module" { gsub(/"/, "", $2); print $2; exit }' <<< "${gomod}"
+}
+
+while read -r _ local_sha remote_ref _; do
+  case ${remote_ref} in
+    refs/heads/main)
+      echo "pre-push: main changes only through pull requests; not pushing it" >&2
+      status=1
+      ;;
+    refs/heads/feat/*)
+      if [[ "${local_sha}" == "${zero}" ]]; then
+        echo "pre-push: deleting ${remote_ref#refs/heads/} would close the upstream pull request it heads" >&2
+        status=1
+      fi
+      ;;
+    refs/tags/*)
+      if [[ "${local_sha}" != "${zero}" ]]; then
+        module=$(module_of "${local_sha}")
+        if [[ "${module}" != "${fork_module}" ]]; then
+          echo "pre-push: ${remote_ref#refs/tags/} is on a commit whose go.mod declares ${module:-no module}, not ${fork_module}; it can't be installed from the fork" >&2
+          status=1
+        fi
+      fi
+      ;;
+    *) ;;
+  esac
+done
+
+exit "${status}"
