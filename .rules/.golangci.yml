@@ -105,13 +105,13 @@ formatters:
       sections:
         - standard
         - default
-        - prefix(github.com/atombender/go-jsonschema)
+        - prefix(github.com/plheide/go-jsonschema)
       custom-order: true
     gofumpt:
       extra-rules: true
     goimports:
       local-prefixes:
-        - github.com/atombender/go-jsonschema
+        - github.com/plheide/go-jsonschema
   exclusions:
     generated: lax
     paths:

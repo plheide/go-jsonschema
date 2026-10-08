@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	testEscaping "github.com/atombender/go-jsonschema/tests/data/core/propertyNameEscaping"
+	testEscaping "github.com/plheide/go-jsonschema/tests/data/core/propertyNameEscaping"
 )
 
 // pctName and punctName are the two schema property names worth asserting on:

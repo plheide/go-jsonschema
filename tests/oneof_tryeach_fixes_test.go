@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	testArrayParentBounds "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/arrayParentBounds"
-	testArrayParentItems "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/arrayParentItems"
-	testArrayUnchecked "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/arrayUncheckedElements"
-	testOneOfArrayVariants "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/arrayVariants"
-	testNotAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/notAdditionalProperties"
-	testParentProperties "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/parentProperties"
-	testOverlappingRecursion "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/tryEachOverlappingRecursion"
-	testTryEachSelfReference "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/tryEachSelfReference"
+	testArrayParentBounds "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/arrayParentBounds"
+	testArrayParentItems "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/arrayParentItems"
+	testArrayUnchecked "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/arrayUncheckedElements"
+	testOneOfArrayVariants "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/arrayVariants"
+	testNotAdditionalProperties "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/notAdditionalProperties"
+	testParentProperties "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/parentProperties"
+	testOverlappingRecursion "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/tryEachOverlappingRecursion"
+	testTryEachSelfReference "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/tryEachSelfReference"
 )
 
 // TestOneOfTryEachArrayLengthYAML: the YAML body runs the same length checks as

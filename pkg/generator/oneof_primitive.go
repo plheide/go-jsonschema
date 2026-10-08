@@ -3,8 +3,8 @@ package generator
 import (
 	"slices"
 
-	"github.com/atombender/go-jsonschema/pkg/codegen"
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/codegen"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 // primitiveKind is a bit-set of JSON kinds the wrapper-type emission
@@ -154,7 +154,7 @@ func stringVariantFormatFor(t *schemas.Type) stringVariantFormat {
 
 // importPathPkgTypes is the package holding the date and time types a field of
 // format `date` or `time` gets.
-const importPathPkgTypes = "github.com/atombender/go-jsonschema/pkg/types"
+const importPathPkgTypes = "github.com/plheide/go-jsonschema/pkg/types"
 
 // The temporal format keywords a string variant maps to a time type.
 const (

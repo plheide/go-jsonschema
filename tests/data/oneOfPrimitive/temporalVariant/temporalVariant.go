@@ -5,7 +5,7 @@ package test
 import "bytes"
 import "encoding/json"
 import "fmt"
-import "github.com/atombender/go-jsonschema/pkg/types"
+import "github.com/plheide/go-jsonschema/pkg/types"
 import yaml "gopkg.in/yaml.v3"
 import "time"
 

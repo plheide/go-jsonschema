@@ -2,8 +2,8 @@
 
 package test
 
-import headerv1 "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/header/v1"
-import jobsv1 "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1"
+import headerv1 "github.com/plheide/go-jsonschema/tests/data/schemaPackageAlias/header/v1"
+import jobsv1 "github.com/plheide/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1"
 
 type Consumer struct {
 	// Header corresponds to the JSON schema field "header".

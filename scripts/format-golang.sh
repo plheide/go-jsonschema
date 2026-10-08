@@ -12,8 +12,8 @@ echo "formatting with gofumpt.."
 echo "${GOFILES}" | xargs -I {} sh -c 'gofumpt -w -extra {}'
 
 echo "formatting with goimports.."
-echo "${GOFILES}" | xargs -I {} sh -c 'goimports -v -w -e -local github.com/atombender/go-jsonschema {}'
+echo "${GOFILES}" | xargs -I {} sh -c 'goimports -v -w -e -local github.com/plheide/go-jsonschema {}'
 
 echo "formatting with gci.."
 echo "${GOFILES}" |
-  xargs -I {} sh -c 'gci write --skip-generated -s standard -s default -s "Prefix(github.com/atombender/go-jsonschema)" {}'
+  xargs -I {} sh -c 'gci write --skip-generated -s standard -s default -s "Prefix(github.com/plheide/go-jsonschema)" {}'
