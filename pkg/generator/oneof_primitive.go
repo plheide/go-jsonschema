@@ -407,7 +407,16 @@ func (g *schemaGenerator) emitPrimitiveWrapper(
 		g.output.file.Package.AddImport(imp, "")
 	}
 
-	name := g.output.uniqueTypeName(scope)
+	name, nameCollided := g.output.uniqueTypeName(scope)
+
+	if g.config.StructNameFromTitle && t.Title != "" {
+		// The title supplies the name outright, so whatever the scope would
+		// have collided with is no longer relevant.
+		name = g.caser.Identifierize(t.Title)
+		nameCollided = false
+	}
+
+	g.output.warnNameCollision(nameCollided, scope, name)
 
 	// A validator-backed format is only enforced when the user asked for
 	// format validation, exactly as on the non-oneOf path. Clearing it here
@@ -431,10 +440,6 @@ func (g *schemaGenerator) emitPrimitiveWrapper(
 		}
 
 		g.output.file.Package.AddImport("fmt", "")
-	}
-
-	if g.config.StructNameFromTitle && t.Title != "" {
-		name = g.caser.Identifierize(t.Title)
 	}
 
 	decl := &codegen.TypeDecl{

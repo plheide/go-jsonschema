@@ -73,7 +73,20 @@ func (g *schemaGenerator) generateRootType() error {
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
 
-		_, err := g.generateDeclaredType(def, newNameScope(g.caser.Identifierize(name)))
+		// Under the qualify strategy a definition's scope is rooted at its
+		// owning schema's type name, so the identifier depends only on the
+		// schema that declares it. Left bare, several files declaring the
+		// same definition name compete for one identifier and the winner is
+		// whichever is processed first.
+		scope := newNameScope(g.caser.Identifierize(name))
+		if g.config.CollisionStrategy.qualifiesDefinitions() {
+			scope = newRootedNameScope(
+				g.getRootTypeName(g.schema, g.schemaFileName),
+				g.caser.Identifierize(name),
+			)
+		}
+
+		_, err := g.generateDeclaredType(def, scope)
 		if err != nil {
 			return err
 		}
@@ -459,10 +472,13 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return dt, err
 	}
 
-	name := g.output.uniqueTypeName(scope)
+	name, nameCollided := g.output.uniqueTypeName(scope)
 
 	if g.config.StructNameFromTitle && t.Title != "" {
+		// The title supplies the name outright, so whatever the scope would
+		// have collided with is no longer relevant.
 		name = g.caser.Identifierize(t.Title)
+		nameCollided = false
 	}
 
 	decl := codegen.TypeDecl{
@@ -485,6 +501,12 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 		return theType, nil
 	}
+
+	// Only now is the suffixed name known to survive. Warning any earlier
+	// describes a `_1` declaration that the branch above may have just thrown
+	// away — which is what made `--collision-strategy=qualify` report a
+	// collision for every qualified definition while emitting none.
+	g.output.warnNameCollision(nameCollided, scope, name)
 
 	decl.Type = theType
 
@@ -2214,8 +2236,11 @@ func (g *schemaGenerator) generateEnumType(
 		}
 	}
 
+	enumName, enumNameCollided := g.output.uniqueTypeName(scope)
+	g.output.warnNameCollision(enumNameCollided, scope, enumName)
+
 	enumDecl := codegen.TypeDecl{
-		Name:       g.output.uniqueTypeName(scope),
+		Name:       enumName,
 		Type:       enumType,
 		SchemaType: t,
 	}
