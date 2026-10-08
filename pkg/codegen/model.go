@@ -127,7 +127,7 @@ func (p *Package) Generate(out *Emitter) error {
 
 	sorted := make([]Decl, len(p.Decls))
 	copy(sorted, p.Decls)
-	sort.Slice(sorted, func(i, j int) bool {
+	sort.SliceStable(sorted, func(i, j int) bool {
 		if a, ok := sorted[i].(Named); ok {
 			if b, ok := sorted[j].(Named); ok {
 				return schemas.CleanNameForSorting(a.GetName()) < schemas.CleanNameForSorting(b.GetName())
@@ -311,6 +311,13 @@ func (p AliasType) Generate(out *Emitter) error {
 	out.Printlnf("type %s = %s", p.Alias, p.Name)
 
 	return nil
+}
+
+// GetName returns the alias, the name the declaration introduces. With it,
+// every package-level declaration is Named, so Package.Generate orders them by
+// one key instead of treating an alias as equal to everything.
+func (p AliasType) GetName() string {
+	return p.Alias
 }
 
 type PointerType struct {

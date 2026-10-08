@@ -56,58 +56,6 @@ type BetaDelta struct {
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *BetaDelta) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw BetaDelta: %w", err)
-	}
-	if _, ok := raw["commType"]; raw != nil && !ok {
-		return fmt.Errorf("field commType in BetaDelta: required")
-	}
-	if _, ok := raw["epsilon"]; raw != nil && !ok {
-		return fmt.Errorf("field epsilon in BetaDelta: required")
-	}
-	if _, ok := raw["theta"]; raw != nil && !ok {
-		return fmt.Errorf("field theta in BetaDelta: required")
-	}
-	if _, ok := raw["zeta"]; raw != nil && !ok {
-		return fmt.Errorf("field zeta in BetaDelta: required")
-	}
-	type Plain BetaDelta
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal BetaDelta: %w", err)
-	}
-	if plain.CommType != "GRPC" {
-		return fmt.Errorf("field %s: must be equal to %s", "commType", "GRPC")
-	}
-	st := reflect.TypeOf(Plain{})
-	for i := 0; i < st.NumField(); i++ {
-		f := st.Field(i)
-		if f.Name == "AdditionalProperties" {
-			continue
-		}
-		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
-		if name == "-" {
-			continue
-		}
-		if name == "" {
-			name = strings.ToLower(f.Name)
-		}
-		for k := range raw {
-			if k == name {
-				delete(raw, k)
-			}
-		}
-	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for BetaDelta: %w", err)
-	}
-	*j = BetaDelta(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *BetaDelta) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -149,6 +97,58 @@ func (j *BetaDelta) UnmarshalJSON(value []byte) error {
 		}
 		for k := range raw {
 			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return fmt.Errorf("decode additional properties for BetaDelta: %w", err)
+	}
+	*j = BetaDelta(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *BetaDelta) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw BetaDelta: %w", err)
+	}
+	if _, ok := raw["commType"]; raw != nil && !ok {
+		return fmt.Errorf("field commType in BetaDelta: required")
+	}
+	if _, ok := raw["epsilon"]; raw != nil && !ok {
+		return fmt.Errorf("field epsilon in BetaDelta: required")
+	}
+	if _, ok := raw["theta"]; raw != nil && !ok {
+		return fmt.Errorf("field theta in BetaDelta: required")
+	}
+	if _, ok := raw["zeta"]; raw != nil && !ok {
+		return fmt.Errorf("field zeta in BetaDelta: required")
+	}
+	type Plain BetaDelta
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal BetaDelta: %w", err)
+	}
+	if plain.CommType != "GRPC" {
+		return fmt.Errorf("field %s: must be equal to %s", "commType", "GRPC")
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = strings.ToLower(f.Name)
+		}
+		for k := range raw {
+			if k == name {
 				delete(raw, k)
 			}
 		}
@@ -354,6 +354,10 @@ func (j *BetaZeta) UnmarshalYAML(value *yaml.Node) error {
 	*j = BetaZeta(plain)
 	return nil
 }
+
+type Beta_0 = BetaGamma
+
+type Beta_1 = BetaDelta
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Beta) UnmarshalJSON(value []byte) error {
@@ -570,46 +574,6 @@ type Properties struct {
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw Properties: %w", err)
-	}
-	if _, ok := raw["iota"]; raw != nil && !ok {
-		return fmt.Errorf("field iota in Properties: required")
-	}
-	type Plain Properties
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Properties: %w", err)
-	}
-	st := reflect.TypeOf(Plain{})
-	for i := 0; i < st.NumField(); i++ {
-		f := st.Field(i)
-		if f.Name == "AdditionalProperties" {
-			continue
-		}
-		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
-		if name == "-" {
-			continue
-		}
-		if name == "" {
-			name = strings.ToLower(f.Name)
-		}
-		for k := range raw {
-			if k == name {
-				delete(raw, k)
-			}
-		}
-	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for Properties: %w", err)
-	}
-	*j = Properties(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Properties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -650,6 +614,46 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw Properties: %w", err)
+	}
+	if _, ok := raw["iota"]; raw != nil && !ok {
+		return fmt.Errorf("field iota in Properties: required")
+	}
+	type Plain Properties
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal Properties: %w", err)
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = strings.ToLower(f.Name)
+		}
+		for k := range raw {
+			if k == name {
+				delete(raw, k)
+			}
+		}
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return fmt.Errorf("decode additional properties for Properties: %w", err)
+	}
+	*j = Properties(plain)
+	return nil
+}
+
 // DESCRIPTION
 type TITLE struct {
 	// Lambda corresponds to the JSON schema field "lambda".
@@ -676,10 +680,6 @@ func (j *Theta) UnmarshalJSON(value []byte) error {
 	*j = Theta(plain)
 	return nil
 }
-
-type Beta_1 = BetaDelta
-
-type Beta_0 = BetaGamma
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Theta) UnmarshalYAML(value *yaml.Node) error {
