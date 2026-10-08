@@ -8,6 +8,7 @@ on:
       - v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+
 permissions:
   contents: write
+  packages: write
 concurrency:
   group: ${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -27,6 +28,17 @@ jobs:
           go-version: 1.25.12
       - name: Setup workspace
         run: cp go.work.dist go.work
+      - name: Log in to Docker Hub
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Create dedicated docker buildx builder instance
         run: docker buildx create --driver=docker-container --name container --use
       - name: Run GoReleaser for release
@@ -36,5 +48,5 @@ jobs:
           version: 2.17.0
           args: release --verbose --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GO_VERSION: 1.25.12
