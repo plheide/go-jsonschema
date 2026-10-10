@@ -1,3 +1,16 @@
+> [!NOTE]
+> **This is a fork of [omissis/go-jsonschema](https://github.com/omissis/go-jsonschema).** It carries generator
+> improvements that are offered upstream as
+> [pull requests](https://github.com/omissis/go-jsonschema/pulls?q=is%3Apr+author%3Aplheide) but not merged yet,
+> among them:
+>
+> * draft-07 tuple-form `items`, and both forms of `dependencies`;
+> * `oneOf` generated as typed wrappers and dispatching holders instead of `interface{}`;
+> * `x-enum-varnames` naming the generated enum constants.
+>
+> Almost all of it is offered upstream; [FORK.md](FORK.md) lists the exceptions. The fork is a staging area, not a
+> competitor.
+
 **go-jsonschema is a tool to generate Go data types from [JSON Schema](http://json-schema.org/) definitions.**
 
 This tool generates Go data types and structs that corresponds to definitions in the schema,
@@ -5,36 +18,32 @@ along with unmarshalling code that validates the input JSON according to the sch
 
 ## Badges
 
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/omissis/go-jsonschema?style=flat)](https://github.com/omissis/go-jsonschema/releases/latest)
-[![GitHub Workflow Status (event)](https://img.shields.io/github/actions/workflow/status/omissis/go-jsonschema/development.yaml?style=flat)](https://github.com/omissis/go-jsonschema/actions?workflow=development)
-[![License](https://img.shields.io/github/license/omissis/go-jsonschema?style=flat)](/LICENSE.md)
-[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/omissis/go-jsonschema?style=flat)](https://tip.golang.org/doc/go1.25)
-[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/omissis/go-jsonschema?style=flat)](https://github.com/omissis/go-jsonschema)
-[![GitHub repo file count (file type)](https://img.shields.io/github/directory-file-count/omissis/go-jsonschema?style=flat)](https://github.com/omissis/go-jsonschema)
-[![GitHub all releases](https://img.shields.io/github/downloads/omissis/go-jsonschema/total?style=flat)](https://github.com/omissis/go-jsonschema)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/y/omissis/go-jsonschema?style=flat)](https://github.com/omissis/go-jsonschema/commits)
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=flat)](https://conventionalcommits.org)
-[![Codecov](https://img.shields.io/codecov/c/gh/omissis/go-jsonschema?style=flat&token=lPWlXd3MVK)](https://codecov.io/gh/omissis/go-jsonschema)
-[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/omissis/go-jsonschema?style=flat)](https://codeclimate.com/github/omissis/go-jsonschema)
-[![Go Report Card](https://goreportcard.com/badge/github.com/omissis/go-jsonschema)](https://goreportcard.com/report/github.com/omissis/go-jsonschema)
+[![GitHub release](https://img.shields.io/github/v/release/plheide/go-jsonschema?include_prereleases&style=flat)](https://github.com/plheide/go-jsonschema/releases)
+[![GitHub Workflow Status (event)](https://img.shields.io/github/actions/workflow/status/plheide/go-jsonschema/development.yaml?style=flat)](https://github.com/plheide/go-jsonschema/actions?workflow=development)
+[![Go Reference](https://pkg.go.dev/badge/github.com/plheide/go-jsonschema.svg)](https://pkg.go.dev/github.com/plheide/go-jsonschema)
+[![License](https://img.shields.io/github/license/plheide/go-jsonschema?style=flat)](/LICENSE.md)
+[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/plheide/go-jsonschema?style=flat)](https://tip.golang.org/doc/go1.25)
+[![GitHub all releases](https://img.shields.io/github/downloads/plheide/go-jsonschema/total?style=flat)](https://github.com/plheide/go-jsonschema/releases)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/y/plheide/go-jsonschema?style=flat)](https://github.com/plheide/go-jsonschema/commits)
 
 ## Installing
 
-* **Download**: Get a release [here](https://github.com/atombender/go-jsonschema/releases).
+* **Download**: Get a prebuilt binary from [GitHub releases](https://github.com/plheide/go-jsonschema/releases).
 
 * **Install from source**: To install with Go 1.25+:
 
 ```shell
-go get github.com/atombender/go-jsonschema/...
-go install github.com/atombender/go-jsonschema@latest
+go install github.com/plheide/go-jsonschema@latest
 ```
 
-* **Install with Brew**: To install with [Homebrew](https://brew.sh):
+* **Container image**: `plheide/go-jsonschema` on Docker Hub, or `ghcr.io/plheide/go-jsonschema`.
+  Each release is tagged with its version, and only stable releases set `latest`, so name a version:
 
 ```shell
-brew tap omissis/go-jsonschema
-brew install go-jsonschema
+docker run --rm -v "$PWD:/work" -w /work plheide/go-jsonschema:v0.25.0-rc.5 -p main schema.json
 ```
+
+* **Homebrew**: the `omissis/go-jsonschema` tap installs upstream's releases, not this fork.
 
 ## Contributing
 
