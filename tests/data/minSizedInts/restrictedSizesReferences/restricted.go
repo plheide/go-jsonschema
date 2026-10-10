@@ -16,10 +16,10 @@ func (j *I16L) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal I16L: %w", err)
 	}
 	if 127 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 127)
+		return fmt.Errorf("field %s: must be <= %v", "I16L", 127)
 	}
 	if -129 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -129)
+		return fmt.Errorf("field %s: must be >= %v", "I16L", -129)
 	}
 	*j = I16L(plain)
 	return nil
@@ -33,10 +33,10 @@ func (j *I16L) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal I16L: %w", err)
 	}
 	if 127 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 127)
+		return fmt.Errorf("field %s: must be <= %v", "I16L", 127)
 	}
 	if -129 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -129)
+		return fmt.Errorf("field %s: must be >= %v", "I16L", -129)
 	}
 	*j = I16L(plain)
 	return nil
@@ -52,10 +52,10 @@ func (j *I16U) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal I16U: %w", err)
 	}
 	if 128 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 128)
+		return fmt.Errorf("field %s: must be <= %v", "I16U", 128)
 	}
 	if -128 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -128)
+		return fmt.Errorf("field %s: must be >= %v", "I16U", -128)
 	}
 	*j = I16U(plain)
 	return nil
@@ -69,10 +69,10 @@ func (j *I16U) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal I16U: %w", err)
 	}
 	if 128 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 128)
+		return fmt.Errorf("field %s: must be <= %v", "I16U", 128)
 	}
 	if -128 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -128)
+		return fmt.Errorf("field %s: must be >= %v", "I16U", -128)
 	}
 	*j = I16U(plain)
 	return nil
@@ -88,10 +88,10 @@ func (j *I32L) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal I32L: %w", err)
 	}
 	if 32767 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 32767)
+		return fmt.Errorf("field %s: must be <= %v", "I32L", 32767)
 	}
 	if -32769 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -32769)
+		return fmt.Errorf("field %s: must be >= %v", "I32L", -32769)
 	}
 	*j = I32L(plain)
 	return nil
@@ -105,10 +105,10 @@ func (j *I32L) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal I32L: %w", err)
 	}
 	if 32767 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 32767)
+		return fmt.Errorf("field %s: must be <= %v", "I32L", 32767)
 	}
 	if -32769 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -32769)
+		return fmt.Errorf("field %s: must be >= %v", "I32L", -32769)
 	}
 	*j = I32L(plain)
 	return nil
@@ -124,10 +124,10 @@ func (j *I32U) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal I32U: %w", err)
 	}
 	if 32768 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 32768)
+		return fmt.Errorf("field %s: must be <= %v", "I32U", 32768)
 	}
 	if -32768 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -32768)
+		return fmt.Errorf("field %s: must be >= %v", "I32U", -32768)
 	}
 	*j = I32U(plain)
 	return nil
@@ -141,10 +141,10 @@ func (j *I32U) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal I32U: %w", err)
 	}
 	if 32768 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 32768)
+		return fmt.Errorf("field %s: must be <= %v", "I32U", 32768)
 	}
 	if -32768 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -32768)
+		return fmt.Errorf("field %s: must be >= %v", "I32U", -32768)
 	}
 	*j = I32U(plain)
 	return nil
@@ -160,10 +160,10 @@ func (j *I64L) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal I64L: %w", err)
 	}
 	if 2147483647 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 2147483647)
+		return fmt.Errorf("field %s: must be <= %v", "I64L", 2147483647)
 	}
 	if -2147483649 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -2147483649)
+		return fmt.Errorf("field %s: must be >= %v", "I64L", -2147483649)
 	}
 	*j = I64L(plain)
 	return nil
@@ -177,10 +177,10 @@ func (j *I64L) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal I64L: %w", err)
 	}
 	if 2147483647 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 2147483647)
+		return fmt.Errorf("field %s: must be <= %v", "I64L", 2147483647)
 	}
 	if -2147483649 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -2147483649)
+		return fmt.Errorf("field %s: must be >= %v", "I64L", -2147483649)
 	}
 	*j = I64L(plain)
 	return nil
@@ -196,10 +196,10 @@ func (j *I64U) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal I64U: %w", err)
 	}
 	if 2147483648 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 2147483648)
+		return fmt.Errorf("field %s: must be <= %v", "I64U", 2147483648)
 	}
 	if -2147483648 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -2147483648)
+		return fmt.Errorf("field %s: must be >= %v", "I64U", -2147483648)
 	}
 	*j = I64U(plain)
 	return nil
@@ -213,10 +213,10 @@ func (j *I64U) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal I64U: %w", err)
 	}
 	if 2147483648 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 2147483648)
+		return fmt.Errorf("field %s: must be <= %v", "I64U", 2147483648)
 	}
 	if -2147483648 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -2147483648)
+		return fmt.Errorf("field %s: must be >= %v", "I64U", -2147483648)
 	}
 	*j = I64U(plain)
 	return nil
@@ -345,7 +345,7 @@ func (j *U16) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal U16: %w", err)
 	}
 	if 256 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 256)
+		return fmt.Errorf("field %s: must be <= %v", "U16", 256)
 	}
 	*j = U16(plain)
 	return nil
@@ -359,7 +359,7 @@ func (j *U16) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal U16: %w", err)
 	}
 	if 256 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 256)
+		return fmt.Errorf("field %s: must be <= %v", "U16", 256)
 	}
 	*j = U16(plain)
 	return nil
@@ -375,7 +375,7 @@ func (j *U32) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal U32: %w", err)
 	}
 	if 65536 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 65536)
+		return fmt.Errorf("field %s: must be <= %v", "U32", 65536)
 	}
 	*j = U32(plain)
 	return nil
@@ -389,7 +389,7 @@ func (j *U32) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal U32: %w", err)
 	}
 	if 65536 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 65536)
+		return fmt.Errorf("field %s: must be <= %v", "U32", 65536)
 	}
 	*j = U32(plain)
 	return nil
@@ -405,7 +405,7 @@ func (j *U64) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal U64: %w", err)
 	}
 	if 4294967296 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 4294967296)
+		return fmt.Errorf("field %s: must be <= %v", "U64", 4294967296)
 	}
 	*j = U64(plain)
 	return nil
@@ -419,7 +419,7 @@ func (j *U64) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal U64: %w", err)
 	}
 	if 4294967296 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 4294967296)
+		return fmt.Errorf("field %s: must be <= %v", "U64", 4294967296)
 	}
 	*j = U64(plain)
 	return nil

@@ -5,6 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	yamlv3 "gopkg.in/yaml.v3"
+
+	testArrayDefs "github.com/plheide/go-jsonschema/tests/data/validation/array_defs"
 	testExclusiveMaximum "github.com/plheide/go-jsonschema/tests/data/validation/exclusiveMaximum"
 	testExclusiveMinimum "github.com/plheide/go-jsonschema/tests/data/validation/exclusiveMinimum"
 	testMaxLength "github.com/plheide/go-jsonschema/tests/data/validation/maxLength"
@@ -306,8 +309,10 @@ func TestPrimitiveDefs(t *testing.T) {
 			data: `{"myString": "hi"}`,
 			// The stringValidator error comes from MinStr.UnmarshalJSON, which
 			// surfaces during PrimitiveDefs's typed Plain decode and is therefore
-			// wrapped by the outer struct's `unmarshal <Type>: %w` formatter.
-			wantErr: errors.New("unmarshal PrimitiveDefs: field  length: must be >= 5"),
+			// wrapped by the outer struct's `unmarshal <Type>: %w` formatter. The
+			// declared type cannot know the property holding it, so it names
+			// itself.
+			wantErr: errors.New("unmarshal PrimitiveDefs: field MinStr length: must be >= 5"),
 		},
 	}
 
@@ -322,6 +327,73 @@ func TestPrimitiveDefs(t *testing.T) {
 			helpers.CheckError(t, tC.wantErr, err)
 		})
 	}
+}
+
+// TestArrayDefs covers arrays declared in $defs. Such a type used to get no
+// unmarshaler at all, so its own minItems and maxItems were never checked: a
+// field holding it sees only the named type.
+func TestArrayDefs(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc: "no violations",
+			data: `{"myTags": ["a", "b"], "myNumbers": [1], "myPair": ["x", "y"], "myInlineTags": ["p", "q"]}`,
+		},
+		{
+			desc:    "declared array too short",
+			data:    `{"myTags": ["a"]}`,
+			wantErr: errors.New("unmarshal ArrayDefs: field Tags length: must be >= 2"),
+		},
+		{
+			desc:    "declared array too long",
+			data:    `{"myTags": ["a", "b", "c", "d"]}`,
+			wantErr: errors.New("unmarshal ArrayDefs: field Tags length: must be <= 3"),
+		},
+		{
+			desc:    "declared array with only minItems",
+			data:    `{"myTags": ["a", "b"], "myNumbers": []}`,
+			wantErr: errors.New("unmarshal ArrayDefs: field AtLeastOne length: must be >= 1"),
+		},
+		{
+			desc:    "declared array with only maxItems",
+			data:    `{"myTags": ["a", "b"], "myPair": ["x", "y", "z"]}`,
+			wantErr: errors.New("unmarshal ArrayDefs: field AtMostTwo length: must be <= 2"),
+		},
+		{
+			desc:    "inline array keeps its property name",
+			data:    `{"myTags": ["a", "b"], "myInlineTags": ["p"]}`,
+			wantErr: errors.New("field myInlineTags length: must be >= 2"),
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			model := testArrayDefs.ArrayDefs{}
+
+			err := json.Unmarshal([]byte(tC.data), &model)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+// TestArrayDefsYAML checks that the YAML decoder enforces a declared array's
+// bounds too.
+func TestArrayDefsYAML(t *testing.T) {
+	t.Parallel()
+
+	model := testArrayDefs.ArrayDefs{}
+
+	err := yamlv3.Unmarshal([]byte("myTags: [a]\n"), &model)
+
+	helpers.CheckError(t, errors.New("unmarshal ArrayDefs: field Tags length: must be >= 2"), err)
 }
 
 func TestMultipleOf(t *testing.T) {
