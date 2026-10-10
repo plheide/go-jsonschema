@@ -32,6 +32,34 @@ type ArrayParentBoundsLicensesVariant1 []struct {
 	Expression string `json:"expression" yaml:"expression" mapstructure:"expression"`
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ArrayParentBoundsLicensesVariant1) UnmarshalJSON(value []byte) error {
+	type Plain ArrayParentBoundsLicensesVariant1
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal ArrayParentBoundsLicensesVariant1: %w", err)
+	}
+	if len(plain) > 2 {
+		return fmt.Errorf("field %s length: must be <= %d", "ArrayParentBoundsLicensesVariant1", 2)
+	}
+	*j = ArrayParentBoundsLicensesVariant1(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ArrayParentBoundsLicensesVariant1) UnmarshalYAML(value *yaml.Node) error {
+	type Plain ArrayParentBoundsLicensesVariant1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal ArrayParentBoundsLicensesVariant1: %w", err)
+	}
+	if len(plain) > 2 {
+		return fmt.Errorf("field %s length: must be <= %d", "ArrayParentBoundsLicensesVariant1", 2)
+	}
+	*j = ArrayParentBoundsLicensesVariant1(plain)
+	return nil
+}
+
 // MarshalJSON implements json.Marshaler. Exactly one variant
 // pointer must be non-nil; otherwise marshaling errors.
 func (j ArrayParentBoundsLicenses) MarshalJSON() ([]byte, error) {

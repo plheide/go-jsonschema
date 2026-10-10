@@ -2,7 +2,45 @@
 
 package test
 
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+
 // A tuple at the schema root. The root used to be decoded straight into the
 // embedded type, bypassing the tuple handling every subschema gets, so this failed
 // the whole parse.
 type TupleItemsRoot []string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TupleItemsRoot) UnmarshalJSON(value []byte) error {
+	type Plain TupleItemsRoot
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal TupleItemsRoot: %w", err)
+	}
+	if plain != nil && len(plain) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "TupleItemsRoot", 1)
+	}
+	if len(plain) > 1 {
+		return fmt.Errorf("field %s length: must be <= %d", "TupleItemsRoot", 1)
+	}
+	*j = TupleItemsRoot(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *TupleItemsRoot) UnmarshalYAML(value *yaml.Node) error {
+	type Plain TupleItemsRoot
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal TupleItemsRoot: %w", err)
+	}
+	if plain != nil && len(plain) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "TupleItemsRoot", 1)
+	}
+	if len(plain) > 1 {
+		return fmt.Errorf("field %s length: must be <= %d", "TupleItemsRoot", 1)
+	}
+	*j = TupleItemsRoot(plain)
+	return nil
+}
