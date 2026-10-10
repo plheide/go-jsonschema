@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/array-defs",
+  "type": "object",
+  "$defs": {
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2,
+      "maxItems": 3
+    },
+    "atLeastOne": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1
+    },
+    "atMostTwo": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 2
+    }
+  },
+  "properties": {
+    "myTags": {
+      "$ref": "#/$defs/tags"
+    },
+    "myNumbers": {
+      "$ref": "#/$defs/atLeastOne"
+    },
+    "myPair": {
+      "$ref": "#/$defs/atMostTwo"
+    },
+    "myInlineTags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2
+    }
+  },
+  "required": [
+    "myTags"
+  ]
+}

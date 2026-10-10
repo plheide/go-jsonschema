@@ -172,7 +172,7 @@ func (j *BetaEpsilon) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal BetaEpsilon: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain)) < 1 {
-		return fmt.Errorf("field %s length: must be >= %d", "", 1)
+		return fmt.Errorf("field %s length: must be >= %d", "BetaEpsilon", 1)
 	}
 	*j = BetaEpsilon(plain)
 	return nil
@@ -186,7 +186,7 @@ func (j *BetaEpsilon) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal BetaEpsilon: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain)) < 1 {
-		return fmt.Errorf("field %s length: must be >= %d", "", 1)
+		return fmt.Errorf("field %s length: must be >= %d", "BetaEpsilon", 1)
 	}
 	*j = BetaEpsilon(plain)
 	return nil
@@ -333,10 +333,10 @@ func (j *BetaZeta) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal BetaZeta: %w", err)
 	}
 	if 60 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 60)
+		return fmt.Errorf("field %s: must be <= %v", "BetaZeta", 60)
 	}
 	if 1 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 1)
+		return fmt.Errorf("field %s: must be >= %v", "BetaZeta", 1)
 	}
 	*j = BetaZeta(plain)
 	return nil
@@ -350,10 +350,10 @@ func (j *BetaZeta) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal BetaZeta: %w", err)
 	}
 	if 60 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 60)
+		return fmt.Errorf("field %s: must be <= %v", "BetaZeta", 60)
 	}
 	if 1 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 1)
+		return fmt.Errorf("field %s: must be >= %v", "BetaZeta", 1)
 	}
 	*j = BetaZeta(plain)
 	return nil
@@ -682,10 +682,10 @@ func (j *Theta) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal Theta: %w", err)
 	}
 	if 65535 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 65535)
+		return fmt.Errorf("field %s: must be <= %v", "Theta", 65535)
 	}
 	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
+		return fmt.Errorf("field %s: must be >= %v", "Theta", 0)
 	}
 	*j = Theta(plain)
 	return nil
@@ -699,10 +699,10 @@ func (j *Theta) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal Theta: %w", err)
 	}
 	if 65535 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 65535)
+		return fmt.Errorf("field %s: must be <= %v", "Theta", 65535)
 	}
 	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
+		return fmt.Errorf("field %s: must be >= %v", "Theta", 0)
 	}
 	*j = Theta(plain)
 	return nil

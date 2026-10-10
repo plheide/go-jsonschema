@@ -45,7 +45,7 @@ func (j *ElementsByName) UnmarshalJSON(value []byte) error {
 	}
 	for k1 := range plain {
 		if !regexpFormatUUID.MatchString(string(plain[k1])) {
-			return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%q]", "", k1))
+			return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%q]", "ElementsByName", k1))
 		}
 	}
 	*j = ElementsByName(plain)
@@ -61,7 +61,7 @@ func (j *ElementsByName) UnmarshalYAML(value *yaml.Node) error {
 	}
 	for k1 := range plain {
 		if !regexpFormatUUID.MatchString(string(plain[k1])) {
-			return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%q]", "", k1))
+			return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%q]", "ElementsByName", k1))
 		}
 	}
 	*j = ElementsByName(plain)
@@ -80,7 +80,7 @@ func (j *ElementsListsByName) UnmarshalJSON(value []byte) error {
 	for k1 := range plain {
 		for i2 := range plain[k1] {
 			if !regexpFormatUUID.MatchString(string(plain[k1][i2])) {
-				return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%q][%d]", "", k1, i2))
+				return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%q][%d]", "ElementsListsByName", k1, i2))
 			}
 		}
 	}
@@ -98,7 +98,7 @@ func (j *ElementsListsByName) UnmarshalYAML(value *yaml.Node) error {
 	for k1 := range plain {
 		for i2 := range plain[k1] {
 			if !regexpFormatUUID.MatchString(string(plain[k1][i2])) {
-				return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%q][%d]", "", k1, i2))
+				return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%q][%d]", "ElementsListsByName", k1, i2))
 			}
 		}
 	}
@@ -188,7 +188,7 @@ func (j *IdList) UnmarshalJSON(value []byte) error {
 	}
 	for i1 := range plain {
 		if !regexpFormatUUID.MatchString(string(plain[i1])) {
-			return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%d]", "", i1))
+			return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%d]", "IdList", i1))
 		}
 	}
 	*j = IdList(plain)
@@ -204,7 +204,7 @@ func (j *IdList) UnmarshalYAML(value *yaml.Node) error {
 	}
 	for i1 := range plain {
 		if !regexpFormatUUID.MatchString(string(plain[i1])) {
-			return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%d]", "", i1))
+			return fmt.Errorf("field %s: must be a valid uuid", fmt.Sprintf("%s[%d]", "IdList", i1))
 		}
 	}
 	*j = IdList(plain)

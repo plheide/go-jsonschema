@@ -592,9 +592,13 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		}
 
 	case codegen.PrimitiveType, *codegen.PrimitiveType:
+		// A declared type cannot know which property holds it, so its errors
+		// name the type: `field MinStr length: ...`, not `field  length: ...`.
+		// JSONName only labels the message; the value read stays `plain`.
 		validators = g.structFieldValidators(nil, codegen.StructField{
 			Type:       tt,
 			SchemaType: t,
+			JSONName:   decl.Name,
 		}, tt, false)
 
 		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
@@ -609,20 +613,40 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 }
 
 // generateContainerUnmarshaler gives a declared map or array the unmarshaler it
-// needs. A map that is a subschema element always gets one. Either kind also
-// gets one to check the `format` of the strings it holds, since a field holding
-// it sees only the named type; a declared array, such as a `$ref`'d definition
-// of `type: array`, gets none otherwise.
+// needs. A map that is a subschema element always gets one. A declared array
+// gets one to check its own `minItems`/`maxItems`, and either kind gets one to
+// check the `format` of the strings it holds: a field holding it sees only the
+// named type, so a declared array, such as a `$ref`'d definition of
+// `type: array`, is checked nowhere else.
 func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t *schemas.Type, tt codegen.Type) {
 	validators := []validator{}
-
-	if fv := g.elementFormatValidator(codegen.StructField{Type: tt, SchemaType: t}, tt, false); fv != nil {
-		validators = append(validators, fv)
-	}
 
 	_, isMap := tt.(codegen.MapType)
 	if _, ok := tt.(*codegen.MapType); ok {
 		isMap = true
+	}
+
+	_, isArray := tt.(codegen.ArrayType)
+	if _, ok := tt.(*codegen.ArrayType); ok {
+		isArray = true
+	}
+
+	// Only the array's own bounds. A nested array's bounds belong to its own
+	// schema, so this does not walk inner levels.
+	if maxItems, hasMax := effectiveMaxItems(t); isArray && (t.MinItems != 0 || hasMax) {
+		validators = append(validators, &arrayValidator{
+			jsonName:    decl.Name,
+			arrayDepth:  1,
+			minItems:    t.MinItems,
+			maxItems:    maxItems,
+			maxItemsSet: hasMax,
+		})
+	}
+
+	// As for a declared primitive, the errors name the type.
+	field := codegen.StructField{Type: tt, SchemaType: t, JSONName: decl.Name}
+	if fv := g.elementFormatValidator(field, tt, false); fv != nil {
+		validators = append(validators, fv)
 	}
 
 	if (isMap && t.IsSubSchemaTypeElem()) || len(validators) > 0 {
