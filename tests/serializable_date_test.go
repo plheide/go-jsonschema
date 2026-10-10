@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/atombender/go-jsonschema/pkg/types"
+	"github.com/plheide/go-jsonschema/pkg/types"
 )
 
 func TestSerializableDateMarshalsToJSON(t *testing.T) {

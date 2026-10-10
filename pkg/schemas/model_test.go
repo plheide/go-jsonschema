@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 func parseRoot(t *testing.T, doc string) *schemas.Schema {

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/atombender/go-jsonschema/pkg/generator"
-	testExtensionTags "github.com/atombender/go-jsonschema/tests/data/extensionTags"
+	"github.com/plheide/go-jsonschema/pkg/generator"
+	testExtensionTags "github.com/plheide/go-jsonschema/tests/data/extensionTags"
 )
 
 // generateCapturingWarningsWithConfig runs the generator over one schema under

@@ -8,9 +8,9 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/atombender/go-jsonschema/internal/x/text"
-	"github.com/atombender/go-jsonschema/pkg/codegen"
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/internal/x/text"
+	"github.com/plheide/go-jsonschema/pkg/codegen"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 // ErrUnexpectedVariantType is returned when the schema generator produces

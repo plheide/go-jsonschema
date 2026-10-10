@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 // enumVarnames resolves the `x-enum-varnames` extension into one constant name

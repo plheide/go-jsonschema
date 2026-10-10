@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/plheide/go-jsonschema/pkg/generator"
 )
 
 const (

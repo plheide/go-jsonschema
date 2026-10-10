@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	testIntegerFormat "github.com/atombender/go-jsonschema/tests/data/core/integerFormat"
+	testIntegerFormat "github.com/plheide/go-jsonschema/tests/data/core/integerFormat"
 )
 
 // TestIntegerFormatEnumValidation covers integer enums declaring a sized
