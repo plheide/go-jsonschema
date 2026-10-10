@@ -1,0 +1,31 @@
+---
+name: fork-guard
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  fork-guard:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+      - name: README opens with the fork note
+        run: |
+          if ! head -n 5 README.md | grep -q 'This is a fork of \[omissis/go-jsonschema\]'; then
+            echo "::error file=README.md::README.md must open with the note that this is a fork"
+            exit 1
+          fi
+      - name: Releases publish to the fork, not upstream
+        run: |
+          if grep -n 'omissis' .goreleaser.yaml; then
+            echo "::error file=.goreleaser.yaml::.goreleaser.yaml must not publish to upstream's namespace"
+            exit 1
+          fi
