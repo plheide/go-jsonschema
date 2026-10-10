@@ -57,9 +57,9 @@ func TestFormatValidationElements(t *testing.T) {
 		{"nested array item", `{"idGrid": [["` + u + `", "nope"]]}`, `field idGrid[0][1]: must be a valid uuid`},
 		{"nullable item", `{"maybeIds": [null, "nope"]}`, `field maybeIds[1]: must be a valid uuid`},
 		{"email item", `{"emails": ["nope"]}`, `field emails[0]: must be a valid email`},
-		{"declared map value", `{"byName": {"a": "nope"}}`, `field ["a"]: must be a valid uuid`},
-		{"declared map of arrays", `{"listsByName": {"a": ["nope"]}}`, `field ["a"][0]: must be a valid uuid`},
-		{"declared array item", `{"idList": ["nope"]}`, `field [0]: must be a valid uuid`},
+		{"declared map value", `{"byName": {"a": "nope"}}`, `field ElementsByName["a"]: must be a valid uuid`},
+		{"declared map of arrays", `{"listsByName": {"a": ["nope"]}}`, `field ElementsListsByName["a"][0]: must be a valid uuid`},
+		{"declared array item", `{"idList": ["nope"]}`, `field IdList[0]: must be a valid uuid`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
