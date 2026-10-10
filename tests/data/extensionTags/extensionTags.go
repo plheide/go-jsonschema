@@ -13,7 +13,7 @@ type ExtensionTags struct {
 	// A string extension becomes a struct tag, so a reflection-based consumer can
 	// read what the number means. Without this the declaration is dropped and the
 	// generated type is unusable with such a consumer.
-	OilRate *float64 `json:"oilRate,omitempty,omitzero" yaml:"oilRate,omitempty" mapstructure:"oilRate,omitempty" slb-measurement:"Volume_Flowrate"`
+	OilRate *float64 `json:"oilRate,omitempty,omitzero" yaml:"oilRate,omitempty" mapstructure:"oilRate,omitempty" acme-dimension:"Volume"`
 
 	// No extensions at all, so the tags are unchanged.
 	Plain *string `json:"plain,omitempty,omitzero" yaml:"plain,omitempty" mapstructure:"plain,omitempty"`
@@ -24,7 +24,7 @@ type ExtensionTags struct {
 
 	// Values are quoted with strconv.Quote, so an embedded quote is escaped rather
 	// than closing the tag early and silently changing what reflection reads back.
-	Quoted *string `json:"quoted,omitempty,omitzero" yaml:"quoted,omitempty" mapstructure:"quoted,omitempty" slb-measurement:"has \"quotes\" inside"`
+	Quoted *string `json:"quoted,omitempty,omitzero" yaml:"quoted,omitempty" mapstructure:"quoted,omitempty" acme-dimension:"has \"quotes\" inside"`
 
 	// Only extensions named in the configuration are emitted; this one is not mapped,
 	// so it stays out of the output.

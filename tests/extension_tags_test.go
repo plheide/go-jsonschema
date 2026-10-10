@@ -80,9 +80,9 @@ func generateSources(t *testing.T, cfg generator.Config, fileName string) string
 func extensionTagConfig() generator.Config {
 	cfg := basicConfig
 	cfg.ExtensionTags = map[string]string{
-		"x-measurement": "slb-measurement",
-		"x-precision":   "precision",
-		"x-derived":     "derived",
+		"x-dimension": "acme-dimension",
+		"x-precision": "precision",
+		"x-derived":   "derived",
 	}
 
 	return cfg
@@ -120,8 +120,8 @@ func TestExtensionTagsBehaviour(t *testing.T) {
 
 		// A struct tag is flat text; rendering an object or array into one
 		// would be this generator's invention, not something the schema said.
-		assert.Contains(t, joined, `Property "composite" declares x-measurement with a map[string]interface {}`)
-		assert.Contains(t, joined, `Property "listed" declares x-measurement with a []interface {}`)
+		assert.Contains(t, joined, `Property "composite" declares x-dimension with a map[string]interface {}`)
+		assert.Contains(t, joined, `Property "listed" declares x-dimension with a []interface {}`)
 		assert.Contains(t, joined, "only strings, numbers and booleans")
 	})
 
@@ -134,7 +134,7 @@ func TestExtensionTagsBehaviour(t *testing.T) {
 
 		// The tag list is emitted inside a raw string literal, which a
 		// backtick terminates.
-		assert.Contains(t, joined, `Property "backtick" declares x-measurement with a value containing a backtick`)
+		assert.Contains(t, joined, `Property "backtick" declares x-dimension with a value containing a backtick`)
 	})
 
 	t.Run("a tag key reflect cannot read is refused", func(t *testing.T) {
@@ -144,7 +144,7 @@ func TestExtensionTagsBehaviour(t *testing.T) {
 		// silently invisible to the reflection-based consumer it exists for.
 		for _, key := range []string{"", "bad key", "bad:key", `bad"key`} {
 			cfg := extensionTagConfig()
-			cfg.ExtensionTags = map[string]string{"x-measurement": key}
+			cfg.ExtensionTags = map[string]string{"x-dimension": key}
 
 			_, err := generator.New(cfg)
 			require.ErrorContains(t, err, "invalid struct tag key", "key %q", key)
@@ -155,19 +155,19 @@ func TestExtensionTagsBehaviour(t *testing.T) {
 		t.Parallel()
 
 		// reflect reads only the first entry for a key, so a repeated key
-		// compiles and is never seen: x-measurement=json would sit unread
+		// compiles and is never seen: x-dimension=json would sit unread
 		// behind the field's own json tag.
 		for _, tc := range []struct {
 			mapping map[string]string
 			want    string
 		}{
 			{
-				map[string]string{"x-measurement": "json"},
-				"--extension-tag x-measurement=json repeats a key already emitted by --tags",
+				map[string]string{"x-dimension": "json"},
+				"--extension-tag x-dimension=json repeats a key already emitted by --tags",
 			},
 			{
-				map[string]string{"x-measurement": "unit", "x-precision": "unit"},
-				"--extension-tag x-precision=unit repeats a key already emitted by --extension-tag x-measurement=unit",
+				map[string]string{"x-dimension": "unit", "x-precision": "unit"},
+				"--extension-tag x-precision=unit repeats a key already emitted by --extension-tag x-dimension=unit",
 			},
 		} {
 			cfg := extensionTagConfig()
@@ -186,8 +186,8 @@ func TestExtensionTagsBehaviour(t *testing.T) {
 			t, extensionTagConfig(), "./data/extensionTags/extensionTagsSkipped.json",
 		), "\n")
 
-		assert.Contains(t, joined, `Property "overridden" declares x-measurement, `+
-			`but its goJSONSchema.extraTags already sets the slb-measurement tag`)
+		assert.Contains(t, joined, `Property "overridden" declares x-dimension, `+
+			`but its goJSONSchema.extraTags already sets the acme-dimension tag`)
 	})
 
 	t.Run("no configured extensions leaves output untouched", func(t *testing.T) {
@@ -197,7 +197,7 @@ func TestExtensionTagsBehaviour(t *testing.T) {
 		// extensions generates exactly what it generated before.
 		sources := generateSources(t, basicConfig, "./data/extensionTags/extensionTags.json")
 
-		assert.NotContains(t, sources, "slb-measurement")
+		assert.NotContains(t, sources, "acme-dimension")
 		assert.NotContains(t, sources, "precision:")
 		assert.NotContains(t, sources, "derived:")
 	})
@@ -217,12 +217,12 @@ func TestExtensionTagsRoundTrip(t *testing.T) {
 		tag   string
 		want  string
 	}{
-		{"OilRate", "slb-measurement", "Volume_Flowrate"},
+		{"OilRate", "acme-dimension", "Volume"},
 		{"Precision", "precision", "3"},
 		{"Derived", "derived", "true"},
 		// The escaped case: an unescaped quote would close the tag early
 		// and reflection would read back something truncated.
-		{"Quoted", "slb-measurement", `has "quotes" inside`},
+		{"Quoted", "acme-dimension", `has "quotes" inside`},
 	} {
 		field, ok := rt.FieldByName(tc.field)
 		require.True(t, ok, "field %s missing from the generated struct", tc.field)
@@ -244,6 +244,6 @@ func TestExtensionTagsRoundTrip(t *testing.T) {
 	overridden, ok := reflect.TypeFor[testExtensionTags.ExtensionTagsSkipped]().FieldByName("Overridden")
 	require.True(t, ok)
 
-	assert.Equal(t, "Mass_Flowrate", overridden.Tag.Get("slb-measurement"))
-	assert.Equal(t, 1, strings.Count(string(overridden.Tag), "slb-measurement:"))
+	assert.Equal(t, "Mass", overridden.Tag.Get("acme-dimension"))
+	assert.Equal(t, 1, strings.Count(string(overridden.Tag), "acme-dimension:"))
 }

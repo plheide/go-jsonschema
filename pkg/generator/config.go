@@ -67,7 +67,7 @@ type Config struct {
 	CollisionStrategy CollisionStrategy
 
 	// ExtensionTags maps a schema `x-` extension name onto the struct tag it
-	// is emitted as, e.g. {"x-measurement": "slb-measurement"}. Only
+	// is emitted as, e.g. {"x-dimension": "acme-dimension"}. Only
 	// extensions named here are emitted, and only onto the field that
 	// declares them; everything else stays out of the generated output.
 	//

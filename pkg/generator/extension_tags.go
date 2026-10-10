@@ -14,7 +14,7 @@ import (
 // struct tags.
 //
 // A schema carries vendor data the generated Go type otherwise drops on the
-// floor — `x-measurement: "Volume_Flowrate"` says what a number means, and a
+// floor — `x-dimension: "Volume"` says what a number means, and a
 // reflection-based consumer looks for exactly that on the struct field. Other
 // generators reading the same file already emit it, so without this the same
 // schema produces types that work with such a consumer through one generator
@@ -135,7 +135,7 @@ func extensionTagValue(raw any) (string, bool) {
 //
 // A key must be one reflect can parse at all, and it must not repeat a key the
 // tag already carries, from tags or from another mapping: Lookup returns the
-// first entry for a key and never a second, so x-measurement=json would sit
+// first entry for a key and never a second, so x-dimension=json would sit
 // unread behind the field's own json tag.
 func checkExtensionTagKeys(extensionTags map[string]string, tags []string) error {
 	emittedBy := make(map[string]string, len(tags)+len(extensionTags))
