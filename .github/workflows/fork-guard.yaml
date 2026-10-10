@@ -29,3 +29,10 @@ jobs:
             echo "::error file=.goreleaser.yaml::.goreleaser.yaml must not publish to upstream's namespace"
             exit 1
           fi
+      - name: The module path is the fork's
+        run: |
+          scripts/fork/rewrite-module-path.sh
+          if ! git diff --exit-code; then
+            echo "::error::The lines above still use upstream's module path; run scripts/fork/rewrite-module-path.sh"
+            exit 1
+          fi

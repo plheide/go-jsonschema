@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atombender/go-jsonschema/pkg/mathutils"
+	"github.com/plheide/go-jsonschema/pkg/mathutils"
 )
 
 func TestNormalizeBounds(t *testing.T) {

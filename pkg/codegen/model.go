@@ -10,7 +10,7 @@ import (
 
 	"github.com/sanity-io/litter"
 
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 var ErrCannotGenerateCodegenPackageContentError = fmt.Errorf("cannot generate codegen.Package content")

@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	"github.com/atombender/go-jsonschema/pkg/generator"
-	testAdditionalElements "github.com/atombender/go-jsonschema/tests/data/formatValidation/additionalElements"
-	testElements "github.com/atombender/go-jsonschema/tests/data/formatValidation/elements"
-	testInlineMaps "github.com/atombender/go-jsonschema/tests/data/formatValidationInlineMaps"
+	"github.com/plheide/go-jsonschema/pkg/generator"
+	testAdditionalElements "github.com/plheide/go-jsonschema/tests/data/formatValidation/additionalElements"
+	testElements "github.com/plheide/go-jsonschema/tests/data/formatValidation/elements"
+	testInlineMaps "github.com/plheide/go-jsonschema/tests/data/formatValidationInlineMaps"
 )
 
 const elementsValidUUID = "123e4567-e89b-12d3-a456-426614174000"

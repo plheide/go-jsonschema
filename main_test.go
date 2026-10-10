@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 	"testing"
 
-	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/plheide/go-jsonschema/pkg/generator"
 )
 
 func TestParseStrictAdditionalProperties(t *testing.T) {

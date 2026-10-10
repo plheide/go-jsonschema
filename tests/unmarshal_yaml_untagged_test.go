@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	testYAMLUntagged "github.com/atombender/go-jsonschema/tests/data/extraImports/yamlUntaggedFields"
+	testYAMLUntagged "github.com/plheide/go-jsonschema/tests/data/extraImports/yamlUntaggedFields"
 )
 
 // TestExtraImportsYAMLUntaggedFields generates with Tags set to json only, so no

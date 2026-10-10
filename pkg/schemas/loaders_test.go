@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
 // recordingLoader is a stub Loader that records every Load call so tests can
