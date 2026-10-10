@@ -277,7 +277,7 @@ must be in the format URI=FILENAME.`)
 			"or qualify (prefix each definition with its owning schema's type name).")
 	rootCmd.PersistentFlags().StringSliceVar(&extensionTags, "extension-tag", nil,
 		"Emit a schema x- extension as a struct tag, given as an "+
-			"`extension=tag` pair (e.g. x-measurement=slb-measurement). Repeatable.")
+			"`extension=tag` pair (e.g. x-dimension=acme-dimension). Repeatable.")
 	rootCmd.PersistentFlags().StringSliceVar(&schemaRootTypes, "schema-root-type", nil,
 		`Override name to use for the root type of a specific schema ID;
 must be in the format URI=TYPE. By default, it is derived from the file name.`)
