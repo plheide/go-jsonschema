@@ -31,38 +31,22 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+# github.{owner,name} are left out, so goreleaser takes the repository from
+# the git remote, which in the release workflow is this fork, not upstream.
 release:
-  github:
-    owner: omissis
-    name: go-jsonschema
   name_template: "{{ .Tag }}"
   prerelease: auto
-homebrew_casks:
-  - name: go-jsonschema
-    description: go-jsonschema binary
-    url:
-      verified: github.com/omissis/go-jsonschema
-    homepage: https://github.com/omissis/go-jsonschema
-    repository:
-      owner: omissis
-      name: homebrew-go-jsonschema
-    skip_upload: auto
-    hooks:
-      post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/go-jsonschema"]
-          end
 dockers_v2:
   - images:
-      - "omissis/go-jsonschema"
+      - "plheide/go-jsonschema"
+      - "ghcr.io/plheide/go-jsonschema"
     flags:
       - "--target=go-jsonschema"
       - "--builder=container"
     tags:
       - "v{{ .Version }}"
       - "{{ if .IsNightly }}nightly{{ end }}"
-      - "{{ if not .IsNightly }}latest{{ end }}"
+      - "{{ if and (not .IsNightly) (not .Prerelease) }}latest{{ end }}"
     labels:
       "org.opencontainers.image.description": "A tool to generate Go data types from JSON Schema definitions."
       "org.opencontainers.image.created": "{{.Date}}"
