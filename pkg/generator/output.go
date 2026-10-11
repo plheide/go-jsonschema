@@ -12,10 +12,13 @@ import (
 )
 
 type output struct {
-	minimalNames            bool
-	file                    *codegen.File
-	declsByName             map[string]*codegen.TypeDecl
-	declsBySchema           map[*schemas.Type]*codegen.TypeDecl
+	minimalNames  bool
+	file          *codegen.File
+	declsByName   map[string]*codegen.TypeDecl
+	declsBySchema map[*schemas.Type]*codegen.TypeDecl
+	// anyOfVariants holds, for a type merged from an anyOf, the Go type of
+	// each branch, so its validator can name the types that were declared.
+	anyOfVariants           map[*schemas.Type][]string
 	unmarshallersByTypeDecl map[*codegen.TypeDecl]bool
 	processedSchemas        map[string]bool
 	warner                  func(string)
@@ -44,6 +47,30 @@ func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.Typ
 		if cmp.Equal(sv.SchemaType, t, cmputil.Opts(*sv.SchemaType, *t)...) {
 			return sv
 		}
+	}
+}
+
+// forgetDecl withdraws decl, registered for t, once t turns out to be the type
+// declared as resolved instead.
+//
+// t is then remembered as resolved's declaration rather than forgotten: a
+// definition whose type is another named type would otherwise be generated
+// anew at every later reference, and each copy declared under a suffixed name
+// that nothing refers to.
+//
+// decl's name is released only while decl still holds it: a referenced
+// definition whose name matches decl's scope takes the name over from decl
+// meanwhile, and freeing it then would let a later schema claim the same name
+// and bind it to a different type.
+func (o *output) forgetDecl(t *schemas.Type, decl *codegen.TypeDecl, resolved codegen.Type) {
+	if named := namedDecl(resolved); named != nil {
+		o.declsBySchema[t] = named
+	} else {
+		delete(o.declsBySchema, t)
+	}
+
+	if o.declsByName[decl.Name] == decl {
+		delete(o.declsByName, decl.Name)
 	}
 }
 

@@ -299,6 +299,7 @@ func (g *Generator) beginOutput(
 			Package:  pkg,
 		},
 		declsBySchema:           map[*schemas.Type]*codegen.TypeDecl{},
+		anyOfVariants:           map[*schemas.Type][]string{},
 		declsByName:             map[string]*codegen.TypeDecl{},
 		unmarshallersByTypeDecl: map[*codegen.TypeDecl]bool{},
 		processedSchemas:        map[string]bool{},

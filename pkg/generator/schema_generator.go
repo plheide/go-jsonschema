@@ -248,7 +248,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, fmt.Errorf("%w: %q (from ref %q)", rerr, defName, t.Ref)
 		}
 
-		defName = sg.avoidInProgressName(def, g.caser.Identifierize(refPathTypeName(defName)))
+		defName = sg.avoidInProgressName(t, def, g.caser.Identifierize(refPathTypeName(defName)))
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
@@ -357,13 +357,18 @@ func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, erro
 // anyOf merges rely on that), so a nested ref named after its path would take
 // the name and the other declaration would be silently dropped. A schema
 // re-entering itself never needs this: generateDeclaredType answers from
-// declsBySchema first. The suffixed name carries the usual collision warning.
-func (g *schemaGenerator) avoidInProgressName(def *schemas.Type, name string) string {
+// declsBySchema first. Nor does a name held by ref itself: generateDeclaredType
+// reserves a property's scope name for the referencing schema before resolving
+// it, and drops that placeholder once the ref resolves to a named type. So a
+// property order.shipping referencing #/$defs/orderShipping keeps the name
+// OrderShipping for the definition rather than declaring it as OrderShipping_1.
+// The suffixed name carries the usual collision warning.
+func (g *schemaGenerator) avoidInProgressName(ref, def *schemas.Type, name string) string {
 	if _, cached := g.output.declsBySchema[def]; cached {
 		return name
 	}
 
-	if decl, taken := g.output.declsByName[name]; !taken || decl.Type != nil {
+	if decl, taken := g.output.declsByName[name]; !taken || decl.Type != nil || decl.SchemaType == ref {
 		return name
 	}
 
@@ -496,8 +501,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	if isNamedType(theType) || (isMapType(theType) && g.config.DisableCustomTypesForMaps) {
 		// Don't declare named types under a new name.
-		delete(g.output.declsBySchema, t)
-		delete(g.output.declsByName, decl.Name)
+		g.output.forgetDecl(t, &decl, theType)
 
 		return theType, nil
 	}
@@ -521,7 +525,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	switch tt := theType.(type) {
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
-			validators = append(validators, &anyOfValidator{decl.Name, t.GetSubSchemasCount()})
+			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
 			g.generateUnmarshaler(&decl, validators)
 
 			return &codegen.NamedType{Decl: &decl}, nil
@@ -1836,6 +1840,8 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return g.primitiveType(rAnyOf[0], rAnyOf[0].Type[0], true)
 	}
 
+	variantNames := make([]string, len(rAnyOf))
+
 	for i, typ := range rAnyOf {
 		// infer type from base if not set
 		if len(typ.Type) == 0 {
@@ -1861,8 +1867,18 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 			typ.Type.Add(schemas.TypeNameNull)
 		}
 
-		if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
+		variant, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i)))
+		if err != nil {
 			return nil, err
+		}
+
+		// A branch generated earlier keeps the name it was declared under,
+		// which need not be this scope's. So does a branch that is a declared
+		// definition generated inline here, such as a $ref to a string.
+		if named := namedDecl(variant); named != nil {
+			variantNames[i] = named.Name
+		} else if decl, ok := g.output.declsBySchema[typ]; ok {
+			variantNames[i] = decl.Name
 		}
 	}
 
@@ -1876,6 +1892,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	}
 
 	anyOfType.AnyOf = nil
+	g.output.anyOfVariants[anyOfType] = variantNames
 
 	return g.generateTypeInline(anyOfType, scope)
 }
