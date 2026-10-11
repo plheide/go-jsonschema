@@ -20,8 +20,11 @@ type output struct {
 	// each branch, so its validator can name the types that were declared.
 	anyOfVariants           map[*schemas.Type][]string
 	unmarshallersByTypeDecl map[*codegen.TypeDecl]bool
-	processedSchemas        map[string]bool
-	warner                  func(string)
+	// primitiveWrapperKinds holds the JSON kinds each primitive union wrapper
+	// accepts.
+	primitiveWrapperKinds map[*codegen.TypeDecl]primitiveKind
+	processedSchemas      map[string]bool
+	warner                func(string)
 }
 
 func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.TypeDecl {
@@ -72,6 +75,14 @@ func (o *output) forgetDecl(t *schemas.Type, decl *codegen.TypeDecl, resolved co
 	if o.declsByName[decl.Name] == decl {
 		delete(o.declsByName, decl.Name)
 	}
+}
+
+// ownUnmarshalers records that decl's unmarshalers are emitted by the code
+// that declared it, as for an enum or a oneOf holder, so generateUnmarshaler
+// does not add a second, plain pair: Go rejects a type declaring a method
+// twice.
+func (o *output) ownUnmarshalers(decl *codegen.TypeDecl) {
+	o.unmarshallersByTypeDecl[decl] = true
 }
 
 func (o *output) isUniqueTypeName(name string) bool {
