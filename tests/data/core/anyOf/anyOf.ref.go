@@ -50,7 +50,7 @@ func (j *AnyOfRef) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOfRef: %w", err)
 	}
-	var anyOfRef_0 AnyOfRef_0
+	var anyOfRef_0 Policy
 	var errs []error
 	if err := anyOfRef_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -73,7 +73,7 @@ func (j *AnyOfRef) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOfRef: %w", err)
 	}
-	var anyOfRef_0 AnyOfRef_0
+	var anyOfRef_0 Policy
 	var errs []error
 	if err := anyOfRef_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -135,8 +135,8 @@ func (j *Policy) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Policy: %w", err)
 	}
-	var policy_0 Policy_0
-	var policy_1 Policy_1
+	var policy_0 Offer
+	var policy_1 Agreement
 	var errs []error
 	if err := policy_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -162,8 +162,8 @@ func (j *Policy) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Policy: %w", err)
 	}
-	var policy_0 Policy_0
-	var policy_1 Policy_1
+	var policy_0 Offer
+	var policy_1 Agreement
 	var errs []error
 	if err := policy_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
