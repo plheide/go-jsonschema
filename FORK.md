@@ -17,7 +17,8 @@ Not offered upstream yet:
 * keeping a property literally named `-` as a JSON key (`feat/p16-dash-json-key`);
 * checking `minItems`/`maxItems` on an array type declared in `$defs`, and naming the type in a declared type's
   errors (made directly on `main`);
-* everything fork-specific: release and image publishing, the module path, the README banner and this file.
+* everything fork-specific: release and image publishing, the module path, the README banner, `AGENTS.md`,
+  `CLAUDE.md` and this file.
 
 ## Branches
 
