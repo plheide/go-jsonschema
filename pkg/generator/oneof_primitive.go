@@ -24,6 +24,26 @@ const (
 
 func (k primitiveKind) has(other primitiveKind) bool { return k&other == other }
 
+// primitiveKindOf is the kind of a value decoded from JSON, or 0 for an array
+// or an object.
+func primitiveKindOf(v any) primitiveKind {
+	switch v.(type) {
+	case string:
+		return primitiveKindString
+
+	case float64, int, int64:
+		return primitiveKindNumber
+
+	case bool:
+		return primitiveKindBoolean
+
+	case nil:
+		return primitiveKindNull
+	}
+
+	return 0
+}
+
 // isPrimitiveOneOf reports whether t is a `oneOf` whose variants are all
 // simple JSON primitives suitable for the wrapper-type emission strategy.
 // Variants must declare exactly one type from {string, number, boolean, null},
@@ -456,6 +476,7 @@ func (g *schemaGenerator) emitPrimitiveWrapper(
 
 	g.output.declsBySchema[t] = decl
 	g.output.declsByName[decl.Name] = decl
+	g.output.primitiveWrapperKinds[decl] = kinds
 	g.output.file.Package.AddDecl(decl)
 
 	g.output.file.Package.AddImport("encoding/json", "")

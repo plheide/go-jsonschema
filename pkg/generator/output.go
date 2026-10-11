@@ -20,8 +20,11 @@ type output struct {
 	// each branch, so its validator can name the types that were declared.
 	anyOfVariants           map[*schemas.Type][]string
 	unmarshallersByTypeDecl map[*codegen.TypeDecl]bool
-	processedSchemas        map[string]bool
-	warner                  func(string)
+	// primitiveWrapperKinds holds the JSON kinds each primitive union wrapper
+	// accepts.
+	primitiveWrapperKinds map[*codegen.TypeDecl]primitiveKind
+	processedSchemas      map[string]bool
+	warner                func(string)
 }
 
 func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.TypeDecl {
