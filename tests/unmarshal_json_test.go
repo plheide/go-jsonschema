@@ -43,6 +43,8 @@ import (
 	testOneOfNumStringBool "github.com/plheide/go-jsonschema/tests/data/oneOfPrimitive/numStringBool"
 	testOneOfTemporal "github.com/plheide/go-jsonschema/tests/data/oneOfPrimitive/temporalVariant"
 	testOneOfWithNull "github.com/plheide/go-jsonschema/tests/data/oneOfPrimitive/withNull"
+	testRecursiveAllOfRefThroughOneOf "github.com/plheide/go-jsonschema/tests/data/recursiveAllOf/allOfRefThroughOneOf"
+	testRecursiveAllOfRefToSelf "github.com/plheide/go-jsonschema/tests/data/recursiveAllOf/allOfRefToSelf"
 	testRecursiveAllOfSelfRef "github.com/plheide/go-jsonschema/tests/data/recursiveAllOf/selfRef"
 	testRootAllOf "github.com/plheide/go-jsonschema/tests/data/rootComposition/rootAllOf"
 	testRootConst "github.com/plheide/go-jsonschema/tests/data/rootComposition/rootConst"
@@ -2192,5 +2194,62 @@ func TestJsonUnmarshalOneOfTryEachArrayVariants(t *testing.T) {
 
 		err := json.Unmarshal([]byte(`{"license":"MIT"}`), &v)
 		require.Error(t, err)
+	})
+}
+
+// TestJsonUnmarshalRecursiveAllOfRef decodes through allOfs that lead back to
+// the schema they are part of, which used to make generation recurse forever.
+// Each recursive allOf now refers to the copy being generated, so values nest
+// to any depth and every level is still validated.
+func TestJsonUnmarshalRecursiveAllOfRef(t *testing.T) {
+	t.Parallel()
+
+	t.Run("an allOf of the node itself nests", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRecursiveAllOfRefToSelf.AllOfRefToSelf
+
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"root":{"name":"a","child":{"name":"b","child":{"name":"c"}}}}`),
+			&v,
+		))
+		require.NotNil(t, v.Root.Child)
+		require.NotNil(t, v.Root.Child.Child)
+		require.NotNil(t, v.Root.Child.Child.Name)
+		assert.Equal(t, "c", *v.Root.Child.Child.Name)
+	})
+
+	t.Run("a discriminated oneOf nests through its variants", func(t *testing.T) {
+		t.Parallel()
+
+		in := `{"predicate":{"kind":"some","filter":{"kind":"every","filter":` +
+			`{"kind":"some","filter":{"kind":"leaf","value":"v"}}}}}`
+
+		var v testRecursiveAllOfRefThroughOneOf.AllOfRefThroughOneOf
+
+		require.NoError(t, json.Unmarshal([]byte(in), &v))
+		require.NotNil(t, v.Predicate.Some)
+		require.NotNil(t, v.Predicate.Some.Filter.Every)
+		require.NotNil(t, v.Predicate.Some.Filter.Every.Filter.Some)
+		require.NotNil(t, v.Predicate.Some.Filter.Every.Filter.Some.Filter.Leaf)
+		assert.Equal(t, "v", v.Predicate.Some.Filter.Every.Filter.Some.Filter.Leaf.Value)
+
+		out, err := json.Marshal(v)
+		require.NoError(t, err)
+		assert.JSONEq(t, in, string(out))
+	})
+
+	t.Run("a variant is validated at any depth", func(t *testing.T) {
+		t.Parallel()
+
+		for _, in := range []string{
+			`{"predicate":{"kind":"some","filter":{"kind":"every","filter":{"kind":"leaf"}}}}`,
+			`{"predicate":{"kind":"some","filter":{"kind":"unknown"}}}`,
+			`{"predicate":{"kind":"some"}}`,
+		} {
+			var v testRecursiveAllOfRefThroughOneOf.AllOfRefThroughOneOf
+
+			assert.Error(t, json.Unmarshal([]byte(in), &v), in)
+		}
 	})
 }

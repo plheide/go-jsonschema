@@ -434,23 +434,58 @@ func (g *schemaGenerator) generateOneOfComposition(
 	return nil, false, nil
 }
 
+// alreadyDeclaredType is the type of t, which declsBySchema holds as decl, for
+// use at scope.
+func (g *schemaGenerator) alreadyDeclaredType(
+	t *schemas.Type,
+	decl *codegen.TypeDecl,
+	scope nameScope,
+) (codegen.Type, error) {
+	// A $ref's own declaration is only a placeholder while the ref resolves,
+	// dropped as soon as it does. Reached again before then, through a copy
+	// of a schema enclosing it, the placeholder would end up named in the
+	// output but never declared; the ref is what it stands for.
+	//
+	// The placeholder is kept, as before, where the ref cannot be resolved
+	// here, and where definitions that are only $refs to one another lead
+	// back to this ref while it is still being resolved.
+	if _, resolving := g.resolvingRefs[t]; decl.Type == nil && resolvesToRef(t) && !resolving {
+		g.resolvingRefs[t] = struct{}{}
+		defer delete(g.resolvingRefs, t)
+
+		if rt, err := g.generateReferencedType(t); err == nil {
+			// A cycle through the ref comes back as a pointer to the type.
+			// Callers want the declared type itself, package qualifier
+			// included, and add the pointer themselves where their own
+			// reference is cyclic.
+			if pt, ok := rt.(*codegen.PointerType); ok {
+				if nt, ok := pt.Type.(*codegen.NamedType); ok {
+					return nt, nil
+				}
+			}
+
+			return rt, nil
+		}
+	}
+
+	if t.Dereferenced && decl.Name != scope.string() {
+		declAlias := &codegen.AliasType{
+			Alias: scope.string(),
+			Name:  decl.Name,
+		}
+
+		g.generateUnmarshaler(decl, nil)
+
+		g.output.file.Package.AddDecl(declAlias)
+	}
+
+	return &codegen.NamedType{Decl: decl}, nil
+}
+
 //nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
-		if t.Dereferenced {
-			if decl.Name != scope.string() {
-				declAlias := &codegen.AliasType{
-					Alias: scope.string(),
-					Name:  decl.Name,
-				}
-
-				g.generateUnmarshaler(decl, nil)
-
-				g.output.file.Package.AddDecl(declAlias)
-			}
-		}
-
-		return &codegen.NamedType{Decl: decl}, nil
+		return g.alreadyDeclaredType(t, decl, scope)
 	}
 
 	if !g.output.isUniqueTypeName(scope.string()) {
@@ -1912,6 +1947,15 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 
 	rAllOf, _ := g.resolveRefs(t.AllOf, true)
 
+	// A recursive allOf, whose merged type leads back to an allOf with the same
+	// merge, would merge into a fresh copy at every level and never finish: no
+	// cache knows the copies. Its re-entry refers to the merge still being
+	// generated instead, through a pointer, the way a $ref cycle is broken.
+	key := allOfMergeKey(t, rAllOf)
+	if merged, ok := g.mergingAllOf[key]; ok {
+		return g.allOfCycleType(merged, scope)
+	}
+
 	allOfType, err := schemas.AllOf(rAllOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge allOf types: %w", err)
@@ -1944,7 +1988,51 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 		g.warnFallback(t, scope, trigger)
 	}
 
+	g.mergingAllOf[key] = allOfType
+	defer delete(g.mergingAllOf, key)
+
 	return g.generateTypeInline(allOfType, scope)
+}
+
+// allOfMergeKey identifies what an allOf merges into. An allOf of a single
+// schema that declares nothing besides annotations merges into a copy of that
+// schema wherever it is written, so it is keyed by that schema: recursion
+// through two such allOfs of one schema is then caught at the first repeat,
+// not after every combination of them. Any other allOf is keyed by itself.
+func allOfMergeKey(t *schemas.Type, resolved []*schemas.Type) *schemas.Type {
+	if len(t.AllOf) != 1 || len(resolved) != 1 {
+		return t
+	}
+
+	rest := *t
+	rest.AllOf = nil
+
+	if !isAnnotationOnly(&rest) {
+		return t
+	}
+
+	return resolved[0]
+}
+
+// allOfCycleType is the type of a recursive allOf's re-entry: a pointer to the
+// type declared for the merge still being generated. A merged object or oneOf
+// registers its declaration before generating its body, so the re-entry finds
+// it; a merge that declares itself only afterwards is declared here instead,
+// and its own re-entry then finds that.
+func (g *schemaGenerator) allOfCycleType(merged *schemas.Type, scope nameScope) (codegen.Type, error) {
+	decl, ok := g.output.declsBySchema[merged]
+	if !ok {
+		dt, err := g.generateDeclaredType(merged, scope)
+		if err != nil {
+			return nil, err
+		}
+
+		return codegen.WrapTypeInPointer(dt), nil
+	}
+
+	g.warner(fmt.Sprintf("Cycle detected; must wrap type %s in pointer", decl.Name))
+
+	return codegen.WrapTypeInPointer(&codegen.NamedType{Decl: decl}), nil
 }
 
 // mergeWasLossyInAnyBranch is mergeWasLossy applied to each child branch in

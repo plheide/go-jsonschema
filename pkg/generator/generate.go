@@ -37,14 +37,21 @@ var (
 )
 
 type Generator struct {
-	caser        *text.Caser
-	config       Config
-	inScope      map[qualifiedDefinition]struct{}
-	outputs      map[string]*output
-	warner       func(string)
-	formatters   []formatter
-	loader       schemas.Loader
-	minimalNames bool
+	caser   *text.Caser
+	config  Config
+	inScope map[qualifiedDefinition]struct{}
+	// mergingAllOf maps an allOf schema whose merge is being generated to
+	// that merge, so generateAllOfType recognises a merge that leads back to
+	// itself.
+	mergingAllOf map[*schemas.Type]*schemas.Type
+	// resolvingRefs holds the $ref schemas alreadyDeclaredType is resolving in
+	// place of their placeholder declarations.
+	resolvingRefs map[*schemas.Type]struct{}
+	outputs       map[string]*output
+	warner        func(string)
+	formatters    []formatter
+	loader        schemas.Loader
+	minimalNames  bool
 }
 
 type qualifiedDefinition struct {
@@ -97,14 +104,16 @@ func New(config Config) (*Generator, error) {
 	}
 
 	generator := &Generator{
-		caser:        text.NewCaser(config.Capitalizations, config.ResolveExtensions),
-		config:       config,
-		inScope:      map[qualifiedDefinition]struct{}{},
-		outputs:      map[string]*output{},
-		warner:       config.Warner,
-		formatters:   formatters,
-		loader:       config.Loader,
-		minimalNames: config.MinimalNames,
+		caser:         text.NewCaser(config.Capitalizations, config.ResolveExtensions),
+		config:        config,
+		inScope:       map[qualifiedDefinition]struct{}{},
+		mergingAllOf:  map[*schemas.Type]*schemas.Type{},
+		resolvingRefs: map[*schemas.Type]struct{}{},
+		outputs:       map[string]*output{},
+		warner:        config.Warner,
+		formatters:    formatters,
+		loader:        config.Loader,
+		minimalNames:  config.MinimalNames,
 	}
 
 	if config.Loader == nil {
