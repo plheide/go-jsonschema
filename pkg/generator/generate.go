@@ -37,9 +37,13 @@ var (
 )
 
 type Generator struct {
-	caser        *text.Caser
-	config       Config
-	inScope      map[qualifiedDefinition]struct{}
+	caser   *text.Caser
+	config  Config
+	inScope map[qualifiedDefinition]struct{}
+	// mergingAllOf maps an allOf schema whose merge is being generated to
+	// that merge, so generateAllOfType recognises a merge that leads back to
+	// itself.
+	mergingAllOf map[*schemas.Type]*schemas.Type
 	outputs      map[string]*output
 	warner       func(string)
 	formatters   []formatter
@@ -100,6 +104,7 @@ func New(config Config) (*Generator, error) {
 		caser:        text.NewCaser(config.Capitalizations, config.ResolveExtensions),
 		config:       config,
 		inScope:      map[qualifiedDefinition]struct{}{},
+		mergingAllOf: map[*schemas.Type]*schemas.Type{},
 		outputs:      map[string]*output{},
 		warner:       config.Warner,
 		formatters:   formatters,
