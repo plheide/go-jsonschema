@@ -484,6 +484,7 @@ func (g *schemaGenerator) emitPrimitiveWrapper(
 	}
 
 	addMethod("UnmarshalJSON", emitOneOfPrimitiveUnmarshalJSON(name, kinds, strFormat))
+	g.output.ownUnmarshalers(decl)
 	addMethod("MarshalJSON", emitOneOfPrimitiveMarshalJSON(name, kinds))
 
 	if hasYAMLFormatter {

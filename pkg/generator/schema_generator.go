@@ -2413,6 +2413,8 @@ func (g *schemaGenerator) generateEnumType(
 				Name: enumDecl.GetName() + "_enum_unmarshal_" + formatter.getName(),
 			})
 		}
+
+		g.output.ownUnmarshalers(&enumDecl)
 	}
 
 	// TODO: May be aliased string type.
