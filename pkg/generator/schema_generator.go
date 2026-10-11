@@ -1929,7 +1929,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	// array too, that struct would reject values the schema allows, so the
 	// anyOf is interface{} instead, as upstream generates it for these, and
 	// the fidelity warning names what goes unchecked.
-	if mergesIntoObject(t, rAnyOf) && mixesObjectAndNonObject(t, rAnyOf) {
+	if mergesIntoObject(t, rAnyOf) && g.mixesObjectAndNonObject(t, rAnyOf) {
 		g.warnFallback(t, scope, "anyOf with both object and non-object branches")
 
 		return emptyInterfaceTypeVal, nil

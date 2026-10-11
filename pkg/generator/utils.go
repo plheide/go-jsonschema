@@ -100,11 +100,13 @@ func mergesIntoObject(parent *schemas.Type, branches []*schemas.Type) bool {
 
 // mixesObjectAndNonObject reports whether some of parent's anyOf branches
 // admit objects while others admit a primitive or an array.
-func mixesObjectAndNonObject(parent *schemas.Type, branches []*schemas.Type) bool {
+func (g *schemaGenerator) mixesObjectAndNonObject(parent *schemas.Type, branches []*schemas.Type) bool {
 	var object, other bool
 
+	seen := map[*schemas.Type]bool{}
+
 	for _, b := range branches {
-		o, n := branchAdmits(parent, b)
+		o, n := g.branchAdmits(parent.Type, b, seen)
 		object = object || o
 		other = other || n
 	}
@@ -112,16 +114,33 @@ func mixesObjectAndNonObject(parent *schemas.Type, branches []*schemas.Type) boo
 	return object && other
 }
 
-// branchAdmits reports whether a resolved anyOf branch admits objects and
-// whether it admits anything besides objects and null. A branch without a type
-// takes its parent's, as generateAnyOfType gives it. Without either, object
-// keywords make it an object, while the empty schema, a bare not, and an enum
-// or const of non-objects admit other values too; anything else, such as a
-// branch listing only required, counts as neither.
-func branchAdmits(parent, b *schemas.Type) (bool, bool) {
+// branchAdmits reports whether an anyOf branch admits objects and whether it
+// admits anything besides objects and null. A branch without a type takes the
+// enclosing one, as generateAnyOfType gives it. Without either, object
+// keywords make it an object; an anyOf or oneOf admits what its members do;
+// and the empty schema, a bare not, and an enum or const of non-objects admit
+// other values too. Anything else, such as a branch listing only required,
+// counts as neither.
+func (g *schemaGenerator) branchAdmits(
+	enclosing schemas.TypeList,
+	b *schemas.Type,
+	seen map[*schemas.Type]bool,
+) (bool, bool) {
+	if b.Ref != "" {
+		if b = g.lookupRef(b); b == nil {
+			return false, false
+		}
+	}
+
+	if seen[b] {
+		return false, false
+	}
+
+	seen[b] = true
+
 	types := b.Type
 	if len(types) == 0 {
-		types = parent.Type
+		types = enclosing
 	}
 
 	if len(types) > 0 {
@@ -144,6 +163,18 @@ func branchAdmits(parent, b *schemas.Type) (bool, bool) {
 
 	if len(b.Properties) > 0 || len(b.PatternProperties) > 0 || b.AdditionalProperties != nil {
 		return true, false
+	}
+
+	if members := slices.Concat(b.AnyOf, b.OneOf); len(members) > 0 {
+		var object, other bool
+
+		for _, m := range members {
+			o, n := g.branchAdmits(nil, m, seen)
+			object = object || o
+			other = other || n
+		}
+
+		return object, other
 	}
 
 	rest := *b
