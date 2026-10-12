@@ -9,16 +9,23 @@ competitor: once upstream merges a change, the fork takes that change from upstr
 The generator changes are offered upstream as
 [pull requests](https://github.com/omissis/go-jsonschema/pulls?q=is%3Apr+author%3Aplheide). Each one is a branch
 in a stack, from `feat/p0i-quote-property-names` to `feat/p14-stable-decl-order`. Each layer of the stack was
-reviewed and merged into this fork's `main` on its own.
+reviewed and merged into this fork's `main` on its own. The README lists
+[how the fork's output differs from upstream's](README.md#differences-from-upstream), and
+[what the generator does beyond JSON Schema](README.md#beyond-json-schema).
 
 Not offered upstream yet:
 
 * `--version`, which reports the stamps the release build sets (`feat/p15-version`);
 * keeping a property literally named `-` as a JSON key (`feat/p16-dash-json-key`);
-* checking `minItems`/`maxItems` on an array type declared in `$defs`, and naming the type in a declared type's
-  errors (made directly on `main`);
-* everything fork-specific: release and image publishing, the module path, the README banner, `AGENTS.md`,
-  `CLAUDE.md` and this file.
+* changes made directly on `main`, to be carried into the stack's pull requests together:
+  * checking `minItems`/`maxItems` on an array type declared in `$defs`, and naming the type in a declared type's
+    errors;
+  * fixes for schemas that upstream generates but the stack failed on: `$ref`s and `anyOf` branches bound to the
+    wrong declared type, recursive `allOf` merges that never finished, duplicate `UnmarshalJSON` methods, defaults
+    on fields that hold a union wrapper, and `anyOf`s that mix objects with other types;
+  * fidelity warnings for a dropped `oneOf`, `if`/`then`/`else`, `not`, `false` schema or `$ref`;
+* everything fork-specific: release and image publishing, the module path, the README banner and the README sections
+  on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 
 ## Branches
 

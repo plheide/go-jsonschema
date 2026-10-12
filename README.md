@@ -9,7 +9,8 @@
 > * `x-enum-varnames` naming the generated enum constants.
 >
 > Almost all of it is offered upstream; [FORK.md](FORK.md) lists the exceptions. The fork is a staging area, not a
-> competitor.
+> competitor. [Differences from upstream](#differences-from-upstream) lists how its output differs, and
+> [Beyond JSON Schema](#beyond-json-schema) what it reads and does that JSON Schema doesn't define.
 
 **go-jsonschema is a tool to generate Go data types from [JSON Schema](http://json-schema.org/) definitions.**
 
@@ -132,6 +133,104 @@ types:
 These types are needed because there is no native type provided by Go which
 properly handles them.
 
+## Beyond JSON Schema
+
+The generator reads a few inputs that are not part of JSON Schema, and makes a few choices that JSON Schema leaves
+open. This section lists all of them, with the flags that turn them on or off. Everything else follows JSON Schema,
+or is listed as unsupported under [Status](#status).
+
+### Inputs that are not JSON Schema
+
+| Input | Effect | From |
+| --- | --- | --- |
+| `goJSONSchema` | On a schema, `type` names a Go type to use instead of generating one, `imports` adds the imports it needs, and `nillable: true` says it needs no pointer. On a property, `identifier` names the field, `pointer` makes it a pointer (`true`) or a value (`false`), and `extraTags` adds struct tags. | upstream |
+| `x-enum-varnames` | Names the constants generated for an enum's values, in `enum` order, as OpenAPI generators read it. | fork |
+| Other `x-` keys | Become struct tags when mapped with `--extension-tag x-key=tag`, and are ignored otherwise. | fork, opt-in |
+| `format: int32` and `format: int64` on an `integer` | Go `int32` and `int64`, the OpenAPI meaning of these formats. A later release makes this opt-in, through `--openapi-int-formats`. | fork |
+| `format: uuid` | Checked by `--validate-formats` in every draft, although JSON Schema defines it only from draft 2019-09. | fork, opt-in |
+
+### Choices JSON Schema leaves open
+
+* **`default`** is only an annotation in JSON Schema. Generated code assigns it when the key is absent from the
+  input: to struct fields, and in the fork also to fields that hold a union wrapper.
+* **`readOnly: true`** properties are rejected when the input contains them, which JSON Schema allows.
+  `--disable-readonly-validation` turns that off.
+* **Properties a schema allows without declaring them** are dropped on decode, unless the schema declares
+  `additionalProperties`. In that case an `AdditionalProperties` field holds them.
+* **`--strict-additional-properties=strict`** rejects undeclared properties on every object, including where the
+  schema allows them. That is stricter than JSON Schema.
+* **`--only-models`** generates the types without unmarshalers, so nothing is checked.
+
+### Checks that are off by default
+
+Generated code skips these JSON Schema checks unless a flag turns them on, so its behavior stays the same as
+upstream's:
+
+| Check | Flag |
+| --- | --- |
+| `format` | `--validate-formats`, described [below](#opt-in-format-validation) |
+| `additionalProperties: false` | `--strict-additional-properties=respect-schema`, described [below](#opt-in-additionalproperties-false-enforcement) |
+| `null` where `type` excludes it | `--validate-null-types`. It checks properties, but not yet array elements or a top-level value. |
+
+### Fidelity warnings
+
+When generated code doesn't check something a schema declares, the generator says so on stderr, once for each type:
+
+* `schema fidelity: type X falls back to interface{} due to <reason>; declared but not enforced: <keywords>` means
+  the type became `interface{}`.
+* `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
+  `oneOf`, an `if`/`then`/`else`, a `not` or a `false` schema.
+
+The keywords listed as unsupported under [Validation](#validation), such as `uniqueItems` and `patternProperties`,
+are not reported.
+
+### Options for names, types and tags
+
+`--capitalization`, `--collision-strategy`, `--disable-custom-types-for-maps`, `--disable-omitempty`,
+`--disable-omitzero`, `--extra-imports`, `--min-sized-ints`, `--minimal-names`, `--struct-name-from-title`, `--tags`
+and `Config.AliasSingleAllOfAnyOfRefs` choose how the generated code is named, typed and tagged.
+`--collision-strategy` is the fork's; the others are upstream's.
+
+## Differences from upstream
+
+For the same schema and flags, the fork's output differs from upstream's v0.24 output as listed below. All of it is
+offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
+
+### Types
+
+| Schema | Upstream | Fork |
+| --- | --- | --- |
+| `"type": ["number", "null"]` | `type FooRate *float64`, a named pointer type, which can have no methods | `*float64` |
+| `oneOf` of `string`, `number`, `boolean` and `null` variants, or `"type": ["string", "number"]` | `interface{}` | A struct holding one of the values, decoded by its JSON kind |
+| `oneOf` of objects told apart by a `const` property | `interface{}` | A struct with a field per variant, decoded by that property |
+| Any other `oneOf` of objects | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches |
+| `integer` with `format: int32` or `format: int64` | `int` | `int32` or `int64` |
+| An enum with `x-enum-varnames: ["Low", "High"]` | Constants named after the type and the value, such as `FooLevelLo` | `Low` and `High` |
+| `oneOf`, `anyOf`, `allOf` or `enum` at the root | No root type | The root type |
+
+### Schemas that only the fork generates
+
+* Draft-07 tuple-form `items`, which upstream fails to parse. The array is `[]interface{}`, and `additionalItems:
+  false` limits its length.
+* Draft-07 `dependencies` in the property-list form, such as `{"a": ["b"]}`, which upstream fails to parse inside a
+  subschema. It is parsed, but not enforced.
+* `$ref`s to nested definitions, such as `#/definitions/a/definitions/b`, in the same file or another one.
+
+### Checks the fork adds
+
+* An `allOf` of `if`/`then`/`else` keyed on one property's `const` or `enum` checks each branch's `required`, as
+  described under [Validation](#validation).
+* An array type declared in `$defs` checks its own `minItems` and `maxItems`.
+
+### Other differences
+
+* A required property named `-` is decoded. Upstream tagged it `json:"-"`, which `encoding/json` skips.
+* A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
+  Upstream generated a tag that decodes nothing.
+* Declarations come out in a fixed order. In upstream's output, an unrelated change could reorder them.
+* The [fidelity warnings](#fidelity-warnings) above.
+* `--version` prints the release.
+
 ## Status
 
 While not finished, go-jsonschema can be used today. Aside from some minor features,
@@ -150,15 +249,15 @@ only specific validations remain to be fully implemented.
     * [x] `string`
   * [ ] Location identifiers (§8.2.3)
     * [x] References against top-level names: `#/$defs/someName`
-    * [ ] References against nested names: `#/$defs/someName/$defs/someOtherName`
+    * [x] References against nested names: `#/$defs/someName/$defs/someOtherName`
     * [x] References against top-level names in external files: `myschema.json#/$defs/someName`
-    * [ ] References against nested names: `myschema.json#/$defs/someName/$defs/someOtherName`
+    * [x] References against nested names: `myschema.json#/$defs/someName/$defs/someOtherName`
   * [x] Comments (§9)
 * Validation ([RFC draft](http://json-schema.org/latest/json-schema-validation.html))
   * [ ] Schema annotations (§10)
     * [x] `description`
-    * [x] `default` (only for struct fields)
-    * [ ] `readOnly`
+    * [x] `default` (for struct fields, and fields that hold a union wrapper)
+    * [x] `readOnly` (present in the input: rejected, unless `--disable-readonly-validation` is set)
     * [ ] `writeOnly`
     * [ ] ~~`title`~~ (N/A)
     * [ ] ~~`examples`~~ (N/A)
@@ -178,30 +277,34 @@ only specific validations remain to be fully implemented.
     * [X] `minLength`
     * [X] `pattern`
   * [ ] Array validation (§6.4)
-    * [X] `items`
+    * [X] `items` (the draft-07 tuple form gives `[]interface{}`)
     * [x] `maxItems`
     * [x] `minItems`
     * [ ] `uniqueItems`
-    * [ ] `additionalItems`
+    * [ ] `additionalItems` (only `false` after tuple-form `items` is checked, as a length limit)
     * [ ] `contains`
   * [ ] Object validation (§6.5)
     * [x] `required`
     * [x] `properties`
     * [x] `additionalProperties: false` (opt-in via `Config.StrictAdditionalProperties`)
     * [ ] `patternProperties`
-    * [ ] `dependencies`
+    * [ ] `dependencies` (both forms are parsed, but not enforced)
     * [ ] `propertyNames`
     * [ ] `maxProperties`
     * [ ] `minProperties`
-  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's required-field check. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check (extra `required`/composition/validation keywords decline detection)
+  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's required-field check. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check (extra `required`/composition/validation keywords decline detection). Other conditionals
+    are not compiled, and a [fidelity warning](#fidelity-warnings) reports them
     * [x] `if`
     * [x] `then`
     * [x] `else`
   * [ ] Boolean subschemas (§6.7)
-    * [ ] `allOf`
-    * [ ] `anyOf`
-    * [x] `oneOf` (primitive variants only — `string`, `number`, `boolean`, `null`; **note**: `integer`-typed variants are not currently routed through the wrapper, and object discriminated unions are pending)
-    * [ ] `not`
+    * [x] `allOf` (merged into one type)
+    * [x] `anyOf` (merged into one type that requires a match with at least one branch; a mix of object and
+      non-object branches is `interface{}`)
+    * [x] `oneOf` (primitive variants — `string`, `number`, `boolean`, `null` — become a wrapper; object variants
+      become a holder that dispatches on a `const` discriminator or tries each variant; **note**: `integer`-typed
+      variants are not currently routed through the wrapper)
+    * [ ] `not` (reported by a [fidelity warning](#fidelity-warnings))
   * [x] Multi-type unions (§4.2.1) — `{"type": ["string", "number", "boolean", "null"]}` is wire-equivalent to a primitive `oneOf` and routes through the same wrapper. Same primitive set as `oneOf`; same `integer` exclusion. The `["X", "null"]` shape continues to use `*X` for ergonomics; non-primitive types in the union (`object`, `array`) and per-value validation keywords on the union (`format`, `minimum`, etc.) decline detection and fall back to `interface{}`.
   * [ ] Semantic formats (§7.3)
     * [x] Dates and times
@@ -212,7 +315,7 @@ only specific validations remain to be fully implemented.
     * [ ] URI-template
     * [ ] JSON pointers
     * [x] Regex (opt-in via `Config.FormatValidation`)
-    * [x] `uuid` (extension; opt-in via `Config.FormatValidation`)
+    * [x] `uuid` (defined from draft 2019-09, checked in every draft; opt-in via `Config.FormatValidation`)
 
 ### Opt-in `format` validation
 
@@ -225,7 +328,7 @@ skipped when nil, so absent values do not trigger validation.
 
 | `format` | Strategy | Notes |
 | --- | --- | --- |
-| `uuid` | RE2 regex against the canonical 8-4-4-4-12 hex form (case-insensitive) | Not in the JSON Schema core spec; supported as a common extension. |
+| `uuid` | RE2 regex against the canonical 8-4-4-4-12 hex form (case-insensitive) | Defined by JSON Schema from draft 2019-09; checked in every draft. |
 | `email` | `net/mail.ParseAddress` + reject if a display-name is present + require the parsed address to round-trip the input verbatim | Stricter than the Go stdlib default: only RFC 5321 `addr-spec` (`local@domain`) is accepted. Forms like `Alice <alice@example.com>` or `<bob@example.com>` are rejected. |
 | `uri` | `net/url.Parse` + `IsAbs()` + RFC 3986 character-class regex | Rejects whitespace, control characters, and malformed percent-encoding (`%` not followed by two hex digits). Empty strings are rejected (not absolute). |
 | `uri-reference` | `net/url.Parse` + RFC 3986 character-class regex | Same character-class check as `uri`. Empty strings, fragment-only refs (`#x`), and relative paths (`/a/b`) are accepted per RFC 3986. |
