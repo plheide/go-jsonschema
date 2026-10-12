@@ -278,9 +278,12 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		return dt, nil
 	}
 
-	nt, ok := dt.(*codegen.NamedType)
-	if !ok {
-		return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, t)
+	// A nullable definition, such as an anyOf of an object and null, comes
+	// back as a pointer to its declared type; references to it keep the
+	// pointer.
+	nt, err := g.extractPointedType(dt)
+	if err != nil {
+		return nil, err
 	}
 
 	if isCycle {
@@ -309,11 +312,17 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		g.output.file.Package.AddImport(sg.output.file.Package.QualifiedName, alias)
 	}
 
-	return &codegen.NamedType{
+	ref := &codegen.NamedType{
 		Package: &sg.output.file.Package,
 		Decl:    nt.Decl,
 		Alias:   alias,
-	}, nil
+	}
+
+	if _, isPointer := dt.(*codegen.PointerType); isPointer {
+		return &codegen.PointerType{Type: ref}, nil
+	}
+
+	return ref, nil
 }
 
 func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, error) {
@@ -1913,6 +1922,20 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	if hasNull && len(rAnyOf) == 1 && len(rAnyOf[0].Type) == 1 &&
 		isTypeTemporal(rAnyOf[0].Type[0], rAnyOf[0].Format) {
 		return g.primitiveType(rAnyOf[0], rAnyOf[0].Type[0], true)
+	}
+
+	// When the branches merge into an object with properties, the anyOf
+	// becomes a struct, which can hold only an object, with a validator that
+	// decodes every branch into a type of its own. If a branch admits a
+	// primitive or an array too, that struct would reject values the schema
+	// allows and its validator has no type to decode them into, so the anyOf
+	// is interface{} instead, as upstream generates it for these, and the
+	// fidelity warning names what goes unchecked. A merge into a map keeps
+	// its type, as upstream's.
+	if mergesIntoStruct(t, rAnyOf) && g.mixesObjectAndNonObject(t, rAnyOf) {
+		g.warnFallback(t, scope, "anyOf with both object and non-object branches")
+
+		return emptyInterfaceTypeVal, nil
 	}
 
 	variantNames := make([]string, len(rAnyOf))
