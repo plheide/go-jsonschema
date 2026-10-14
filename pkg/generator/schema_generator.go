@@ -1434,10 +1434,21 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	}
 }
 
+// typeFormat is the format to type t's typeName by. An integer's format is an
+// OpenAPI one, int32 or int64, since JSON Schema defines none, so it sizes the
+// integer only under OpenAPIIntFormats.
+func (g *schemaGenerator) typeFormat(t *schemas.Type, typeName string) string {
+	if typeName == schemas.TypeNameInteger && !g.config.OpenAPIIntFormats {
+		return ""
+	}
+
+	return t.Format
+}
+
 func (g *schemaGenerator) primitiveType(t *schemas.Type, name string, isNillable bool) (codegen.Type, error) {
 	cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
 		name,
-		t.Format,
+		g.typeFormat(t, name),
 		isNillable,
 		g.config.MinSizedInts,
 		&t.Minimum,
@@ -2390,7 +2401,7 @@ func (g *schemaGenerator) generateEnumType(
 		var err error
 		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(
 			t.Type[0],
-			t.Format,
+			g.typeFormat(t, t.Type[0]),
 			false,
 			g.config.MinSizedInts,
 			&t.Minimum,

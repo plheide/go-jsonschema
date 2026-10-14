@@ -134,7 +134,9 @@ func PrimitiveTypeFromJSONSchemaType(
 	case schemas.TypeNameInteger:
 		t := PrimitiveType{"int"}
 
-		// An explicit `format` fixes the width the value is carried at.
+		// An explicit `format` fixes the width the value is carried at. The
+		// generator passes an integer's format only under
+		// Config.OpenAPIIntFormats, since these are OpenAPI formats.
 		// Without this, `{"type":"integer","format":"int64"}` emits a bare
 		// `int`, which is 32 bits on 32-bit platforms — so a value the schema
 		// explicitly declares as 64-bit fails to decode there at all, while

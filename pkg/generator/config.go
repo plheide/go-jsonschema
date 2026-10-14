@@ -32,6 +32,10 @@ type Config struct {
 	OnlyModels bool
 	// MinSizedInts configures the generator to use the smallest int and uint types based on schema maximum values.
 	MinSizedInts bool
+	// OpenAPIIntFormats maps an integer's OpenAPI format, int32 or int64, to the Go integer type of that width.
+	// JSON Schema defines no integer formats, so it is off by default, and an integer is an int, as upstream
+	// generates it. MinSizedInts still wins where it applies.
+	OpenAPIIntFormats bool
 	// MinimalNames configures the generator to use the shortest identifier names possible.
 	MinimalNames bool
 	// Loader provides a schema loader for the generator.
