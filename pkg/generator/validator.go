@@ -511,7 +511,11 @@ func pointerToIntegerElem(t codegen.Type) (codegen.Type, bool) {
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
 	tmpEmitter := codegen.NewEmitter(maxLineLen)
 
-	if err := v.defaultValueType.Generate(tmpEmitter); err != nil {
+	// A list is a []interface{} in an interface{} field, as encoding/json
+	// decodes one, since an interface type has no composite literal.
+	if isEmptyInterface(v.defaultValueType) {
+		tmpEmitter.Printf("[]interface{}")
+	} else if err := v.defaultValueType.Generate(tmpEmitter); err != nil {
 		return "", fmt.Errorf("%w: %w", ErrCannotDumpDefaultSlice, err)
 	}
 
@@ -1375,6 +1379,20 @@ func (v *wrapperDefaultValidator) desc() *validatorDesc {
 		requiresRawAfter: true,
 		imports:          []packageImport{{qualifiedName: "encoding/json"}},
 	}
+}
+
+// isEmptyInterface reports whether t is interface{}, or names a type declared
+// as interface{}.
+func isEmptyInterface(t codegen.Type) bool {
+	switch t := t.(type) {
+	case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
+		return true
+
+	case *codegen.NamedType:
+		return isEmptyInterfaceDecl(t)
+	}
+
+	return false
 }
 
 // isEmptyInterfaceDecl reports whether nt names a type declared as interface{}.
