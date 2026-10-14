@@ -34,6 +34,7 @@ import (
 	testMultiTypeAll "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/stringNumberBoolNull"
 	testMultiTypeStrNum "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/stringOrNumber"
 	testNullableBranch "github.com/plheide/go-jsonschema/tests/data/nullableBranch"
+	testNullableEnum "github.com/plheide/go-jsonschema/tests/data/nullableEnum"
 	testOneOfDiscAnimal "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/animal"
 	testOneOfArrayVariants "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/arrayVariants"
 	testOneOfNoDisc "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/noDiscriminator"
@@ -2284,6 +2285,40 @@ func TestJsonUnmarshalNullableBranch(t *testing.T) {
 	// X's own checks still run on a value that is not null.
 	for _, payload := range []string{`{"refOneOf":{}}`, `{"refAnyOf":{}}`, `{"inlineObject":{}}`, `{"items":[{}]}`} {
 		var w testNullableBranch.NullableBranch
+
+		require.Error(t, json.Unmarshal([]byte(payload), &w), "payload %s", payload)
+	}
+}
+
+// TestJsonUnmarshalNullableEnum decodes enums that admit null by their type,
+// their values or both: a null the enum lists is nil, and one it does not
+// list is rejected, since the type check passes but the enum check fails.
+func TestJsonUnmarshalNullableEnum(t *testing.T) {
+	t.Parallel()
+
+	var v testNullableEnum.NullableEnum
+
+	payload := `{"mode":"fast","withNull":null,"typeless":null,"level":null}`
+	require.NoError(t, json.Unmarshal([]byte(payload), &v))
+	assert.Nil(t, v.WithNull)
+	assert.Nil(t, v.Typeless)
+	assert.Nil(t, v.Level)
+
+	payload = `{"mode":"fast","withNull":"full","typeless":"on","level":2,"viaRef":"stop"}`
+	require.NoError(t, json.Unmarshal([]byte(payload), &v))
+	require.NotNil(t, v.WithNull)
+	assert.Equal(t, testNullableEnum.NullableEnumWithNullFull, *v.WithNull)
+	require.NotNil(t, v.Level)
+	assert.Equal(t, testNullableEnum.NullableEnumLevel(2), *v.Level)
+
+	for _, payload := range []string{
+		`{"mode":"fast","withoutNull":null}`,
+		`{"mode":null}`,
+		`{"mode":"fast","viaRef":null}`,
+		`{"mode":"fast","withNull":"other"}`,
+		`{"mode":"fast","level":3}`,
+	} {
+		var w testNullableEnum.NullableEnum
 
 		require.Error(t, json.Unmarshal([]byte(payload), &w), "payload %s", payload)
 	}

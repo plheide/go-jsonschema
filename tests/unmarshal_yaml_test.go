@@ -20,6 +20,7 @@ import (
 	testFormatYAMLURIRef "github.com/plheide/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatYAMLUUID "github.com/plheide/go-jsonschema/tests/data/formatValidation/uuid"
 	testNullableBranch "github.com/plheide/go-jsonschema/tests/data/nullableBranch"
+	testNullableEnum "github.com/plheide/go-jsonschema/tests/data/nullableEnum"
 	testRootConstNull "github.com/plheide/go-jsonschema/tests/data/rootComposition/rootConstNull"
 	testYAMLStrictAddlFalse "github.com/plheide/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
 	testYAMLStrictAddlFalseEmpty "github.com/plheide/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
@@ -330,4 +331,20 @@ func TestYamlUnmarshalNullableBranch(t *testing.T) {
 	var w testNullableBranch.NullableBranch
 
 	require.Error(t, yamlv3.Unmarshal([]byte("refOneOf: {}\n"), &w))
+}
+
+// TestYamlUnmarshalNullableEnum is TestJsonUnmarshalNullableEnum for YAML.
+func TestYamlUnmarshalNullableEnum(t *testing.T) {
+	t.Parallel()
+
+	var v testNullableEnum.NullableEnum
+
+	require.NoError(t, yamlv3.Unmarshal([]byte("mode: fast\nwithNull: null\nlevel: 1\n"), &v))
+	assert.Nil(t, v.WithNull)
+	require.NotNil(t, v.Level)
+	assert.Equal(t, testNullableEnum.NullableEnumLevel(1), *v.Level)
+
+	var w testNullableEnum.NullableEnum
+
+	require.Error(t, yamlv3.Unmarshal([]byte("mode: fast\nwithoutNull: null\n"), &w))
 }

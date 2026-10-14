@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Enums that admit null by their type, their values, or both. The enum's type is that of its other values, held through a pointer: a null the enum lists decodes to nil, and one it does not list is rejected, since the type check passes but the enum check does not.",
+  "properties": {
+    "withNull": { "type": ["string", "null"], "enum": ["full", "steady", null] },
+    "withoutNull": { "type": ["string", "null"], "enum": ["full", "steady"] },
+    "typeless": { "enum": ["on", "off", null] },
+    "level": { "type": ["integer", "null"], "enum": [1, 2, null] },
+    "mode": { "type": ["string", "null"], "enum": ["fast"] },
+    "viaRef": { "$ref": "#/definitions/Phase" }
+  },
+  "required": ["mode"],
+  "definitions": {
+    "Phase": { "type": ["string", "null"], "enum": ["start", "stop"] }
+  }
+}

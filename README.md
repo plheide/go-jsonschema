@@ -205,6 +205,7 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 | `oneOf` of objects told apart by a `const` property | `interface{}` | A struct with a field per variant, decoded by that property |
 | Any other `oneOf` of objects | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches |
 | `oneOf` or `anyOf` of a `$ref`, an object or an array, and `{"type": "null"}` | `interface{}` for a `oneOf`, a copy of the schema for an `anyOf` | A pointer to the schema's own type |
+| An enum listing `null` beside values of one type, such as `"enum": ["a", "b", null]` | A struct holding an `interface{}` | A pointer to an enum of that type |
 | An enum with `x-enum-varnames: ["Low", "High"]` | Constants named after the type and the value, such as `FooLevelLo` | `Low` and `High` |
 | `oneOf`, `anyOf`, `allOf` or `enum` at the root | No root type | The root type |
 
@@ -221,6 +222,7 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 * An `allOf` of `if`/`then`/`else` keyed on one property's `const` or `enum` checks each branch's `required`, as
   described under [Validation](#validation).
 * An array type declared in `$defs` checks its own `minItems` and `maxItems`.
+* A property whose `type` admits `null` but whose `enum` does not list it rejects a `null`.
 
 ### Other differences
 
