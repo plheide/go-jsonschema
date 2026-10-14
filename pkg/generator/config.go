@@ -82,7 +82,10 @@ type Config struct {
 	ExtensionTags map[string]string
 
 	// ValidateNullTypes configures the generator to reject a property that is
-	// present with an explicit null where the schema's `type` excludes null.
+	// present with an explicit null where the schema's `type` excludes null,
+	// and likewise an array element, and the value of a declared type that is
+	// not an object, such as a named string or array. In YAML a document that
+	// is only null is not checked: yaml.v3 does not pass one to UnmarshalYAML.
 	//
 	// Off by default: telling null apart from an omitted field requires
 	// decoding the payload into a raw map first, so enabling this adds an

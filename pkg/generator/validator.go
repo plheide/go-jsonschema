@@ -48,6 +48,11 @@ type validatorDesc struct {
 	// has been decoded. The after validators run before that, while the map
 	// is still empty, so a check on its values would check nothing.
 	afterAdditionalProperties bool
+
+	// beforeRawDecode runs the validator first, on the method's own input. It
+	// decodes what it needs itself, so it also suits a type that is not an
+	// object, which the raw map cannot hold.
+	beforeRawDecode bool
 }
 
 var (
@@ -57,6 +62,8 @@ var (
 	_ validator = new(nullTypeValidator)
 	_ validator = new(nonNullValidator)
 	_ validator = new(nonNullContainerValidator)
+	_ validator = new(nonNullElementsValidator)
+	_ validator = new(nonNullValueValidator)
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
 	_ validator = new(stringValidator)
@@ -119,49 +126,11 @@ type nonNullValidator struct {
 }
 
 func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
-	// The key-matching rule has to be the decoder's own, or the check
-	// disagrees with what was actually assigned.
-	//
-	// encoding/json matches a JSON key to a struct field without regard to
-	// case, so an exact lookup of `age` misses `{"Age": null}` — which the
-	// decode still assigns, leaving the check that exists to reject it unfired.
-	//
-	// yaml.v3 matches case-sensitively, so the same leniency there would
-	// reject `Age: null` when the field was never assigned at all and the
-	// document may well be valid.
-	if format == formatJSON && !v.exactOnly {
-		// `fieldValue` is deliberately not named `value`: that is the
-		// UnmarshalJSON parameter, and shadowing it reads as a bug.
-		//
-		// Where the payload carries two differently-cased spellings and one is
-		// null, this rejects it. encoding/json is no more specific for that
-		// input, and refusing an ambiguous payload is the safer answer for a
-		// validation flag.
-		out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
-		out.Indent(1)
-		out.Printlnf(`if fieldValue != nil || !strings.EqualFold(fieldName, %q) {`, v.jsonName)
-		out.Indent(1)
-		out.Printlnf("continue")
-		out.Indent(-1)
-		out.Printlnf("}")
-
-		if len(v.caseVariants) > 0 {
-			quoted := make([]string, len(v.caseVariants))
-			for i, name := range v.caseVariants {
-				quoted[i] = fmt.Sprintf("%q", name)
-			}
-
-			out.Printlnf("switch fieldName {")
-			out.Printlnf("case %s:", strings.Join(quoted, ", "))
-			out.Indent(1)
-			out.Printlnf("continue")
-			out.Indent(-1)
-			out.Printlnf("}")
-		}
-	} else {
-		out.Printlnf(`if fieldValue, ok := %s[%q]; ok && fieldValue == nil {`, varNameRawMap, v.jsonName)
-		out.Indent(1)
-	}
+	// Where the payload carries two differently-cased spellings and one is
+	// null, this rejects it. encoding/json is no more specific for that
+	// input, and refusing an ambiguous payload is the safer answer for a
+	// validation flag.
+	emitRawKeyMatch(out, format, v.jsonName, v.caseVariants, v.exactOnly, true)
 
 	out.Printlnf(
 		`return fmt.Errorf("field %s in %s: must not be null")`,
@@ -188,6 +157,211 @@ func (v *nonNullValidator) desc() *validatorDesc {
 	}
 
 	return d
+}
+
+// emitRawKeyMatch opens a block that runs for the raw-map entry the decoder
+// assigns to the property jsonName, with the entry's value in fieldValue; with
+// nullOnly, only when that value is null. The caller emits the body, then
+// closes the block with out.Indent(-1) and "}". caseVariants and exactOnly are
+// as for nonNullValidator.
+//
+// The key-matching rule has to be the decoder's own, or the check
+// disagrees with what was actually assigned.
+//
+// encoding/json matches a JSON key to a struct field without regard to
+// case, so an exact lookup of `age` misses `{"Age": null}` — which the
+// decode still assigns, leaving the check that exists to reject it unfired.
+//
+// yaml.v3 matches case-sensitively, so the same leniency there would
+// reject `Age: null` when the field was never assigned at all and the
+// document may well be valid.
+func emitRawKeyMatch(
+	out *codegen.Emitter,
+	format, jsonName string,
+	caseVariants []string,
+	exactOnly, nullOnly bool,
+) {
+	if format != formatJSON || exactOnly {
+		cond := "ok"
+		if nullOnly {
+			cond = "ok && fieldValue == nil"
+		}
+
+		out.Printlnf(`if fieldValue, ok := %s[%q]; %s {`, varNameRawMap, jsonName, cond)
+		out.Indent(1)
+
+		return
+	}
+
+	// `fieldValue` is deliberately not named `value`: that is the
+	// UnmarshalJSON parameter, and shadowing it reads as a bug.
+	out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
+	out.Indent(1)
+
+	if nullOnly {
+		out.Printlnf(`if fieldValue != nil || !strings.EqualFold(fieldName, %q) {`, jsonName)
+	} else {
+		out.Printlnf(`if !strings.EqualFold(fieldName, %q) {`, jsonName)
+	}
+
+	out.Indent(1)
+	out.Printlnf("continue")
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	if len(caseVariants) > 0 {
+		quoted := make([]string, len(caseVariants))
+		for i, name := range caseVariants {
+			quoted[i] = fmt.Sprintf("%q", name)
+		}
+
+		out.Printlnf("switch fieldName {")
+		out.Printlnf("case %s:", strings.Join(quoted, ", "))
+		out.Indent(1)
+		out.Printlnf("continue")
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+}
+
+// nonNullElementsValidator rejects an explicit null among the elements of an
+// array property, at each level of nesting whose items exclude null, as
+// nonNullValidator does for the property itself: decoding the elements into
+// their Go type would turn the null into a zero value. It matches the
+// property's key the way nonNullValidator does.
+type nonNullElementsValidator struct {
+	jsonName string
+	declName string
+	// forbidden holds, for each level of nesting, whether its elements must
+	// not be null. The walk ends at its last level, which always forbids it.
+	forbidden    []bool
+	caseVariants []string
+	exactOnly    bool
+}
+
+func (v *nonNullElementsValidator) generate(out *codegen.Emitter, format string) error {
+	emitRawKeyMatch(out, format, v.jsonName, v.caseVariants, v.exactOnly, false)
+
+	emitNullElementWalk(out, "fieldValue", v.forbidden, func(path string) string {
+		return fmt.Sprintf(`fmt.Errorf("field %%s in %%s: must not be null", %s, %q)`, path, v.declName)
+	}, v.jsonName)
+
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	return nil
+}
+
+func (v *nonNullElementsValidator) desc() *validatorDesc {
+	d := &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+	}
+
+	if !v.exactOnly {
+		d.imports = []packageImport{{qualifiedName: "strings"}}
+	}
+
+	return d
+}
+
+// nonNullValueValidator rejects a null where a declared type that is not an
+// object, such as a named primitive or array, excludes it, and a null among
+// its array elements where those exclude it. Without it, encoding/json leaves
+// a primitive at its zero value for a null and makes an array nil, with no
+// error. yaml.v3 does not call UnmarshalYAML for a null node, so in YAML only
+// the elements are checked here; a null property is the parent's to reject.
+type nonNullValueValidator struct {
+	declName string
+	// excludesNull reports whether the value itself must not be null.
+	excludesNull bool
+	// forbidden is as for nonNullElementsValidator.
+	forbidden []bool
+}
+
+func (v *nonNullValueValidator) generate(out *codegen.Emitter, format string) error {
+	out.Printlnf("var rawValue interface{}")
+
+	if format == formatJSON {
+		out.Printlnf("if err := json.Unmarshal(value, &rawValue); err != nil {")
+	} else {
+		out.Printlnf("if err := value.Decode(&rawValue); err != nil {")
+	}
+
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("unmarshal raw %s: %%w", err)`, v.declName)
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	if v.excludesNull {
+		out.Printlnf("if rawValue == nil {")
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("%s: must not be null")`, v.declName)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if len(v.forbidden) > 0 {
+		emitNullElementWalk(out, "rawValue", v.forbidden, func(path string) string {
+			return fmt.Sprintf(`fmt.Errorf("%%s: must not be null", %s)`, path)
+		}, v.declName)
+	}
+
+	return nil
+}
+
+func (v *nonNullValueValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:        true,
+		beforeRawDecode: true,
+	}
+}
+
+// emitNullElementWalk emits a walk of value as nested arrays, one level per
+// entry of forbidden, returning errorFor(path) for a null element at a level
+// that forbids one. path is a Go expression naming the element, such as
+// fmt.Sprintf("%s[%d][%d]", name, i0, i1).
+func emitNullElementWalk(
+	out *codegen.Emitter,
+	value string,
+	forbidden []bool,
+	errorFor func(path string) string,
+	name string,
+) {
+	indexes := make([]string, 0, len(forbidden))
+
+	for level, nullForbidden := range forbidden {
+		elements := fmt.Sprintf("elements%d", level)
+		index := fmt.Sprintf("i%d", level)
+		element := fmt.Sprintf("element%d", level)
+
+		out.Printlnf(`if %s, ok := %s.([]interface{}); ok {`, elements, value)
+		out.Indent(1)
+		out.Printlnf(`for %s, %s := range %s {`, index, element, elements)
+		out.Indent(1)
+
+		indexes = append(indexes, index)
+
+		if nullForbidden {
+			path := fmt.Sprintf(`fmt.Sprintf("%%s%s", %q, %s)`,
+				strings.Repeat("[%d]", len(indexes)), name, strings.Join(indexes, ", "))
+
+			out.Printlnf("if %s == nil {", element)
+			out.Indent(1)
+			out.Printlnf("return %s", errorFor(path))
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
+
+		value = element
+	}
+
+	for range forbidden {
+		out.Indent(-1)
+		out.Printlnf("}")
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
 }
 
 // nonNullContainerValidator rejects a null instance where the schema's own

@@ -94,7 +94,8 @@ These are `Config` fields, each with its own test data under `tests/data/`:
   allow list. Off by default to preserve historical behavior.
 - `StrictAdditionalProperties` (`--strict-additional-properties`): whether `additionalProperties: false` becomes a
   runtime rejection. Off (default, unknown fields dropped silently), `respect-schema`, or `strict`.
-- `ValidateNullTypes` (`--validate-null-types`): reject an explicit `null` where the schema's `type` excludes it.
+- `ValidateNullTypes` (`--validate-null-types`): reject an explicit `null` where the schema's `type` excludes it, in
+  properties, array elements and declared non-object types.
 - `CollisionStrategy` (`--collision-strategy`): `positional` (default) or `qualify`, which names each definition
   after its schema so type names don't depend on argument order.
 - `ExtensionTags` (`--extension-tag x-foo=tag`): emit schema `x-` extensions as struct tags.

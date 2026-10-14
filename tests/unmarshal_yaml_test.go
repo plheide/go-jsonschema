@@ -143,6 +143,54 @@ func TestYamlValidateNullTypesKeyMatching(t *testing.T) {
 	})
 }
 
+// TestYamlValidateNullElements is TestJsonUnmarshalValidateNullElements for
+// YAML. yaml.v3 does not call UnmarshalYAML for a null node, so a null
+// document is not rejected, while the elements of a declared array are.
+func TestYamlValidateNullElements(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		payload  string
+		wantPath string
+	}{
+		{"tags: [a, null]\n", "tags[1]"},
+		{"matrix: [[1, null]]\n", "matrix[0][1]"},
+		{"maybeTags: [a, null]\n", ""},
+		{"outerNullable: [null, [a]]\n", ""},
+	} {
+		var v testNullTypes.NullElements
+
+		err := yamlv3.Unmarshal([]byte(tc.payload), &v)
+		if tc.wantPath == "" {
+			require.NoError(t, err, "payload %s", tc.payload)
+
+			continue
+		}
+
+		require.Error(t, err, "payload %s", tc.payload)
+		assert.Contains(t, err.Error(), tc.wantPath+" in NullElements: must not be null", "payload %s", tc.payload)
+	}
+
+	var a testNullTypes.NullRootArray
+
+	err := yamlv3.Unmarshal([]byte("[a, null]\n"), &a)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "NullRootArray[1]: must not be null")
+
+	var r testNullTypes.NullRecursiveArray
+
+	err = yamlv3.Unmarshal([]byte("tree: [[[null]]]\n"), &r)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "RecursiveTree[0]: must not be null")
+
+	err = yamlv3.Unmarshal([]byte("ping: [[[[null]]]]\n"), &r)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "PingList[0][0]: must not be null")
+	require.NoError(t, yamlv3.Unmarshal([]byte("tree: [[[]]]\nping: [[[[]]]]\n"), &r))
+
+	require.NoError(t, yamlv3.Unmarshal([]byte("null\n"), &a), "yaml.v3 does not hand a null document to UnmarshalYAML")
+}
+
 func TestYamlUnmarshalFormatValidation(t *testing.T) {
 	t.Parallel()
 

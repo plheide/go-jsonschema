@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "A root array whose items exclude null. A null decodes into it as a nil slice, and a null element as an empty string.",
+  "type": "array",
+  "items": { "type": "string" }
+}

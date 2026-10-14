@@ -2052,6 +2052,96 @@ func TestJsonUnmarshalValidateNullTypes(t *testing.T) {
 	})
 }
 
+// TestJsonUnmarshalValidateNullElements covers --validate-null-types past a
+// property itself: the elements of an array, at each level of nesting whose
+// items exclude null, and a declared type that is not an object.
+func TestJsonUnmarshalValidateNullElements(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		payload string
+		// wantPath names the rejected element; "" when the payload is valid.
+		wantPath string
+	}{
+		{`{"tags":["a",null]}`, "tags[1]"},
+		// The key is matched the way encoding/json binds it to the field.
+		{`{"Tags":[null]}`, "tags[0]"},
+		{`{"matrix":[[1,null]]}`, "matrix[0][1]"},
+		{`{"matrix":[null]}`, "matrix[0]"},
+		{`{"maybeTags":["a",null]}`, ""},
+		{`{"outerNullable":[null,["a"]]}`, ""},
+		{`{"outerNullable":[["a",null]]}`, "outerNullable[0][1]"},
+		{`{"codes":["x",null]}`, "codes[1]"},
+		{`{"tags":["a"],"matrix":[[1,2]],"codes":["x"]}`, ""},
+	} {
+		var v testNullTypes.NullElements
+
+		err := json.Unmarshal([]byte(tc.payload), &v)
+		if tc.wantPath == "" {
+			require.NoError(t, err, "payload %s", tc.payload)
+
+			continue
+		}
+
+		require.Error(t, err, "payload %s", tc.payload)
+		assert.Contains(t, err.Error(), tc.wantPath+" in NullElements: must not be null", "payload %s", tc.payload)
+	}
+
+	t.Run("a declared type that is not an object", func(t *testing.T) {
+		t.Parallel()
+
+		var s testNullTypes.NullRootString
+
+		err := json.Unmarshal([]byte(`null`), &s)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "NullRootString: must not be null")
+		require.NoError(t, json.Unmarshal([]byte(`"x"`), &s))
+
+		var a testNullTypes.NullRootArray
+
+		err = json.Unmarshal([]byte(`null`), &a)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "NullRootArray: must not be null")
+
+		err = json.Unmarshal([]byte(`["a",null]`), &a)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "NullRootArray[1]: must not be null")
+		require.NoError(t, json.Unmarshal([]byte(`["a"]`), &a))
+	})
+
+	t.Run("an array that leads back to its own definition", func(t *testing.T) {
+		t.Parallel()
+
+		// The walk stops where the definition repeats. Each element decodes
+		// through its own type's unmarshaler, which checks the next level, so
+		// a null further down is still rejected, by the array that holds it.
+		for _, tc := range []struct {
+			payload string
+			// wantErr ends the expected error; "" when the payload is valid.
+			wantErr string
+		}{
+			{`{"tree":[null]}`, "field tree[0] in NullRecursiveArray: must not be null"},
+			{`{"tree":[[[null]]]}`, "RecursiveTree[0]: must not be null"},
+			{`{"tree":[[[]],[]]}`, ""},
+			{`{"ping":[[null]]}`, "field ping[0][0] in NullRecursiveArray: must not be null"},
+			{`{"ping":[[[[null]]]]}`, "PingList[0][0]: must not be null"},
+			{`{"ping":[[[[]]]]}`, ""},
+		} {
+			var v testNullTypes.NullRecursiveArray
+
+			err := json.Unmarshal([]byte(tc.payload), &v)
+			if tc.wantErr == "" {
+				require.NoError(t, err, "payload %s", tc.payload)
+
+				continue
+			}
+
+			require.Error(t, err, "payload %s", tc.payload)
+			assert.Contains(t, err.Error(), tc.wantErr, "payload %s", tc.payload)
+		}
+	})
+}
+
 // TestJsonUnmarshalOneOfPrimitiveTemporal covers a primitive `oneOf` whose
 // string variant carries `format: date-time`.
 //
