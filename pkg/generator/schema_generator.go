@@ -2255,6 +2255,38 @@ func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
 	return false
 }
 
+// generateInlineComposition generates an inline anyOf or allOf, and "X or
+// null" as a pointer to X's type. handled reports whether t was one of them.
+func (g *schemaGenerator) generateInlineComposition(t *schemas.Type, scope nameScope) (codegen.Type, bool, error) {
+	if branch, ok := g.nullableSingleBranch(t); ok {
+		dt, err := g.generateNullableBranch(branch, scope)
+
+		return dt, true, err
+	}
+
+	if len(t.AnyOf) > 0 {
+		dt, err := g.generateAnyOfType(t, scope)
+
+		return dt, true, err
+	}
+
+	if len(t.AllOf) > 0 {
+		// The conditional-discriminator pattern compiles to a validator
+		// that attaches only on a declared type, so it skips the merge.
+		if _, ok := g.detectConditionalDiscriminator(t); ok {
+			dt, err := g.generateDeclaredType(t, scope)
+
+			return dt, true, err
+		}
+
+		dt, err := g.generateAllOfType(t, scope)
+
+		return dt, true, err
+	}
+
+	return nil, false, nil
+}
+
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
@@ -2271,18 +2303,8 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		g.warnUncompiledConditional(t, scope)
 
-		if len(t.AnyOf) > 0 {
-			return g.generateAnyOfType(t, scope)
-		}
-
-		if len(t.AllOf) > 0 {
-			// The conditional-discriminator pattern compiles to a validator
-			// that attaches only on a declared type, so it skips the merge.
-			if _, ok := g.detectConditionalDiscriminator(t); ok {
-				return g.generateDeclaredType(t, scope)
-			}
-
-			return g.generateAllOfType(t, scope)
+		if dt, handled, err := g.generateInlineComposition(t, scope); handled {
+			return dt, err
 		}
 
 		// Composition forms that emit a named wrapper or holder must be
