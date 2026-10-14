@@ -6,13 +6,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	testIntegerFormat "github.com/plheide/go-jsonschema/tests/data/core/integerFormat"
+	testOpenAPIIntFormats "github.com/plheide/go-jsonschema/tests/data/openAPIIntFormats"
 )
 
 // TestIntegerFormatEnumValidation covers integer enums declaring a sized
-// format. Each validator decodes into the sized type and compares every allowed
-// value with reflect.DeepEqual; an untyped allowed-values list holds ints, so
-// no value ever matched and every one was rejected, valid ones included.
+// format, under OpenAPIIntFormats. Each validator decodes into the sized type
+// and compares every allowed value with reflect.DeepEqual; an untyped
+// allowed-values list holds ints, so no value ever matched and every one was
+// rejected, valid ones included.
 func TestIntegerFormatEnumValidation(t *testing.T) {
 	t.Parallel()
 
@@ -29,7 +30,7 @@ func TestIntegerFormatEnumValidation(t *testing.T) {
 		{`{"mixed": 66}`, true},
 		{`{"mixed": 2147483648}`, false},
 	} {
-		var v testIntegerFormat.IntegerFormatEnum
+		var v testOpenAPIIntFormats.IntegerFormatEnum
 
 		err := json.Unmarshal([]byte(tc.payload), &v)
 		if tc.valid {

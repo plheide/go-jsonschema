@@ -601,8 +601,18 @@ func TestMinSizeInt(t *testing.T) {
 
 	cfg := basicConfig
 	cfg.MinSizedInts = true
+	cfg.OpenAPIIntFormats = true
 
 	testExamples(t, cfg, "./data/minSizedInts")
+}
+
+func TestOpenAPIIntFormats(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.OpenAPIIntFormats = true
+
+	testExamples(t, cfg, "./data/openAPIIntFormats")
 }
 
 func TestAliasSingleAllOfAnyOfRefs(t *testing.T) {

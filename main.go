@@ -57,6 +57,7 @@ var (
 	tags                          []string
 	structNameFromTitle           bool
 	minSizedInts                  bool
+	openAPIIntFormats             bool
 	minimalNames                  bool
 	disableReadOnlyValidation     bool
 	validateNullTypes             bool
@@ -152,6 +153,7 @@ var (
 				Tags:                       tags,
 				OnlyModels:                 onlyModels,
 				MinSizedInts:               minSizedInts,
+				OpenAPIIntFormats:          openAPIIntFormats,
 				MinimalNames:               minimalNames,
 				DisableReadOnlyValidation:  disableReadOnlyValidation,
 				ValidateNullTypes:          validateNullTypes,
@@ -295,6 +297,8 @@ also look for foo.json if --resolve-extension json is provided.`)
 		`Specify which struct tags to generate. Defaults are json, yaml, mapstructure`)
 	rootCmd.PersistentFlags().BoolVar(&minSizedInts, "min-sized-ints", false,
 		"Uses sized int and uint values based on the min and max values for the field")
+	rootCmd.PersistentFlags().BoolVar(&openAPIIntFormats, "openapi-int-formats", false,
+		"Map an integer's OpenAPI format, int32 or int64, to the Go integer type of that width")
 	rootCmd.PersistentFlags().BoolVar(&disableReadOnlyValidation, "disable-readonly-validation", false,
 		"Do not include validation of readonly fields")
 	rootCmd.PersistentFlags().BoolVar(&minimalNames, "minimal-names", false,
