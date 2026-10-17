@@ -6,8 +6,10 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-// A oneOf of a $ref and null falls back to interface{}. The referenced schema's
-// constraints go unchecked with it, which is reported by naming the $ref.
+// A oneOf of a $ref and null, where the referenced schema admits null too: a null
+// matches both branches, so the oneOf rejects it, which no pointer can say. It
+// falls back to interface{}, and the referenced schema's constraints go unchecked
+// with it, which is reported by naming the $ref.
 type OneOfRefOrNull struct {
 	// Pair corresponds to the JSON schema field "pair".
 	Pair interface{} `json:"pair,omitempty,omitzero" yaml:"pair,omitempty" mapstructure:"pair,omitempty"`

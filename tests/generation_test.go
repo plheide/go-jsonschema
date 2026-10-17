@@ -560,6 +560,18 @@ func TestOneOfDiscriminated(t *testing.T) {
 	testExamples(t, basicConfig, "./data/oneOfDiscriminated")
 }
 
+func TestNullableEnum(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/nullableEnum")
+}
+
+func TestNullableBranch(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/nullableBranch")
+}
+
 func TestRecursiveAllOf(t *testing.T) {
 	t.Parallel()
 

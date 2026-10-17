@@ -19,6 +19,8 @@ import (
 	testFormatYAMLURI "github.com/plheide/go-jsonschema/tests/data/formatValidation/uri"
 	testFormatYAMLURIRef "github.com/plheide/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatYAMLUUID "github.com/plheide/go-jsonschema/tests/data/formatValidation/uuid"
+	testNullableBranch "github.com/plheide/go-jsonschema/tests/data/nullableBranch"
+	testNullableEnum "github.com/plheide/go-jsonschema/tests/data/nullableEnum"
 	testRootConstNull "github.com/plheide/go-jsonschema/tests/data/rootComposition/rootConstNull"
 	testYAMLStrictAddlFalse "github.com/plheide/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
 	testYAMLStrictAddlFalseEmpty "github.com/plheide/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
@@ -311,4 +313,38 @@ func TestYamlMarshalEnumWrapper(t *testing.T) {
 	out, err := yamlv3.Marshal(&v)
 	require.NoError(t, err)
 	require.Equal(t, "null\n", string(out))
+}
+
+// TestYamlUnmarshalNullableBranch is TestJsonUnmarshalNullableBranch for YAML.
+func TestYamlUnmarshalNullableBranch(t *testing.T) {
+	t.Parallel()
+
+	var v testNullableBranch.NullableBranch
+
+	require.NoError(t, yamlv3.Unmarshal([]byte("refOneOf: null\nitems: [null, {k: b}]\n"), &v))
+	assert.Nil(t, v.RefOneOf)
+	require.Len(t, v.Items, 2)
+	assert.Nil(t, v.Items[0])
+	require.NotNil(t, v.Items[1])
+	assert.Equal(t, "b", v.Items[1].K)
+
+	var w testNullableBranch.NullableBranch
+
+	require.Error(t, yamlv3.Unmarshal([]byte("refOneOf: {}\n"), &w))
+}
+
+// TestYamlUnmarshalNullableEnum is TestJsonUnmarshalNullableEnum for YAML.
+func TestYamlUnmarshalNullableEnum(t *testing.T) {
+	t.Parallel()
+
+	var v testNullableEnum.NullableEnum
+
+	require.NoError(t, yamlv3.Unmarshal([]byte("mode: fast\nwithNull: null\nlevel: 1\n"), &v))
+	assert.Nil(t, v.WithNull)
+	require.NotNil(t, v.Level)
+	assert.Equal(t, testNullableEnum.NullableEnumLevel(1), *v.Level)
+
+	var w testNullableEnum.NullableEnum
+
+	require.Error(t, yamlv3.Unmarshal([]byte("mode: fast\nwithoutNull: null\n"), &w))
 }

@@ -3,7 +3,6 @@
 package test
 
 import "encoding/json"
-import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
@@ -114,124 +113,10 @@ func (j *PeerName) UnmarshalYAML(value *yaml.Node) error {
 // Represents an individual Limbo testcase.
 type Testcase struct {
 	// For server (i.e. client-side) validation: the expected peer name, if any
-	ExpectedPeerName *TestcaseExpectedPeerName `json:"expected_peer_name" yaml:"expected_peer_name" mapstructure:"expected_peer_name"`
+	ExpectedPeerName *PeerName `json:"expected_peer_name" yaml:"expected_peer_name" mapstructure:"expected_peer_name"`
 
 	// For server (i.e. client-side) validation: the expected peer name, if any
-	NotExpectedPeerName *TestcaseNotExpectedPeerName `json:"not_expected_peer_name,omitempty,omitzero" yaml:"not_expected_peer_name,omitempty" mapstructure:"not_expected_peer_name,omitempty"`
-}
-
-// For server (i.e. client-side) validation: the expected peer name, if any
-type TestcaseExpectedPeerName struct {
-	// The kind of peer name
-	Kind PeerKind `json:"kind" yaml:"kind" mapstructure:"kind"`
-
-	// The peer's name
-	Value string `json:"value" yaml:"value" mapstructure:"value"`
-}
-
-type TestcaseExpectedPeerName_0 = PeerName
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TestcaseExpectedPeerName) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw TestcaseExpectedPeerName: %w", err)
-	}
-	var testcaseExpectedPeerName_0 PeerName
-	var errs []error
-	if err := testcaseExpectedPeerName_0.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 1 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain TestcaseExpectedPeerName
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal TestcaseExpectedPeerName: %w", err)
-	}
-	*j = TestcaseExpectedPeerName(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw TestcaseExpectedPeerName: %w", err)
-	}
-	var testcaseExpectedPeerName_0 PeerName
-	var errs []error
-	if err := testcaseExpectedPeerName_0.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 1 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain TestcaseExpectedPeerName
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal TestcaseExpectedPeerName: %w", err)
-	}
-	*j = TestcaseExpectedPeerName(plain)
-	return nil
-}
-
-// For server (i.e. client-side) validation: the expected peer name, if any
-type TestcaseNotExpectedPeerName struct {
-	// The kind of peer name
-	Kind PeerKind `json:"kind" yaml:"kind" mapstructure:"kind"`
-
-	// The peer's name
-	Value string `json:"value" yaml:"value" mapstructure:"value"`
-}
-
-type TestcaseNotExpectedPeerName_0 = PeerName
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TestcaseNotExpectedPeerName) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw TestcaseNotExpectedPeerName: %w", err)
-	}
-	var testcaseNotExpectedPeerName_0 PeerName
-	var errs []error
-	if err := testcaseNotExpectedPeerName_0.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 1 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain TestcaseNotExpectedPeerName
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal TestcaseNotExpectedPeerName: %w", err)
-	}
-	*j = TestcaseNotExpectedPeerName(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TestcaseNotExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw TestcaseNotExpectedPeerName: %w", err)
-	}
-	var testcaseNotExpectedPeerName_0 PeerName
-	var errs []error
-	if err := testcaseNotExpectedPeerName_0.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 1 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain TestcaseNotExpectedPeerName
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal TestcaseNotExpectedPeerName: %w", err)
-	}
-	*j = TestcaseNotExpectedPeerName(plain)
-	return nil
+	NotExpectedPeerName *PeerName `json:"not_expected_peer_name,omitempty,omitzero" yaml:"not_expected_peer_name,omitempty" mapstructure:"not_expected_peer_name,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

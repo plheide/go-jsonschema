@@ -33,6 +33,8 @@ import (
 	testMultiTypeEmbedded "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/embeddedInStruct"
 	testMultiTypeAll "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/stringNumberBoolNull"
 	testMultiTypeStrNum "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/stringOrNumber"
+	testNullableBranch "github.com/plheide/go-jsonschema/tests/data/nullableBranch"
+	testNullableEnum "github.com/plheide/go-jsonschema/tests/data/nullableEnum"
 	testOneOfDiscAnimal "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/animal"
 	testOneOfArrayVariants "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/arrayVariants"
 	testOneOfNoDisc "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/noDiscriminator"
@@ -2252,4 +2254,72 @@ func TestJsonUnmarshalRecursiveAllOfRef(t *testing.T) {
 			assert.Error(t, json.Unmarshal([]byte(in), &v), in)
 		}
 	})
+}
+
+// TestJsonUnmarshalNullableBranch decodes "X or null", a oneOf or anyOf of a
+// schema and {"type": "null"}, generated as a pointer to X's type: a null is
+// nil, and anything else is decoded and checked as X.
+func TestJsonUnmarshalNullableBranch(t *testing.T) {
+	t.Parallel()
+
+	var v testNullableBranch.NullableBranch
+
+	require.NoError(t, json.Unmarshal([]byte(`{"refOneOf":null,"refAnyOf":null,"inlineObject":null}`), &v))
+	assert.Nil(t, v.RefOneOf)
+	assert.Nil(t, v.RefAnyOf)
+	assert.Nil(t, v.InlineObject)
+
+	payload := `{"refOneOf":{"k":"a"},"inlineObject":{"id":1},"inlineArray":["x"],"items":[null,{"k":"b"}]}`
+	require.NoError(t, json.Unmarshal([]byte(payload), &v))
+	require.NotNil(t, v.RefOneOf)
+	assert.Equal(t, "a", v.RefOneOf.K)
+	require.NotNil(t, v.InlineObject)
+	assert.Equal(t, 1, v.InlineObject.Id)
+	require.NotNil(t, v.InlineArray)
+	assert.Equal(t, testNullableBranch.NullableBranchInlineArray{"x"}, *v.InlineArray)
+	require.Len(t, v.Items, 2)
+	assert.Nil(t, v.Items[0])
+	require.NotNil(t, v.Items[1])
+	assert.Equal(t, "b", v.Items[1].K)
+
+	// X's own checks still run on a value that is not null.
+	for _, payload := range []string{`{"refOneOf":{}}`, `{"refAnyOf":{}}`, `{"inlineObject":{}}`, `{"items":[{}]}`} {
+		var w testNullableBranch.NullableBranch
+
+		require.Error(t, json.Unmarshal([]byte(payload), &w), "payload %s", payload)
+	}
+}
+
+// TestJsonUnmarshalNullableEnum decodes enums that admit null by their type,
+// their values or both: a null the enum lists is nil, and one it does not
+// list is rejected, since the type check passes but the enum check fails.
+func TestJsonUnmarshalNullableEnum(t *testing.T) {
+	t.Parallel()
+
+	var v testNullableEnum.NullableEnum
+
+	payload := `{"mode":"fast","withNull":null,"typeless":null,"level":null}`
+	require.NoError(t, json.Unmarshal([]byte(payload), &v))
+	assert.Nil(t, v.WithNull)
+	assert.Nil(t, v.Typeless)
+	assert.Nil(t, v.Level)
+
+	payload = `{"mode":"fast","withNull":"full","typeless":"on","level":2,"viaRef":"stop"}`
+	require.NoError(t, json.Unmarshal([]byte(payload), &v))
+	require.NotNil(t, v.WithNull)
+	assert.Equal(t, testNullableEnum.NullableEnumWithNullFull, *v.WithNull)
+	require.NotNil(t, v.Level)
+	assert.Equal(t, testNullableEnum.NullableEnumLevel(2), *v.Level)
+
+	for _, payload := range []string{
+		`{"mode":"fast","withoutNull":null}`,
+		`{"mode":null}`,
+		`{"mode":"fast","viaRef":null}`,
+		`{"mode":"fast","withNull":"other"}`,
+		`{"mode":"fast","level":3}`,
+	} {
+		var w testNullableEnum.NullableEnum
+
+		require.Error(t, json.Unmarshal([]byte(payload), &w), "payload %s", payload)
+	}
 }

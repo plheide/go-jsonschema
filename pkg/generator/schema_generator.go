@@ -593,6 +593,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		}
 
 		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, false)...)
+		validators = append(validators, g.enumNullValidators(tt, decl.Name)...)
 
 		if v := g.strictFieldsValidatorFor(t, tt, decl.Name); v != nil {
 			validators = append(validators, v)
@@ -704,6 +705,46 @@ func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t
 	if (isMap && t.IsSubSchemaTypeElem()) || len(validators) > 0 {
 		g.generateUnmarshaler(decl, validators)
 	}
+}
+
+// enumNullValidators rejects a property present with an explicit null where
+// its type admits null but its enum does not list it: the type check passes
+// and the enum check fails. The field is a pointer, so the null would decode
+// to nil unchecked. This is enum validation, so unlike ValidateNullTypes it
+// is always on.
+func (g *schemaGenerator) enumNullValidators(tt *codegen.StructType, declName string) []validator {
+	var out []validator
+
+	for i, f := range tt.Fields {
+		s := f.SchemaType
+		for hops := 0; s != nil && s.Ref != "" && hops < maxNullCheckRefHops; hops++ {
+			s = g.localRefTarget(s)
+		}
+
+		if s == nil || s.Enum == nil || enumListsNull(s) {
+			continue
+		}
+
+		if _, nullable := isTypeNullable(s); !nullable {
+			continue
+		}
+
+		// The key is matched as nullTypeValidators matches it.
+		v := &nonNullValidator{jsonName: f.JSONName, declName: declName}
+
+		for j, other := range tt.Fields {
+			if j == i || !strings.EqualFold(other.JSONName, f.JSONName) {
+				continue
+			}
+
+			v.caseVariants = append(v.caseVariants, other.JSONName)
+			v.exactOnly = v.exactOnly || j < i
+		}
+
+		out = append(out, v)
+	}
+
+	return out
 }
 
 // nullTypeValidators builds the opt-in `type` checks for explicit nulls. The
@@ -2255,6 +2296,38 @@ func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
 	return false
 }
 
+// generateInlineComposition generates an inline anyOf or allOf, and "X or
+// null" as a pointer to X's type. handled reports whether t was one of them.
+func (g *schemaGenerator) generateInlineComposition(t *schemas.Type, scope nameScope) (codegen.Type, bool, error) {
+	if branch, ok := g.nullableSingleBranch(t); ok {
+		dt, err := g.generateNullableBranch(branch, scope)
+
+		return dt, true, err
+	}
+
+	if len(t.AnyOf) > 0 {
+		dt, err := g.generateAnyOfType(t, scope)
+
+		return dt, true, err
+	}
+
+	if len(t.AllOf) > 0 {
+		// The conditional-discriminator pattern compiles to a validator
+		// that attaches only on a declared type, so it skips the merge.
+		if _, ok := g.detectConditionalDiscriminator(t); ok {
+			dt, err := g.generateDeclaredType(t, scope)
+
+			return dt, true, err
+		}
+
+		dt, err := g.generateAllOfType(t, scope)
+
+		return dt, true, err
+	}
+
+	return nil, false, nil
+}
+
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
@@ -2271,18 +2344,8 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		g.warnUncompiledConditional(t, scope)
 
-		if len(t.AnyOf) > 0 {
-			return g.generateAnyOfType(t, scope)
-		}
-
-		if len(t.AllOf) > 0 {
-			// The conditional-discriminator pattern compiles to a validator
-			// that attaches only on a declared type, so it skips the merge.
-			if _, ok := g.detectConditionalDiscriminator(t); ok {
-				return g.generateDeclaredType(t, scope)
-			}
-
-			return g.generateAllOfType(t, scope)
+		if dt, handled, err := g.generateInlineComposition(t, scope); handled {
+			return dt, err
 		}
 
 		// Composition forms that emit a named wrapper or holder must be
@@ -2367,7 +2430,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		return nil, err
 	}
 
-	if typeIsNullable {
+	if typeIsNullable || enumHoldsNullAsNil(t) {
 		return codegen.WrapTypeInPointer(dt), nil
 	}
 
@@ -2386,6 +2449,77 @@ func (g *Generator) singularScope(scope nameScope) nameScope {
 	return scope.add("Elem")
 }
 
+// enumValueType is the JSON type of t's enum values when there is one besides
+// null: t's single type, the primitive one other than null in a type list such
+// as ["string", "null"], or without a type list, the one type of every value
+// that is not null. A null value is then left to the pointer that holds the
+// enum. ok is false when the values have several types.
+func enumValueType(t *schemas.Type) (string, bool) {
+	switch {
+	case len(t.Type) == 1:
+		return t.Type[0], true
+
+	case len(t.Type) == 2 && slices.Contains(t.Type, schemas.TypeNameNull):
+		for _, name := range t.Type {
+			if name != schemas.TypeNameNull {
+				return name, schemas.IsPrimitiveType(name)
+			}
+		}
+
+	case len(t.Type) == 0 && enumListsNull(t):
+		var name string
+
+		for _, v := range t.Enum {
+			var valueType string
+
+			switch v.(type) {
+			case nil:
+				continue
+
+			case string:
+				valueType = schemas.TypeNameString
+
+			case float64:
+				valueType = schemas.TypeNameNumber
+
+			case bool:
+				valueType = schemas.TypeNameBoolean
+
+			default:
+				return "", false
+			}
+
+			if name != "" && name != valueType {
+				return "", false
+			}
+
+			name = valueType
+		}
+
+		return name, name != ""
+	}
+
+	return "", false
+}
+
+// enumHoldsNullAsNil reports whether t is an enum listing null beside values
+// of one other type. generateEnumType gives it that type, so it holds null as
+// a nil pointer, as a type list admitting null does.
+func enumHoldsNullAsNil(t *schemas.Type) bool {
+	if t.Enum == nil || !enumListsNull(t) {
+		return false
+	}
+
+	name, ok := enumValueType(t)
+
+	return ok && name != schemas.TypeNameNull
+}
+
+// enumListsNull reports whether null is one of t's enum values.
+func enumListsNull(t *schemas.Type) bool {
+	return slices.Contains(t.Enum, any(nil))
+}
+
 func (g *schemaGenerator) generateEnumType(
 	t *schemas.Type, scope nameScope,
 ) (codegen.Type, error) {
@@ -2397,11 +2531,11 @@ func (g *schemaGenerator) generateEnumType(
 
 	var enumType codegen.Type
 
-	if len(t.Type) == 1 {
+	if typeName, ok := enumValueType(t); ok {
 		var err error
 		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(
-			t.Type[0],
-			g.typeFormat(t, t.Type[0]),
+			typeName,
+			g.typeFormat(t, typeName),
 			false,
 			g.config.MinSizedInts,
 			&t.Minimum,
@@ -2409,15 +2543,18 @@ func (g *schemaGenerator) generateEnumType(
 			&t.ExclusiveMinimum,
 			&t.ExclusiveMaximum,
 		); err != nil {
-			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
+			return nil, fmt.Errorf("invalid type %q: %w", typeName, err)
 		}
 
-		// Enforce integer type for enum values.
-		if t.Type[0] == "integer" {
+		// Enforce integer type for enum values. A null value is left as it is:
+		// the field holding the enum is a pointer, so it decodes to nil.
+		if typeName == "integer" {
 			for i, v := range t.Enum {
 				switch v := v.(type) {
 				case float64:
 					t.Enum[i] = int(v)
+
+				case nil:
 
 				default:
 					return nil, fmt.Errorf("%w %v", errEnumNonPrimitiveVal, v)
@@ -2425,7 +2562,7 @@ func (g *schemaGenerator) generateEnumType(
 			}
 		}
 
-		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses interface{}, which cannot have methods.
+		wrapInStruct = typeName == schemas.TypeNameNull // Null uses interface{}, which cannot have methods.
 	} else {
 		if len(t.Type) > 1 {
 			// TODO: Support multiple types.

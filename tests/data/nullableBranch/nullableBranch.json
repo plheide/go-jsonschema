@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A oneOf or anyOf of one schema and null, which says that schema or null, is a pointer to the schema's type: a $ref's declared type, or an inline object or array declared under the property's name.",
+  "properties": {
+    "refOneOf": { "oneOf": [{ "$ref": "#/definitions/Pair" }, { "type": "null" }] },
+    "refAnyOf": { "anyOf": [{ "type": "null" }, { "$ref": "#/definitions/Pair" }] },
+    "inlineObject": {
+      "oneOf": [
+        { "type": "object", "required": ["id"], "properties": { "id": { "type": "integer" } } },
+        { "type": "null" }
+      ]
+    },
+    "inlineArray": { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }] },
+    "items": {
+      "type": "array",
+      "items": { "oneOf": [{ "$ref": "#/definitions/Pair" }, { "type": "null" }] }
+    },
+    "ambiguous": {
+      "description": "The referenced schema admits null too, so a null matches both branches and the oneOf rejects it: no pointer can say that, so this stays as it was.",
+      "oneOf": [{ "$ref": "#/definitions/NullablePair" }, { "type": "null" }]
+    }
+  },
+  "definitions": {
+    "Pair": { "type": "object", "required": ["k"], "properties": { "k": { "type": "string" } } },
+    "NullablePair": { "type": ["object", "null"], "required": ["k"], "properties": { "k": { "type": "string" } } }
+  }
+}
