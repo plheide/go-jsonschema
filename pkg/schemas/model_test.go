@@ -127,3 +127,46 @@ func TestRootSchemaRejectsNullItems(t *testing.T) {
 		t.Fatalf("err = %v, want %v", err, schemas.ErrNullNotASchema)
 	}
 }
+
+// TestRejectsNullSubschemas covers a null where a composition entry, a
+// property, a pattern property, a dependent schema or a definition must be a
+// schema. encoding/json leaves such a member as a nil *Type without calling
+// any decoder hook. In a composition, a property or a definition the
+// generator then dereferenced it and crashed; the other two were read as
+// absent. The parse now rejects each, and names the member.
+func TestRejectsNullSubschemas(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		schema string
+		at     string
+	}{
+		{`{"allOf": [{"type": "string"}, null]}`, `allOf[1]`},
+		{`{"anyOf": [null]}`, `anyOf[0]`},
+		{`{"oneOf": [{"type": "string"}, null]}`, `oneOf[1]`},
+		{`{"type": "object", "properties": {"a": {"allOf": [null]}}}`, `allOf[0]`},
+		{`{"type": "object", "properties": {"b": {"type": "string"}, "a": null}}`, `properties["a"]`},
+		{`{"type": "object", "patternProperties": {"^x": null}}`, `patternProperties["^x"]`},
+		{`{"type": "object", "dependentSchemas": {"a": null}}`, `dependentSchemas["a"]`},
+		{`{"$defs": {"D": null}}`, `$defs["D"]`},
+		{`{"definitions": {"D": null}}`, `definitions["D"]`},
+		{`{"$defs": {"D": {"definitions": {"E": null}}}}`, `definitions["E"]`},
+	} {
+		_, err := schemas.FromJSONReader(strings.NewReader(tc.schema))
+		if !errors.Is(err, schemas.ErrNullNotASchema) {
+			t.Errorf("%s: err = %v, want %v", tc.schema, err, schemas.ErrNullNotASchema)
+
+			continue
+		}
+
+		if !strings.Contains(err.Error(), tc.at+": ") {
+			t.Errorf("%s: err = %v, want it to name %s", tc.schema, err, tc.at)
+		}
+	}
+
+	if _, err := schemas.FromJSONReader(strings.NewReader(
+		`{"allOf": [{"type": "string"}], "properties": {"a": {"$ref": "#/$defs/D"}}, "$defs": {"D": {"type": "string"}}}`,
+	)); err != nil {
+		t.Errorf("valid schema: err = %v", err)
+	}
+}
