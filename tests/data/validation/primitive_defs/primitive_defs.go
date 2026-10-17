@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "regexp"
 import "unicode/utf8"
 
 type MinStr string
@@ -38,6 +39,9 @@ func (j *MinStr) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type PrimitiveDefs struct {
+	// MyCode corresponds to the JSON schema field "myCode".
+	MyCode *UpperCode `json:"myCode,omitempty,omitzero" yaml:"myCode,omitempty" mapstructure:"myCode,omitempty"`
+
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
 	MyNullableString *MinStr `json:"myNullableString,omitempty,omitzero" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
 
@@ -78,5 +82,35 @@ func (j *PrimitiveDefs) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal PrimitiveDefs: %w", err)
 	}
 	*j = PrimitiveDefs(plain)
+	return nil
+}
+
+type UpperCode string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *UpperCode) UnmarshalJSON(value []byte) error {
+	type Plain UpperCode
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal UpperCode: %w", err)
+	}
+	if matched, _ := regexp.MatchString(`^[A-Z]+$`, string(plain)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "UpperCode", `^[A-Z]+$`)
+	}
+	*j = UpperCode(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *UpperCode) UnmarshalYAML(value *yaml.Node) error {
+	type Plain UpperCode
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal UpperCode: %w", err)
+	}
+	if matched, _ := regexp.MatchString(`^[A-Z]+$`, string(plain)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "UpperCode", `^[A-Z]+$`)
+	}
+	*j = UpperCode(plain)
 	return nil
 }

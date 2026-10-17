@@ -1581,11 +1581,6 @@ func TestJsonUnmarshalConditionalDiscriminator(t *testing.T) {
 	})
 }
 
-// TestJsonUnmarshalConditionalDiscriminatorEnumForm exercises the runtime
-// behavior of the enum-form discriminator dispatch: per-variant required
-// enforcement when discStr is in the branch's value set, runtime
-// interpolation of the offending value into the error message, and the
-// const-vs-enum precedence + overlapping-branch semantics.
 // TestJsonUnmarshalConditionalDiscriminatorEscapedText: discriminator values
 // and a field name carrying a quote, a backslash or a percent sign reach the
 // generated error literals escaped, so the code compiles and the message names
@@ -1622,6 +1617,11 @@ func TestJsonUnmarshalConditionalDiscriminatorNested(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(`{"pet": {"kind": "cat"}}`), &v))
 }
 
+// TestJsonUnmarshalConditionalDiscriminatorEnumForm exercises the runtime
+// behavior of the enum-form discriminator dispatch: per-variant required
+// enforcement when discStr is in the branch's value set, runtime
+// interpolation of the offending value into the error message, and the
+// const-vs-enum precedence + overlapping-branch semantics.
 func TestJsonUnmarshalConditionalDiscriminatorEnumForm(t *testing.T) {
 	t.Parallel()
 
