@@ -314,6 +314,13 @@ func TestPrimitiveDefs(t *testing.T) {
 			// itself.
 			wantErr: errors.New("unmarshal PrimitiveDefs: field MinStr length: must be >= 5"),
 		},
+		{
+			desc: "myCode does not match its pattern",
+			data: `{"myString": "hello", "myCode": "abc"}`,
+			// The pattern check names the declared type too, like the length
+			// check above.
+			wantErr: errors.New("unmarshal PrimitiveDefs: field UpperCode pattern match: must match ^[A-Z]+$"),
+		},
 	}
 
 	for _, tC := range testCases {

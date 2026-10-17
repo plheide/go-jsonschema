@@ -1303,6 +1303,7 @@ func (g *schemaGenerator) defaultValidatorFor(
 		defaultValueType: dvType,
 		defaultValue:     f.DefaultValue,
 		isPointer:        isPointer,
+		warner:           g.warner,
 	}
 }
 

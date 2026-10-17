@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Defaults written as literals of their fields' Go types: struct fields found by their JSON names, nested pointers, maps and lists. A default no value of its field's type can hold is left out with a warning.",
+  "type": "object",
+  "properties": {
+    "enabled": { "type": "boolean", "default": "true" },
+    "count": { "type": "integer", "default": "5" },
+    "big": { "type": "integer", "default": 9223372036854774784 },
+    "huge": { "type": "integer", "default": 9223372036854775808 },
+    "ratio": { "type": "number", "default": "half" },
+    "tags": { "type": "array", "items": { "type": "string" }, "default": "a" },
+    "codes": { "type": "array", "items": { "type": "string" }, "default": [1, 2] },
+    "started": { "type": "string", "format": "date-time", "default": "2020-01-01T00:00:00Z" },
+    "labels": { "$ref": "#/definitions/Labels", "default": { "team": "core", "tier": "1" } },
+    "server": {
+      "$ref": "#/definitions/Server",
+      "default": {
+        "host_name": "localhost",
+        "port": 8080,
+        "note": "primary",
+        "aliases": ["a", "b"],
+        "tls": { "enabled": true }
+      }
+    },
+    "servers": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Server" },
+      "default": [{ "host_name": "a" }, { "host_name": "b", "port": 1 }]
+    },
+    "mismatchedServer": { "$ref": "#/definitions/Server", "default": { "host_name": "x", "port": "80" } },
+    "unknownKeyServer": { "$ref": "#/definitions/Server", "default": { "host_name": "x", "colour": "red" } }
+  },
+  "definitions": {
+    "Labels": { "type": "object", "additionalProperties": { "type": "string" } },
+    "Server": {
+      "type": "object",
+      "properties": {
+        "host_name": { "type": "string" },
+        "port": { "type": "integer" },
+        "note": { "type": "string" },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "tls": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }
+      },
+      "required": ["host_name"]
+    }
+  }
+}

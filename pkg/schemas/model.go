@@ -27,6 +27,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -304,8 +305,6 @@ func (value *Type) ConvertAllRefs(absolutePath string) error {
 	return updateAllRefsValues(&val, absolutePath)
 }
 
-// UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
-// and `false` is equivalent to `{"not": {}}`.
 // isJSONArray reports whether raw is a JSON array, ignoring leading
 // whitespace. Used to tell draft-07 `dependencies` property dependencies
 // (arrays of property names) from schema dependencies without relying on a
@@ -376,6 +375,46 @@ func isJSONNull(raw []byte) bool {
 	return string(bytes.TrimSpace(raw)) == "null"
 }
 
+// nullSubschema names the first composition entry, property, pattern
+// property, dependent schema or definition of obj that is null, or returns ""
+// when there is none. Unlike `items` and `dependencies`, these never reach a
+// decoder hook: encoding/json leaves a null list entry or map value as a nil
+// *Type, which the generator crashed on or silently ignored.
+// legacyDefinitions are the draft-07 `definitions`, not yet merged into obj.
+func nullSubschema(obj *ObjectAsType, legacyDefinitions Definitions) string {
+	for _, list := range []struct {
+		keyword string
+		members []*Type
+	}{
+		{"allOf", obj.AllOf},
+		{"anyOf", obj.AnyOf},
+		{"oneOf", obj.OneOf},
+	} {
+		if i := slices.Index(list.members, nil); i >= 0 {
+			return fmt.Sprintf("%s[%d]", list.keyword, i)
+		}
+	}
+
+	for _, set := range []struct {
+		keyword string
+		members map[string]*Type
+	}{
+		{"properties", obj.Properties},
+		{"patternProperties", obj.PatternProperties},
+		{"dependentSchemas", obj.DependentSchemas},
+		{"$defs", obj.Definitions},
+		{"definitions", legacyDefinitions},
+	} {
+		for _, name := range slices.Sorted(maps.Keys(set.members)) {
+			if set.members[name] == nil {
+				return fmt.Sprintf("%s[%q]", set.keyword, name)
+			}
+		}
+	}
+
+	return ""
+}
+
 // isJSONObject reports whether raw is a JSON object, ignoring leading
 // whitespace.
 func isJSONObject(raw []byte) bool {
@@ -393,6 +432,8 @@ func isJSONObject(raw []byte) bool {
 	return false
 }
 
+// UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
+// and `false` is equivalent to `{"not": {}}`.
 func (value *Type) UnmarshalJSON(raw []byte) error {
 	var b bool
 	if err := json.Unmarshal(raw, &b); err == nil {
@@ -447,6 +488,13 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	}{}
 	if err := json.Unmarshal(raw, &legacyObj); err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
+	}
+
+	// A null where a schema belongs is rejected, as for `items`. The draft-07
+	// `definitions` are checked before they are merged, so the error names
+	// the keyword the document used.
+	if at := nullSubschema(&obj, legacyObj.Definitions); at != "" {
+		return fmt.Errorf("%s: %w", at, ErrNullNotASchema)
 	}
 
 	var (

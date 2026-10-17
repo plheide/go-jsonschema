@@ -6,6 +6,10 @@
     "minStr": {
       "type": "string",
       "minLength": 5
+    },
+    "upperCode": {
+      "type": "string",
+      "pattern": "^[A-Z]+$"
     }
   },
   "properties": {
@@ -14,6 +18,9 @@
     },
     "myNullableString": {
       "$ref": "#/$defs/minStr"
+    },
+    "myCode": {
+      "$ref": "#/$defs/upperCode"
     }
   },
   "required": [
