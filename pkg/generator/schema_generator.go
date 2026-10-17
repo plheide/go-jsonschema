@@ -654,6 +654,10 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			JSONName:   decl.Name,
 		}, tt, false)
 
+		if v := g.nonNullValueValidatorFor(t, decl.Name); v != nil {
+			validators = append(validators, v)
+		}
+
 		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
 			g.generateUnmarshaler(&decl, validators)
 		}
@@ -700,6 +704,10 @@ func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t
 	field := codegen.StructField{Type: tt, SchemaType: t, JSONName: decl.Name}
 	if fv := g.elementFormatValidator(field, tt, false); fv != nil {
 		validators = append(validators, fv)
+	}
+
+	if v := g.nonNullValueValidatorFor(t, decl.Name); v != nil {
+		validators = append(validators, v)
 	}
 
 	if (isMap && t.IsSubSchemaTypeElem()) || len(validators) > 0 {
@@ -774,29 +782,120 @@ func (g *schemaGenerator) nullTypeValidators(
 	var out []validator
 
 	for i, f := range tt.Fields {
-		if !g.schemaExcludesNullResolved(f.SchemaType) {
+		excludesNull := g.schemaExcludesNullResolved(f.SchemaType)
+		forbidden := g.nullForbiddenLevels(f.SchemaType)
+
+		if !excludesNull && len(forbidden) == 0 {
 			continue
 		}
-
-		v := &nonNullValidator{jsonName: f.JSONName, declName: declName}
 
 		// encoding/json binds a key to the field with exactly that name, and
 		// only otherwise to the first field whose name matches it regardless
 		// of case. Properties differing only in case split the keys between
 		// them that way, so the check has to split them the same way.
+		var (
+			caseVariants []string
+			exactOnly    bool
+		)
+
 		for j, other := range tt.Fields {
 			if j == i || !strings.EqualFold(other.JSONName, f.JSONName) {
 				continue
 			}
 
-			v.caseVariants = append(v.caseVariants, other.JSONName)
-			v.exactOnly = v.exactOnly || j < i
+			caseVariants = append(caseVariants, other.JSONName)
+			exactOnly = exactOnly || j < i
 		}
 
-		out = append(out, v)
+		if excludesNull {
+			out = append(out, &nonNullValidator{
+				jsonName:     f.JSONName,
+				declName:     declName,
+				caseVariants: caseVariants,
+				exactOnly:    exactOnly,
+			})
+		}
+
+		if len(forbidden) > 0 {
+			out = append(out, &nonNullElementsValidator{
+				jsonName:     f.JSONName,
+				declName:     declName,
+				forbidden:    forbidden,
+				caseVariants: caseVariants,
+				exactOnly:    exactOnly,
+			})
+		}
 	}
 
 	return out
+}
+
+// nonNullValueValidatorFor builds the opt-in null check for a declared type
+// that is not an object, such as a named primitive or array: the value and its
+// array elements, where the schema's `type` excludes null. Returns nil unless
+// ValidateNullTypes is set and there is something to check.
+func (g *schemaGenerator) nonNullValueValidatorFor(t *schemas.Type, declName string) validator {
+	if !g.config.ValidateNullTypes {
+		return nil
+	}
+
+	excludesNull := schemaExcludesNull(t)
+	forbidden := g.nullForbiddenLevels(t)
+
+	if !excludesNull && len(forbidden) == 0 {
+		return nil
+	}
+
+	return &nonNullValueValidator{declName: declName, excludesNull: excludesNull, forbidden: forbidden}
+}
+
+// nullForbiddenLevels walks t's nested arrays, through same-document $refs, and
+// reports for each level of nesting whether its elements must not be null, up
+// to the deepest level where they must not; nil when no level forbids it. The
+// draft-07 tuple form of `items` is not walked.
+//
+// The walk stops where it comes back to a schema it has already walked. The
+// elements at that level are of a recursive declared type, and that type's
+// own unmarshaler checks the levels below, so walking on would only repeat
+// those checks.
+func (g *schemaGenerator) nullForbiddenLevels(t *schemas.Type) []bool {
+	var levels []bool
+
+	deepest := -1
+	walked := make(map[*schemas.Type]bool)
+
+	for depth := range maxNullCheckRefHops {
+		t = g.localRefResolved(t)
+		if t == nil || t.Items == nil || !slices.Contains(t.Type, schemas.TypeNameArray) || walked[t] {
+			break
+		}
+
+		walked[t] = true
+
+		forbidden := g.schemaExcludesNullResolved(t.Items)
+		if forbidden {
+			deepest = depth
+		}
+
+		levels = append(levels, forbidden)
+		t = t.Items
+	}
+
+	return levels[:deepest+1]
+}
+
+// localRefResolved follows t's same-document $refs to the schema they end at,
+// or returns nil when one cannot be followed.
+func (g *schemaGenerator) localRefResolved(t *schemas.Type) *schemas.Type {
+	for hops := 0; t != nil && t.Ref != ""; hops++ {
+		if hops == maxNullCheckRefHops {
+			return nil
+		}
+
+		t = g.localRefTarget(t)
+	}
+
+	return t
 }
 
 // maxNullCheckRefHops bounds the reference chain walked while deciding whether a

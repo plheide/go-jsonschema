@@ -170,7 +170,7 @@ upstream's:
 | --- | --- |
 | `format` | `--validate-formats`, described [below](#opt-in-format-validation) |
 | `additionalProperties: false` | `--strict-additional-properties=respect-schema`, described [below](#opt-in-additionalproperties-false-enforcement) |
-| `null` where `type` excludes it | `--validate-null-types`. It checks properties, but not yet array elements or a top-level value. |
+| `null` where `type` excludes it | `--validate-null-types`. It checks properties, the elements of arrays, and declared types that are not objects. In YAML a document that is only `null` is not checked, since yaml.v3 does not pass one to `UnmarshalYAML`. |
 
 ### Fidelity warnings
 

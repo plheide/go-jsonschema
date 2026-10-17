@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Array properties whose items exclude null: decoding a null element into its Go type would leave a zero value, so the element is checked against the raw input, at each level of nesting.",
+  "properties": {
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "matrix": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "number" } }
+    },
+    "maybeTags": {
+      "description": "Its items admit null, so a null element is a value.",
+      "type": "array",
+      "items": { "type": ["string", "null"] }
+    },
+    "outerNullable": {
+      "description": "Its outer elements may be null, its inner ones may not.",
+      "type": "array",
+      "items": { "type": ["array", "null"], "items": { "type": "string" } }
+    },
+    "codes": { "$ref": "#/definitions/CodeList" }
+  },
+  "definitions": {
+    "CodeList": { "type": "array", "items": { "type": "string" } }
+  }
+}

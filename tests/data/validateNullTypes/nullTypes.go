@@ -74,6 +74,18 @@ func (j *NullTypes) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field tags in NullTypes: must not be null")
 	}
 	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "tags") {
+			continue
+		}
+		if elements0, ok := fieldValue.([]interface{}); ok {
+			for i0, element0 := range elements0 {
+				if element0 == nil {
+					return fmt.Errorf("field %s in %s: must not be null", fmt.Sprintf("%s[%d]", "tags", i0), "NullTypes")
+				}
+			}
+		}
+	}
+	for fieldName, fieldValue := range raw {
 		if fieldValue != nil || !strings.EqualFold(fieldName, "viaRef") {
 			continue
 		}
@@ -115,6 +127,15 @@ func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 	if fieldValue, ok := raw["tags"]; ok && fieldValue == nil {
 		return fmt.Errorf("field tags in NullTypes: must not be null")
 	}
+	if fieldValue, ok := raw["tags"]; ok {
+		if elements0, ok := fieldValue.([]interface{}); ok {
+			for i0, element0 := range elements0 {
+				if element0 == nil {
+					return fmt.Errorf("field %s in %s: must not be null", fmt.Sprintf("%s[%d]", "tags", i0), "NullTypes")
+				}
+			}
+		}
+	}
 	if fieldValue, ok := raw["viaRef"]; ok && fieldValue == nil {
 		return fmt.Errorf("field viaRef in NullTypes: must not be null")
 	}
@@ -131,3 +152,39 @@ func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type StrictName string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *StrictName) UnmarshalJSON(value []byte) error {
+	var rawValue interface{}
+	if err := json.Unmarshal(value, &rawValue); err != nil {
+		return fmt.Errorf("unmarshal raw StrictName: %w", err)
+	}
+	if rawValue == nil {
+		return fmt.Errorf("StrictName: must not be null")
+	}
+	type Plain StrictName
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal StrictName: %w", err)
+	}
+	*j = StrictName(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *StrictName) UnmarshalYAML(value *yaml.Node) error {
+	var rawValue interface{}
+	if err := value.Decode(&rawValue); err != nil {
+		return fmt.Errorf("unmarshal raw StrictName: %w", err)
+	}
+	if rawValue == nil {
+		return fmt.Errorf("StrictName: must not be null")
+	}
+	type Plain StrictName
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal StrictName: %w", err)
+	}
+	*j = StrictName(plain)
+	return nil
+}

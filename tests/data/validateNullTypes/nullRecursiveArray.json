@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Arrays whose items lead back to their own definition, directly or through another one. The walk for null elements stops where a definition repeats, because from there each element decodes through that type's own unmarshaler.",
+  "type": "object",
+  "properties": {
+    "tree": { "$ref": "#/definitions/RecursiveTree" },
+    "ping": { "$ref": "#/definitions/PingList" }
+  },
+  "definitions": {
+    "RecursiveTree": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/RecursiveTree" }
+    },
+    "PingList": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/PongList" }
+    },
+    "PongList": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/PingList" }
+    }
+  }
+}

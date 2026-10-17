@@ -55,6 +55,9 @@ func generateUnmarshalBody(
 	validators []validator,
 ) func(*codegen.Emitter) error {
 	var (
+		// firstValidators decode the input themselves, so they run before the
+		// raw map, which only an object can be decoded into.
+		firstValidators  []validator
 		beforeValidators []validator
 		afterValidators  []validator
 		// apValidators check AdditionalProperties' values, so they run once
@@ -67,6 +70,9 @@ func generateUnmarshalBody(
 		d := v.desc()
 
 		switch {
+		case d.beforeRawDecode:
+			firstValidators = append(firstValidators, v)
+
 		case d.beforeJSONUnmarshal:
 			beforeValidators = append(beforeValidators, v)
 
@@ -83,6 +89,12 @@ func generateUnmarshalBody(
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", ctx.methodSuffix, ctx.formatName)
 		out.Printlnf("func (j *%s) Unmarshal%s(%s) error {", declType.Name, ctx.methodSuffix, ctx.paramDecl)
 		out.Indent(1)
+
+		for _, v := range firstValidators {
+			if err := v.generate(out, ctx.formatName); err != nil {
+				return fmt.Errorf("cannot generate first validators: %w", err)
+			}
+		}
 
 		hasAdditionalProperties := hasAdditionalPropertiesField(declType)
 
