@@ -1,13 +1,12 @@
 package generator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 
-	"github.com/sanity-io/litter"
 	"github.com/sosodev/duration"
 
 	"github.com/plheide/go-jsonschema/pkg/codegen"
@@ -473,12 +472,20 @@ type defaultValidator struct {
 	defaultValueType codegen.Type
 	defaultValue     any
 	isPointer        bool
+	// warner reports a default that is left out; warned keeps the report to
+	// one, although the default is written once per format.
+	warner func(string)
+	warned bool
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
 	defaultValue, err := v.dumpDefaultValueAssignment(out)
 	if err != nil {
 		return fmt.Errorf("cannot generate default validator: %w", err)
+	}
+
+	if defaultValue == "" {
+		return nil
 	}
 
 	out.Printlnf(`if v, ok := %s[%q]; !ok || v == nil {`, varNameRawMap, v.jsonName)
@@ -491,71 +498,45 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
 }
 
 func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any, error) {
-	if v.defaultValueType != nil {
-		// A named interface{}, such as an anyOf that admits objects and
-		// other values alike, takes the default as a plain value below;
-		// only a struct or a map is filled in key by key here.
-		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok && !isEmptyInterfaceDecl(nt) {
-			dvm, ok := v.defaultValue.(map[string]any)
-			if ok {
-				var b strings.Builder
+	if _, ok := v.defaultValueType.(codegen.DurationType); ok {
+		defaultDurationISO8601, ok := v.defaultValue.(string)
 
-				for _, k := range sortedKeys(dvm) {
-					fmt.Fprintf(&b, "\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k]))
-				}
-
-				b.WriteString("\n")
-
-				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), b.String())
-
-				return v.assignDefault(out, defaultValue), nil
-			}
+		if !ok {
+			return nil, fmt.Errorf("%w: %T given", ErrDefaultDurationIsNotAString, v.defaultValue)
 		}
 
-		if _, ok := v.defaultValueType.(codegen.DurationType); ok {
-			defaultDurationISO8601, ok := v.defaultValue.(string)
-
-			if !ok {
-				return nil, fmt.Errorf("%w: %T given", ErrDefaultDurationIsNotAString, v.defaultValue)
-			}
-
-			if defaultDurationISO8601 == "" {
-				return nil, ErrDurationIsEmpty
-			}
-
-			duration, err := duration.Parse(defaultDurationISO8601)
-			if err != nil {
-				return nil, ErrCannotConvertISO8601ToGoFormat
-			}
-
-			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
-
-			defaultValue := "defaultDuration"
-			goDurationStr := duration.ToTimeDuration().String()
-
-			tmpEmitter.Printlnf("%s, err := time.ParseDuration(\"%s\")", defaultValue, goDurationStr)
-			tmpEmitter.Printlnf("if err != nil {")
-			tmpEmitter.Indent(1)
-			tmpEmitter.Printlnf(
-				"return fmt.Errorf(\"failed to parse the \\\"%s\\\" default value for field %s: %%w\", err)",
-				goDurationStr,
-				v.jsonName,
-			)
-			tmpEmitter.Indent(-1)
-			tmpEmitter.Printlnf("}")
-
-			if v.isPointer {
-				tmpEmitter.Printlnf(`%s.%s = &%s`, varNamePlainStruct, v.fieldName, defaultValue)
-			} else {
-				tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
-			}
-
-			return tmpEmitter.String(), nil
+		if defaultDurationISO8601 == "" {
+			return nil, ErrDurationIsEmpty
 		}
-	}
 
-	if defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength()); err == nil {
-		return v.assignDefault(out, defaultValue), nil
+		duration, err := duration.Parse(defaultDurationISO8601)
+		if err != nil {
+			return nil, ErrCannotConvertISO8601ToGoFormat
+		}
+
+		tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+
+		defaultValue := "defaultDuration"
+		goDurationStr := duration.ToTimeDuration().String()
+
+		tmpEmitter.Printlnf("%s, err := time.ParseDuration(\"%s\")", defaultValue, goDurationStr)
+		tmpEmitter.Printlnf("if err != nil {")
+		tmpEmitter.Indent(1)
+		tmpEmitter.Printlnf(
+			"return fmt.Errorf(\"failed to parse the \\\"%s\\\" default value for field %s: %%w\", err)",
+			goDurationStr,
+			v.jsonName,
+		)
+		tmpEmitter.Indent(-1)
+		tmpEmitter.Printlnf("}")
+
+		if v.isPointer {
+			tmpEmitter.Printlnf(`%s.%s = &%s`, varNamePlainStruct, v.fieldName, defaultValue)
+		} else {
+			tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+		}
+
+		return tmpEmitter.String(), nil
 	}
 
 	// Special handling for pointer-to-integer types (e.g., *int or NamedType wrapping *int).
@@ -581,16 +562,38 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 		}
 	}
 
-	// Fallback to sdump in case we couldn't dump it properly.
-	// Special handling for integer types: JSON numbers are float64, but we need int literals.
-	defaultValue := v.defaultValue
-	if v.isIntegerType() {
-		if f, ok := v.defaultValue.(float64); ok {
-			defaultValue = int(f)
-		}
+	lit, ok := defaultLiteral(v.defaultValue, v.defaultValueType)
+	if !ok {
+		v.leaveOut()
+
+		return "", nil
 	}
 
-	return v.assignDefault(out, litter.Sdump(defaultValue)), nil
+	return v.assignDefault(out, lit), nil
+}
+
+// leaveOut reports, once, a default that cannot be written as a value of its
+// field's type. Written anyway, it would make the generated code fail to
+// compile, and a default is only an annotation, so the field goes without.
+func (v *defaultValidator) leaveOut() {
+	if v.warned || v.warner == nil {
+		return
+	}
+
+	v.warned = true
+
+	encoded, err := json.Marshal(v.defaultValue)
+	if err != nil {
+		encoded = fmt.Appendf(nil, "%v", v.defaultValue)
+	}
+
+	typeName := "unknown"
+	if v.defaultValueType != nil {
+		typeName = typeString(v.defaultValueType)
+	}
+
+	v.warner(fmt.Sprintf("default %s for field %q is not a value of Go type %s; it is left out",
+		encoded, v.jsonName, typeName))
 }
 
 // assignDefault generates the assignment of a default value to the field.
@@ -618,27 +621,6 @@ func (v *defaultValidator) assignDefault(out *codegen.Emitter, valueExpr string)
 	tmpEmitter.Printlnf("%s = &%s", getPlainName(v.fieldName), tmpVarName)
 
 	return strings.TrimRight(tmpEmitter.String(), "\n")
-}
-
-func (v *defaultValidator) isIntegerType() bool {
-	return isIntegerType(v.defaultValueType)
-}
-
-func isIntegerType(t codegen.Type) bool {
-	switch tt := t.(type) {
-	case codegen.PointerType:
-		return isIntegerType(tt.Type)
-	case *codegen.PointerType:
-		return isIntegerType(tt.Type)
-	case codegen.NamedType:
-		return isIntegerType(tt.Decl.Type)
-	case *codegen.NamedType:
-		return isIntegerType(tt.Decl.Type)
-	case codegen.PrimitiveType:
-		return isGoIntegerTypeName(tt.Type)
-	}
-
-	return false
 }
 
 // isGoIntegerTypeName reports whether name is one of Go's integer types.
@@ -680,39 +662,6 @@ func pointerToIntegerElem(t codegen.Type) (codegen.Type, bool) {
 	}
 
 	return nil, false
-}
-
-func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
-	tmpEmitter := codegen.NewEmitter(maxLineLen)
-
-	// A list is a []interface{} in an interface{} field, as encoding/json
-	// decodes one, since an interface type has no composite literal.
-	if isEmptyInterface(v.defaultValueType) {
-		tmpEmitter.Printf("[]interface{}")
-	} else if err := v.defaultValueType.Generate(tmpEmitter); err != nil {
-		return "", fmt.Errorf("%w: %w", ErrCannotDumpDefaultSlice, err)
-	}
-
-	tmpEmitter.Printlnf("{")
-
-	kind := reflect.ValueOf(v.defaultValue).Kind()
-
-	if kind == reflect.Slice {
-		df, ok := v.defaultValue.([]any)
-		if !ok {
-			return "", ErrInvalidDefaultValue
-		}
-
-		for _, value := range df {
-			tmpEmitter.Printlnf("%s,", litter.Sdump(value))
-		}
-	} else {
-		return "", ErrCannotFindSlideToDump
-	}
-
-	tmpEmitter.Printf("}")
-
-	return tmpEmitter.String(), nil
 }
 
 func (v *defaultValidator) desc() *validatorDesc {
@@ -1561,20 +1510,6 @@ func (v *wrapperDefaultValidator) desc() *validatorDesc {
 		requiresRawAfter: true,
 		imports:          []packageImport{{qualifiedName: "encoding/json"}},
 	}
-}
-
-// isEmptyInterface reports whether t is interface{}, or names a type declared
-// as interface{}.
-func isEmptyInterface(t codegen.Type) bool {
-	switch t := t.(type) {
-	case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
-		return true
-
-	case *codegen.NamedType:
-		return isEmptyInterfaceDecl(t)
-	}
-
-	return false
 }
 
 // isEmptyInterfaceDecl reports whether nt names a type declared as interface{}.
