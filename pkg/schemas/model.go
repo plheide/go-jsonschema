@@ -305,8 +305,6 @@ func (value *Type) ConvertAllRefs(absolutePath string) error {
 	return updateAllRefsValues(&val, absolutePath)
 }
 
-// UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
-// and `false` is equivalent to `{"not": {}}`.
 // isJSONArray reports whether raw is a JSON array, ignoring leading
 // whitespace. Used to tell draft-07 `dependencies` property dependencies
 // (arrays of property names) from schema dependencies without relying on a
@@ -434,6 +432,8 @@ func isJSONObject(raw []byte) bool {
 	return false
 }
 
+// UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
+// and `false` is equivalent to `{"not": {}}`.
 func (value *Type) UnmarshalJSON(raw []byte) error {
 	var b bool
 	if err := json.Unmarshal(raw, &b); err == nil {
