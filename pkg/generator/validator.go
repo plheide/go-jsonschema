@@ -843,10 +843,18 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 			`if matched, _ := regexp.MatchString(`+"`%s`"+`, string(%s%s)); !matched {`,
 			v.pattern, pointerPrefix, value,
 		)
+		// A struct field's pattern error names its Go field, as upstream's
+		// does. A declared type has no field; its JSONName carries the type's
+		// name, which the length checks print as well.
+		patternName := v.fieldName
+		if patternName == "" {
+			patternName = v.jsonName
+		}
+
 		out.Indent(1)
 		out.Printlnf(
 			`return fmt.Errorf("field %%s pattern match: must match %%s", "%s", `+"`%s`"+`)`,
-			v.fieldName, v.pattern,
+			patternName, v.pattern,
 		)
 		out.Indent(-1)
 		out.Printlnf("}")
