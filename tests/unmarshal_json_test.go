@@ -34,6 +34,7 @@ import (
 	testMultiTypeAll "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/stringNumberBoolNull"
 	testMultiTypeStrNum "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/stringOrNumber"
 	testNullableBranch "github.com/plheide/go-jsonschema/tests/data/nullableBranch"
+	testNullableBranchCrossFile "github.com/plheide/go-jsonschema/tests/data/nullableBranchCrossFile"
 	testNullableEnum "github.com/plheide/go-jsonschema/tests/data/nullableEnum"
 	testOneOfDiscAnimal "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/animal"
 	testOneOfArrayVariants "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/arrayVariants"
@@ -2439,4 +2440,24 @@ func TestJsonUnmarshalAnyOfPrimitiveFirst(t *testing.T) {
 	assert.Equal(t, map[string]any{"x": "y"}, root)
 	require.NoError(t, json.Unmarshal([]byte(`"ok"`), &root))
 	assert.Equal(t, "ok", root)
+}
+
+// TestJsonUnmarshalNullableBranchCrossFile decodes "X or null" where X is a
+// $ref into another file: a null is nil, and an object is decoded as X.
+func TestJsonUnmarshalNullableBranchCrossFile(t *testing.T) {
+	t.Parallel()
+
+	var v testNullableBranchCrossFile.CrossFile
+
+	require.NoError(t, json.Unmarshal([]byte(`{"viaOneOf": null, "viaAnyOf": null}`), &v))
+	assert.Nil(t, v.ViaOneOf)
+	assert.Nil(t, v.ViaAnyOf)
+
+	require.NoError(t, json.Unmarshal([]byte(`{"viaOneOf": {"city": "Oslo"}, "viaAnyOf": {"city": "Bergen"}}`), &v))
+	require.NotNil(t, v.ViaOneOf)
+	require.NotNil(t, v.ViaOneOf.City)
+	assert.Equal(t, "Oslo", *v.ViaOneOf.City)
+	require.NotNil(t, v.ViaAnyOf)
+	require.NotNil(t, v.ViaAnyOf.City)
+	assert.Equal(t, "Bergen", *v.ViaAnyOf.City)
 }
