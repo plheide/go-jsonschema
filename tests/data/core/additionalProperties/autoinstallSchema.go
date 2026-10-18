@@ -257,51 +257,7 @@ func (j *AutoinstallSchemaAptFallback) UnmarshalYAML(value *yaml.Node) error {
 
 type AutoinstallSchemaAptMirrorSelection struct {
 	// Primary corresponds to the JSON schema field "primary".
-	Primary []string `json:"primary,omitempty,omitzero" yaml:"primary,omitempty" mapstructure:"primary,omitempty"`
-}
-
-type AutoinstallSchemaAptMirrorSelectionPrimaryElem_1 struct {
-	// Arches corresponds to the JSON schema field "arches".
-	Arches []string `json:"arches,omitempty,omitzero" yaml:"arches,omitempty" mapstructure:"arches,omitempty"`
-
-	// Uri corresponds to the JSON schema field "uri".
-	Uri string `json:"uri" yaml:"uri" mapstructure:"uri"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
-	}
-	if _, ok := raw["uri"]; raw != nil && !ok {
-		return fmt.Errorf("field uri in AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: required")
-	}
-	type Plain AutoinstallSchemaAptMirrorSelectionPrimaryElem_1
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
-	}
-	*j = AutoinstallSchemaAptMirrorSelectionPrimaryElem_1(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
-	}
-	if _, ok := raw["uri"]; raw != nil && !ok {
-		return fmt.Errorf("field uri in AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: required")
-	}
-	type Plain AutoinstallSchemaAptMirrorSelectionPrimaryElem_1
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
-	}
-	*j = AutoinstallSchemaAptMirrorSelectionPrimaryElem_1(plain)
-	return nil
+	Primary []interface{} `json:"primary,omitempty,omitzero" yaml:"primary,omitempty" mapstructure:"primary,omitempty"`
 }
 
 type AutoinstallSchemaAptPreferencesElem struct {

@@ -59,11 +59,28 @@ func (g *schemaGenerator) nullableSingleBranch(t *schemas.Type) (*schemas.Type, 
 		return nil, false
 	}
 
-	if isOneOf && !g.schemaExcludesNullResolved(branch) {
+	if isOneOf && !g.branchExcludesNull(branch) {
 		return nil, false
 	}
 
 	return branch, true
+}
+
+// branchExcludesNull reports whether a oneOf's branch excludes null, looking
+// through a $ref into this document or another one. schemaExcludesNullResolved
+// stops where a $ref leaves the document, so a $ref into another file, such as
+// a schema an AsyncAPI generator writes to a file of its own, kept the oneOf
+// interface{}. lookupRef loads that file without generating anything. A $ref
+// that the other file's schema itself holds is not followed: the oneOf is then
+// generated as before.
+func (g *schemaGenerator) branchExcludesNull(branch *schemas.Type) bool {
+	if branch.Ref == "" || g.localRefTarget(branch) != nil {
+		return g.schemaExcludesNullResolved(branch)
+	}
+
+	target := g.lookupRef(branch)
+
+	return target != nil && target.Ref == "" && schemaExcludesNull(target)
 }
 
 // generateNullableBranch generates "X or null" as a pointer to X's type: the

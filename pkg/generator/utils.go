@@ -81,36 +81,23 @@ func isMapType(t codegen.Type) bool {
 	return isMapType
 }
 
-// mergesIntoStruct reports whether merging parent's anyOf branches yields an
-// object with properties, which becomes a struct rather than a map. The merge
-// keeps the first type list it meets, the parent's before the branches', and
-// collects the properties of all of them.
-func mergesIntoStruct(parent *schemas.Type, branches []*schemas.Type) bool {
-	types := parent.Type
+// admitsStruct reports whether parent's anyOf has an object with properties
+// among it: an object type in the parent's type list or any branch's, and
+// properties on the parent or any branch. That object is what makes the anyOf
+// a struct when it comes first. The merge keeps only the first type list it
+// meets, so a primitive or array branch ahead of it made the anyOf that
+// primitive or array instead, rejecting every object, valid ones included.
+// Asked of every type list, the answer does not depend on the order.
+func admitsStruct(parent *schemas.Type, branches []*schemas.Type) bool {
+	object := slices.Contains(parent.Type, schemas.TypeNameObject)
+	properties := len(parent.Properties) > 0
 
 	for _, b := range branches {
-		if len(types) > 0 {
-			break
-		}
-
-		types = b.Type
+		object = object || slices.Contains(b.Type, schemas.TypeNameObject)
+		properties = properties || len(b.Properties) > 0
 	}
 
-	if !slices.Contains(types, schemas.TypeNameObject) {
-		return false
-	}
-
-	if len(parent.Properties) > 0 {
-		return true
-	}
-
-	for _, b := range branches {
-		if len(b.Properties) > 0 {
-			return true
-		}
-	}
-
-	return false
+	return object && properties
 }
 
 // mixesObjectAndNonObject reports whether some of parent's anyOf branches

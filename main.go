@@ -288,7 +288,9 @@ must be in the format URI=TYPE. By default, it is derived from the file name.`)
 named 'id' becomes 'Id'. With --capitalization ID, it will be generated as 'ID'.`)
 	rootCmd.PersistentFlags().StringSliceVar(&resolveExtensions, "resolve-extension", nil,
 		`Add a file extension that is used to resolve schema names, e.g. {"$ref": "./foo"} will
-also look for foo.json if --resolve-extension json is provided.`)
+also look for foo.json if --resolve-extension json is provided. The extension is also
+removed from a schema file's name before its root type is named after it, so
+widget.schema.json gives Widget with --resolve-extension .schema.json.`)
 	rootCmd.PersistentFlags().StringSliceVar(&yamlExtensions, "yaml-extension", []string{".yml", ".yaml"},
 		`Add a file extension that should be recognized as YAML. Default are .yml, .yaml.`)
 	rootCmd.PersistentFlags().BoolVarP(&structNameFromTitle, "struct-name-from-title", "t", false,

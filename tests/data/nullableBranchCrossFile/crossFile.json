@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "\"X or null\" where X is a $ref into another file. The oneOf form needs X to exclude null, or a null would match both branches, and it now looks that up in the other file; it used to stay interface{}. An X that admits null keeps the oneOf as it was.",
+  "type": "object",
+  "properties": {
+    "viaOneOf": { "oneOf": [{ "$ref": "address.json" }, { "type": "null" }] },
+    "viaAnyOf": { "anyOf": [{ "$ref": "address.json" }, { "type": "null" }] },
+    "nullableTarget": { "oneOf": [{ "$ref": "nullableAddress.json" }, { "type": "null" }] }
+  }
+}

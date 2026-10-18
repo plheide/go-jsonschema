@@ -62,6 +62,13 @@ go-jsonschema -p main schema.json
 
 This will write a Go source file to standard output, declared under the package `main`.
 
+The root type is named after the schema file, so `schema.json` gives `SchemaJson`.
+`--schema-root-type URI=TYPE` names it explicitly. Each `--resolve-extension` is also
+removed from the file name first: with `--resolve-extension .schema.json`,
+`widget.schema.json` gives `Widget` rather than `WidgetSchemaJson`. The same applies to
+another file a `$ref` points at as a whole, while a `$ref` to one of its definitions, such as
+`lib.schema.json#/definitions/Thing`, names the type after the definition.
+
 You can generate code for multiple schemas in one run, optionally writing to different files inside different packages:
 
 ```shell

@@ -661,6 +661,14 @@ func TestRefWithOverridesPath(t *testing.T) {
 	testExampleFile(t, cfg, "./data/refWithOverridesPath/schema.json")
 }
 
+// TestNullableBranchCrossFile covers "X or null" where X is a $ref into
+// another file, whose schemas the main file's golden also holds.
+func TestNullableBranchCrossFile(t *testing.T) {
+	t.Parallel()
+
+	testExampleFile(t, basicConfig, "./data/nullableBranchCrossFile/crossFile.json")
+}
+
 func TestStructWithConstraints(t *testing.T) {
 	t.Parallel()
 

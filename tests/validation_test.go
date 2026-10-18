@@ -16,6 +16,7 @@ import (
 	testMinimum "github.com/plheide/go-jsonschema/tests/data/validation/minimum"
 	testMultipleOf "github.com/plheide/go-jsonschema/tests/data/validation/multipleOf"
 	testPattern "github.com/plheide/go-jsonschema/tests/data/validation/pattern"
+	testPatternUnsupported "github.com/plheide/go-jsonschema/tests/data/validation/patternUnsupported"
 	testPrimitiveDefs "github.com/plheide/go-jsonschema/tests/data/validation/primitive_defs"
 	testReadOnlyFields "github.com/plheide/go-jsonschema/tests/data/validation/readOnly"
 	testReadOnlyAndRequiredFields "github.com/plheide/go-jsonschema/tests/data/validation/readOnlyAndRequired"
@@ -614,6 +615,51 @@ func TestExclusiveMinimum(t *testing.T) {
 			mo2 := testExclusiveMinimum.ExclusiveMinimumOld{}
 
 			err = json.Unmarshal([]byte(tC.data), &mo2)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+// TestPatternUnsupported covers patterns Go's regexp cannot compile, a
+// lookahead and a backreference, which the generated check used to fail on
+// every value, valid ones included. They are left unchecked. A pattern RE2
+// compiles, and a length beside an unchecked pattern, are still checked.
+func TestPatternUnsupported(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc: "values the unchecked patterns allow",
+			data: `{"checked": "ABC", "lookahead": "abcdefg1", "lookaheadMinLength": "ab1", "code": "aa"}`,
+		},
+		{
+			desc: "values they do not allow pass too",
+			data: `{"lookahead": "short", "code": "ab"}`,
+		},
+		{
+			desc:    "a pattern RE2 compiles is still checked",
+			data:    `{"checked": "abc"}`,
+			wantErr: errors.New("field Checked pattern match: must match ^[A-Z]{3}$"),
+		},
+		{
+			desc:    "a length beside an unchecked pattern is still checked",
+			data:    `{"lookaheadMinLength": "a1"}`,
+			wantErr: errors.New("field lookaheadMinLength length: must be >= 3"),
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			model := testPatternUnsupported.PatternUnsupported{}
+
+			err := json.Unmarshal([]byte(tC.data), &model)
 
 			helpers.CheckError(t, tC.wantErr, err)
 		})

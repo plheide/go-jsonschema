@@ -103,6 +103,43 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Contains(t, joined, "declared property(ies)")
 	})
 
+	t.Run("a pattern Go's regexp cannot compile is reported and left unchecked", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := filterFidelityWarnings(
+			generateWithWarnerCapture(t, "./data/validation/patternUnsupported/patternUnsupported.json"))
+		joined := strings.Join(warnings, "\n")
+
+		for _, owner := range []string{"lookahead", "lookaheadMinLength", "RepeatedCode"} {
+			assert.Contains(t, joined, `of "`+owner+`" is not checked: Go's regexp cannot compile it`)
+		}
+
+		assert.NotContains(t, joined, `of "checked"`, "a pattern RE2 compiles is checked, not reported")
+		assert.Len(t, warnings, 3)
+	})
+
+	t.Run("anyOf with the non-object branch first falls back and warns too", func(t *testing.T) {
+		t.Parallel()
+
+		// The merge used to take the first branch's kind, so these became
+		// *string, []string and []string, and the root a string, each
+		// rejecting every object.
+		for schema, want := range map[string]int{
+			"./data/core/anyOf/anyOfPrimitiveFirst.json":     3,
+			"./data/core/anyOf/anyOfPrimitiveFirstRoot.json": 1,
+		} {
+			var fellBack int
+
+			for _, w := range filterFidelityWarnings(generateWithWarnerCapture(t, schema)) {
+				if strings.Contains(w, "anyOf with both object and non-object branches") {
+					fellBack++
+				}
+			}
+
+			assert.Equal(t, want, fellBack, schema)
+		}
+	})
+
 	t.Run("a oneOf of required-only branches on a struct is reported", func(t *testing.T) {
 		t.Parallel()
 

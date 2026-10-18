@@ -34,6 +34,7 @@ import (
 	testMultiTypeAll "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/stringNumberBoolNull"
 	testMultiTypeStrNum "github.com/plheide/go-jsonschema/tests/data/multiTypePrimitive/stringOrNumber"
 	testNullableBranch "github.com/plheide/go-jsonschema/tests/data/nullableBranch"
+	testNullableBranchCrossFile "github.com/plheide/go-jsonschema/tests/data/nullableBranchCrossFile"
 	testNullableEnum "github.com/plheide/go-jsonschema/tests/data/nullableEnum"
 	testOneOfDiscAnimal "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/animal"
 	testOneOfArrayVariants "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/arrayVariants"
@@ -2412,4 +2413,51 @@ func TestJsonUnmarshalNullableEnum(t *testing.T) {
 
 		require.Error(t, json.Unmarshal([]byte(payload), &w), "payload %s", payload)
 	}
+}
+
+// TestJsonUnmarshalAnyOfPrimitiveFirst decodes an anyOf of an object with
+// properties and a primitive or an array, with the non-object branch first.
+// It used to take that branch's kind and reject every object; like the
+// object-first anyOf, it now holds either.
+func TestJsonUnmarshalAnyOfPrimitiveFirst(t *testing.T) {
+	t.Parallel()
+
+	var v testAnyOf.AnyOfPrimitiveFirst
+
+	require.NoError(t, json.Unmarshal(
+		[]byte(`{"mixed": {"x": "y"}, "listed": ["default", {"uri": "u"}], "arrayFirst": {"x": "y"}}`), &v))
+	assert.Equal(t, map[string]any{"x": "y"}, v.Mixed)
+	assert.Equal(t, []any{"default", map[string]any{"uri": "u"}}, v.Listed)
+	assert.Equal(t, map[string]any{"x": "y"}, v.ArrayFirst)
+
+	require.NoError(t, json.Unmarshal([]byte(`{"mixed": "ok", "arrayFirst": ["a"]}`), &v))
+	assert.Equal(t, "ok", v.Mixed)
+	assert.Equal(t, []any{"a"}, v.ArrayFirst)
+
+	var root testAnyOf.AnyOfPrimitiveFirstRoot
+
+	require.NoError(t, json.Unmarshal([]byte(`{"x": "y"}`), &root))
+	assert.Equal(t, map[string]any{"x": "y"}, root)
+	require.NoError(t, json.Unmarshal([]byte(`"ok"`), &root))
+	assert.Equal(t, "ok", root)
+}
+
+// TestJsonUnmarshalNullableBranchCrossFile decodes "X or null" where X is a
+// $ref into another file: a null is nil, and an object is decoded as X.
+func TestJsonUnmarshalNullableBranchCrossFile(t *testing.T) {
+	t.Parallel()
+
+	var v testNullableBranchCrossFile.CrossFile
+
+	require.NoError(t, json.Unmarshal([]byte(`{"viaOneOf": null, "viaAnyOf": null}`), &v))
+	assert.Nil(t, v.ViaOneOf)
+	assert.Nil(t, v.ViaAnyOf)
+
+	require.NoError(t, json.Unmarshal([]byte(`{"viaOneOf": {"city": "Oslo"}, "viaAnyOf": {"city": "Bergen"}}`), &v))
+	require.NotNil(t, v.ViaOneOf)
+	require.NotNil(t, v.ViaOneOf.City)
+	assert.Equal(t, "Oslo", *v.ViaOneOf.City)
+	require.NotNil(t, v.ViaAnyOf)
+	require.NotNil(t, v.ViaAnyOf.City)
+	assert.Equal(t, "Bergen", *v.ViaAnyOf.City)
 }
