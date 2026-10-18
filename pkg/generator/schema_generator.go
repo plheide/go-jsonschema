@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode"
@@ -1039,11 +1040,8 @@ func (g *schemaGenerator) structFieldValidators(
 	case codegen.PrimitiveType:
 		switch {
 		case v.Type == schemas.TypeNameString:
-			hasPattern := len(f.SchemaType.Pattern) != 0
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern || f.SchemaType.Const != nil {
-				// Double escape the escape characters so we don't effectively parse the escapes within the value.
-				escapedPattern := f.SchemaType.Pattern
-
+			pattern := g.compilablePattern(f.SchemaType.Pattern, f.JSONName)
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || pattern != "" || f.SchemaType.Const != nil {
 				var constVal *string
 
 				if f.SchemaType.Const != nil {
@@ -1054,26 +1052,18 @@ func (g *schemaGenerator) structFieldValidators(
 					}
 				}
 
-				replaceJSONCharactersBy := []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
-
-				replaceJSONCharacters := []string{"\b", "\f", "\n", "\r", "\t"}
-				for i, replace := range replaceJSONCharacters {
-					with := replaceJSONCharactersBy[i]
-					escapedPattern = strings.ReplaceAll(escapedPattern, replace, with)
-				}
-
 				validators = append(validators, &stringValidator{
 					jsonName:   f.JSONName,
 					fieldName:  f.Name,
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
-					pattern:    escapedPattern,
+					pattern:    pattern,
 					constVal:   constVal,
 					isNillable: isNillable,
 				})
 			}
 
-			if hasPattern {
+			if pattern != "" {
 				g.output.file.Package.AddImport("regexp", "")
 			}
 
@@ -1261,6 +1251,40 @@ func isStringType(t codegen.Type) bool {
 	}
 
 	return false
+}
+
+// compilablePattern returns pattern as the generated code writes it, inside a
+// raw string literal with JSON's control characters escaped, or "" when there
+// is none or Go's regexp cannot compile it. JSON Schema's patterns are
+// ECMA-262, and RE2, which Go's regexp implements, has no lookaround or
+// backreference. Emitted anyway, the check would reject every value, valid
+// ones included, because the compile error is lost when the generated code
+// runs. Such a pattern is reported and left unchecked. owner names the field
+// or type the pattern constrains, for the warning.
+func (g *schemaGenerator) compilablePattern(pattern, owner string) string {
+	if pattern == "" {
+		return ""
+	}
+
+	// Double escape the escape characters so we don't effectively parse the
+	// escapes within the value.
+	escaped := pattern
+
+	replaceJSONCharactersBy := []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
+
+	replaceJSONCharacters := []string{"\b", "\f", "\n", "\r", "\t"}
+	for i, replace := range replaceJSONCharacters {
+		escaped = strings.ReplaceAll(escaped, replace, replaceJSONCharactersBy[i])
+	}
+
+	if _, err := regexp.Compile(escaped); err != nil {
+		g.warner(fmt.Sprintf("schema fidelity: pattern %q of %q is not checked: Go's regexp cannot compile it (%v)",
+			pattern, owner, err))
+
+		return ""
+	}
+
+	return escaped
 }
 
 // defaultValidatorFor sets field f to its default while its key is absent;

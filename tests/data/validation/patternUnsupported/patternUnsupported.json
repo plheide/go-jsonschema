@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Patterns that JSON Schema's ECMA-262 dialect allows but Go's regexp (RE2) cannot compile, a lookahead and a backreference. Each is left unchecked with a warning, where the generated check rejected every value. A pattern RE2 compiles is still checked, and so is a length beside an unchecked pattern.",
+  "type": "object",
+  "properties": {
+    "checked": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "lookahead": { "type": "string", "pattern": "^(?=.*[0-9]).{8,}$" },
+    "lookaheadMinLength": { "type": "string", "pattern": "^(?=.*[0-9])", "minLength": 3 },
+    "code": { "$ref": "#/definitions/RepeatedCode" }
+  },
+  "definitions": {
+    "RepeatedCode": { "type": "string", "pattern": "^(a+)\\1$" }
+  }
+}
