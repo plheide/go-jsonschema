@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "An anyOf of an object with properties and a primitive or an array, with the non-object branch first. Merged, it took the first branch's kind and rejected every object, so it falls back to interface{} with a warning, as it does with the object first.",
+  "type": "object",
+  "properties": {
+    "mixed": {
+      "anyOf": [
+        { "type": "string" },
+        { "type": "object", "properties": { "x": { "type": "string" } }, "required": ["x"] }
+      ]
+    },
+    "listed": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          { "type": "string", "const": "default" },
+          { "type": "object", "properties": { "uri": { "type": "string" } }, "required": ["uri"] }
+        ]
+      }
+    },
+    "arrayFirst": {
+      "anyOf": [
+        { "type": "array", "items": { "type": "string" } },
+        { "type": "object", "properties": { "x": { "type": "string" } } }
+      ]
+    }
+  }
+}

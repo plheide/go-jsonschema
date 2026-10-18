@@ -2413,3 +2413,30 @@ func TestJsonUnmarshalNullableEnum(t *testing.T) {
 		require.Error(t, json.Unmarshal([]byte(payload), &w), "payload %s", payload)
 	}
 }
+
+// TestJsonUnmarshalAnyOfPrimitiveFirst decodes an anyOf of an object with
+// properties and a primitive or an array, with the non-object branch first.
+// It used to take that branch's kind and reject every object; like the
+// object-first anyOf, it now holds either.
+func TestJsonUnmarshalAnyOfPrimitiveFirst(t *testing.T) {
+	t.Parallel()
+
+	var v testAnyOf.AnyOfPrimitiveFirst
+
+	require.NoError(t, json.Unmarshal(
+		[]byte(`{"mixed": {"x": "y"}, "listed": ["default", {"uri": "u"}], "arrayFirst": {"x": "y"}}`), &v))
+	assert.Equal(t, map[string]any{"x": "y"}, v.Mixed)
+	assert.Equal(t, []any{"default", map[string]any{"uri": "u"}}, v.Listed)
+	assert.Equal(t, map[string]any{"x": "y"}, v.ArrayFirst)
+
+	require.NoError(t, json.Unmarshal([]byte(`{"mixed": "ok", "arrayFirst": ["a"]}`), &v))
+	assert.Equal(t, "ok", v.Mixed)
+	assert.Equal(t, []any{"a"}, v.ArrayFirst)
+
+	var root testAnyOf.AnyOfPrimitiveFirstRoot
+
+	require.NoError(t, json.Unmarshal([]byte(`{"x": "y"}`), &root))
+	assert.Equal(t, map[string]any{"x": "y"}, root)
+	require.NoError(t, json.Unmarshal([]byte(`"ok"`), &root))
+	assert.Equal(t, "ok", root)
+}
