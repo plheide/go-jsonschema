@@ -7,6 +7,69 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// NewTypeMultipleAllPrimitivesBool returns the TypeMultipleAllPrimitives that
+// holds v, as decoding v does. It does not check v against the schema.
+func NewTypeMultipleAllPrimitivesBool(v bool) TypeMultipleAllPrimitives {
+	return TypeMultipleAllPrimitives{value: v, present: true}
+}
+
+// NewTypeMultipleAllPrimitivesNull returns the TypeMultipleAllPrimitives that
+// holds an explicit null.
+func NewTypeMultipleAllPrimitivesNull() TypeMultipleAllPrimitives {
+	return TypeMultipleAllPrimitives{present: true}
+}
+
+// NewTypeMultipleAllPrimitivesNumber returns the TypeMultipleAllPrimitives that
+// holds v, as decoding v does. It does not check v against the schema.
+func NewTypeMultipleAllPrimitivesNumber(v float64) TypeMultipleAllPrimitives {
+	return TypeMultipleAllPrimitives{value: v, present: true}
+}
+
+// NewTypeMultipleAllPrimitivesString returns the TypeMultipleAllPrimitives that
+// holds v, as decoding v does. It does not check v against the schema.
+func NewTypeMultipleAllPrimitivesString(v string) TypeMultipleAllPrimitives {
+	return TypeMultipleAllPrimitives{value: v, present: true}
+}
+
+// NewTypeMultipleArrayOfAllPrimitivesElemBool returns the
+// TypeMultipleArrayOfAllPrimitivesElem that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewTypeMultipleArrayOfAllPrimitivesElemBool(v bool) TypeMultipleArrayOfAllPrimitivesElem {
+	return TypeMultipleArrayOfAllPrimitivesElem{value: v, present: true}
+}
+
+// NewTypeMultipleArrayOfAllPrimitivesElemNull returns the
+// TypeMultipleArrayOfAllPrimitivesElem that holds an explicit null.
+func NewTypeMultipleArrayOfAllPrimitivesElemNull() TypeMultipleArrayOfAllPrimitivesElem {
+	return TypeMultipleArrayOfAllPrimitivesElem{present: true}
+}
+
+// NewTypeMultipleArrayOfAllPrimitivesElemNumber returns the
+// TypeMultipleArrayOfAllPrimitivesElem that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewTypeMultipleArrayOfAllPrimitivesElemNumber(v float64) TypeMultipleArrayOfAllPrimitivesElem {
+	return TypeMultipleArrayOfAllPrimitivesElem{value: v, present: true}
+}
+
+// NewTypeMultipleArrayOfAllPrimitivesElemString returns the
+// TypeMultipleArrayOfAllPrimitivesElem that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewTypeMultipleArrayOfAllPrimitivesElemString(v string) TypeMultipleArrayOfAllPrimitivesElem {
+	return TypeMultipleArrayOfAllPrimitivesElem{value: v, present: true}
+}
+
+// NewTypeMultipleOnlyTwoOptionsBool returns the TypeMultipleOnlyTwoOptions that
+// holds v, as decoding v does. It does not check v against the schema.
+func NewTypeMultipleOnlyTwoOptionsBool(v bool) TypeMultipleOnlyTwoOptions {
+	return TypeMultipleOnlyTwoOptions{value: v, present: true}
+}
+
+// NewTypeMultipleOnlyTwoOptionsNumber returns the TypeMultipleOnlyTwoOptions that
+// holds v, as decoding v does. It does not check v against the schema.
+func NewTypeMultipleOnlyTwoOptionsNumber(v float64) TypeMultipleOnlyTwoOptions {
+	return TypeMultipleOnlyTwoOptions{value: v, present: true}
+}
+
 type TypeMultiple struct {
 	// All corresponds to the JSON schema field "all".
 	All interface{} `json:"all,omitempty,omitzero" yaml:"all,omitempty" mapstructure:"all,omitempty"`

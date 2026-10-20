@@ -212,7 +212,7 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 | Schema | Upstream | Fork |
 | --- | --- | --- |
 | `"type": ["number", "null"]` | `type FooRate *float64`, a named pointer type, which can have no methods | `*float64` |
-| `oneOf` of `string`, `number`, `boolean` and `null` variants, or `"type": ["string", "number"]` | `interface{}` | A struct holding one of the values, decoded by its JSON kind |
+| `oneOf` of `string`, `number`, `boolean` and `null` variants, or `"type": ["string", "number"]` | `interface{}` | A struct holding one of the values, decoded by its JSON kind. Accessors such as `AsString()` read the value, and constructors such as `NewFooString(v)` build one |
 | `oneOf` of objects told apart by a `const` property | `interface{}` | A struct with a field per variant, decoded by that property |
 | Any other `oneOf` of objects | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches |
 | `oneOf` or `anyOf` of a `$ref`, an object or an array, and `{"type": "null"}` | `interface{}` for a `oneOf`, a copy of the schema for an `anyOf` | A pointer to the schema's own type |

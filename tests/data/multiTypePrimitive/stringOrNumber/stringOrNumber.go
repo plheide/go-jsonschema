@@ -7,6 +7,18 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// NewStringOrNumberNumber returns the StringOrNumber that holds v, as decoding v
+// does. It does not check v against the schema.
+func NewStringOrNumberNumber(v float64) StringOrNumber {
+	return StringOrNumber{value: v, present: true}
+}
+
+// NewStringOrNumberString returns the StringOrNumber that holds v, as decoding v
+// does. It does not check v against the schema.
+func NewStringOrNumberString(v string) StringOrNumber {
+	return StringOrNumber{value: v, present: true}
+}
+
 type StringOrNumber struct {
 	value interface{}
 

@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Wrapper constructors named like types the schema declares. Definitions are generated in name order, before the root. The NewConstructorNameCollisionValue types come before the root's wrapper, so its constructors are suffixed. NewChoiceString comes after Choice, so the type is suffixed instead.",
+  "type": "object",
+  "properties": {
+    "value": { "oneOf": [{ "type": "string" }, { "type": "number" }] },
+    "choice": { "$ref": "#/definitions/Choice" },
+    "later": { "$ref": "#/definitions/NewChoiceString" }
+  },
+  "definitions": {
+    "Choice": { "oneOf": [{ "type": "string" }, { "type": "number" }] },
+    "NewChoiceString": { "type": "string" },
+    "NewConstructorNameCollisionValueNumber": { "type": "string" },
+    "NewConstructorNameCollisionValueString": { "type": "string" }
+  }
+}

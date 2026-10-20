@@ -7,6 +7,30 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// NewStringNumberBoolNullBool returns the StringNumberBoolNull that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewStringNumberBoolNullBool(v bool) StringNumberBoolNull {
+	return StringNumberBoolNull{value: v, present: true}
+}
+
+// NewStringNumberBoolNullNull returns the StringNumberBoolNull that holds an
+// explicit null.
+func NewStringNumberBoolNullNull() StringNumberBoolNull {
+	return StringNumberBoolNull{present: true}
+}
+
+// NewStringNumberBoolNullNumber returns the StringNumberBoolNull that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewStringNumberBoolNullNumber(v float64) StringNumberBoolNull {
+	return StringNumberBoolNull{value: v, present: true}
+}
+
+// NewStringNumberBoolNullString returns the StringNumberBoolNull that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewStringNumberBoolNullString(v string) StringNumberBoolNull {
+	return StringNumberBoolNull{value: v, present: true}
+}
+
 type StringNumberBoolNull struct {
 	value interface{}
 

@@ -715,6 +715,18 @@ func (j *DeprecatedShape) UnmarshalYAML(value *yaml.Node) error {
 // Deprecated: The JSON schema marks this as deprecated.
 type Legacy string
 
+// NewDeprecatedAmountNumber returns the DeprecatedAmount that holds v, as decoding
+// v does. It does not check v against the schema.
+func NewDeprecatedAmountNumber(v float64) DeprecatedAmount {
+	return DeprecatedAmount{value: v, present: true}
+}
+
+// NewDeprecatedAmountString returns the DeprecatedAmount that holds v, as decoding
+// v does. It does not check v against the schema.
+func NewDeprecatedAmountString(v string) DeprecatedAmount {
+	return DeprecatedAmount{value: v, present: true}
+}
+
 type Point struct {
 	// X corresponds to the JSON schema field "x".
 	X *float64 `json:"x,omitempty,omitzero" yaml:"x,omitempty" mapstructure:"x,omitempty"`

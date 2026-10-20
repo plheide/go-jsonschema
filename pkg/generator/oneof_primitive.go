@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/plheide/go-jsonschema/pkg/codegen"
@@ -532,7 +533,70 @@ func (g *schemaGenerator) emitPrimitiveWrapper(
 		addMethod("IsNull", emitOneOfPrimitiveIsNull(name))
 	}
 
+	// One constructor for each kind the wrapper holds, so that code outside
+	// the package, which cannot set its unexported fields, can build one
+	// without decoding JSON.
+	if kinds.has(primitiveKindString) {
+		g.addWrapperConstructor(name, strFormat.accessor, strFormat.goType)
+	}
+
+	if kinds.has(primitiveKindNumber) {
+		g.addWrapperConstructor(name, "Number", "float64")
+	}
+
+	if kinds.has(primitiveKindBoolean) {
+		g.addWrapperConstructor(name, "Bool", "bool")
+	}
+
+	if kinds.has(primitiveKindNull) {
+		g.addWrapperConstructor(name, "Null", "")
+	}
+
 	return &codegen.NamedType{Decl: decl}
+}
+
+// addWrapperConstructor declares New<typeName><kind>(v), which returns the
+// primitive-union wrapper holding v as decoding v leaves it, or
+// New<typeName>Null() when kind is null and goType is "". It does not check v
+// against the schema. A name the package already declares is suffixed and the
+// collision reported, as for an enum constant.
+func (g *schemaGenerator) addWrapperConstructor(typeName, kind, goType string) {
+	base := "New" + typeName + kind
+	name := base
+
+	for n := 1; g.output.declaresName(name) || g.output.importsName(name); n++ {
+		name = fmt.Sprintf("%s_%d", base, n)
+	}
+
+	if name != base {
+		g.warner(fmt.Sprintf(
+			"Wrapper %s: constructor name %q is already declared in this package; declaring it as %q instead",
+			typeName, base, name,
+		))
+	}
+
+	g.output.file.Package.AddDecl(&codegen.Method{
+		Name: name,
+		Impl: func(out *codegen.Emitter) error {
+			if goType == "" {
+				out.Commentf("%s returns the %s that holds an explicit null.", name, typeName)
+				out.Printlnf("func %s() %s {", name, typeName)
+				out.Indent(1)
+				out.Printlnf("return %s{present: true}", typeName)
+			} else {
+				out.Commentf("%s returns the %s that holds v, as decoding v does. "+
+					"It does not check v against the schema.", name, typeName)
+				out.Printlnf("func %s(v %s) %s {", name, goType, typeName)
+				out.Indent(1)
+				out.Printlnf("return %s{value: v, present: true}", typeName)
+			}
+
+			out.Indent(-1)
+			out.Printlnf("}")
+
+			return nil
+		},
+	})
 }
 
 func emitOneOfPrimitiveUnmarshalJSON(

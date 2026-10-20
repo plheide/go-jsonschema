@@ -8,6 +8,18 @@ import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "regexp"
 
+// NewOneOfVariantIdOrNumberNumber returns the OneOfVariantIdOrNumber that holds v,
+// as decoding v does. It does not check v against the schema.
+func NewOneOfVariantIdOrNumberNumber(v float64) OneOfVariantIdOrNumber {
+	return OneOfVariantIdOrNumber{value: v, present: true}
+}
+
+// NewOneOfVariantIdOrNumberString returns the OneOfVariantIdOrNumber that holds v,
+// as decoding v does. It does not check v against the schema.
+func NewOneOfVariantIdOrNumberString(v string) OneOfVariantIdOrNumber {
+	return OneOfVariantIdOrNumber{value: v, present: true}
+}
+
 type OneOfVariant struct {
 	// With format validation enabled the check runs at the end of the wrapper's
 	// string branch, against the value it just decoded — the same check, from the

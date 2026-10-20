@@ -7,6 +7,30 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// NewRootOneOfPrimitiveBool returns the RootOneOfPrimitive that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewRootOneOfPrimitiveBool(v bool) RootOneOfPrimitive {
+	return RootOneOfPrimitive{value: v, present: true}
+}
+
+// NewRootOneOfPrimitiveNull returns the RootOneOfPrimitive that holds an explicit
+// null.
+func NewRootOneOfPrimitiveNull() RootOneOfPrimitive {
+	return RootOneOfPrimitive{present: true}
+}
+
+// NewRootOneOfPrimitiveNumber returns the RootOneOfPrimitive that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewRootOneOfPrimitiveNumber(v float64) RootOneOfPrimitive {
+	return RootOneOfPrimitive{value: v, present: true}
+}
+
+// NewRootOneOfPrimitiveString returns the RootOneOfPrimitive that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewRootOneOfPrimitiveString(v string) RootOneOfPrimitive {
+	return RootOneOfPrimitive{value: v, present: true}
+}
+
 type RootOneOfPrimitive struct {
 	value interface{}
 

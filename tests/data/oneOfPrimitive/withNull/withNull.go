@@ -7,6 +7,17 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// NewWithNullValueNull returns the WithNullValue that holds an explicit null.
+func NewWithNullValueNull() WithNullValue {
+	return WithNullValue{present: true}
+}
+
+// NewWithNullValueString returns the WithNullValue that holds v, as decoding v
+// does. It does not check v against the schema.
+func NewWithNullValueString(v string) WithNullValue {
+	return WithNullValue{value: v, present: true}
+}
+
 type WithNull struct {
 	// Value corresponds to the JSON schema field "value".
 	Value WithNullValue `json:"value" yaml:"value" mapstructure:"value"`
