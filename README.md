@@ -212,6 +212,7 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 | `oneOf` of objects told apart by a `const` property | `interface{}` | A struct with a field per variant, decoded by that property |
 | Any other `oneOf` of objects | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches |
 | `oneOf` or `anyOf` of a `$ref`, an object or an array, and `{"type": "null"}` | `interface{}` for a `oneOf`, a copy of the schema for an `anyOf` | A pointer to the schema's own type |
+| `anyOf` of an object with properties and a primitive or an array | The first branch's type: a primitive such as `*string`, which rejects every object, or a struct, which rejects the primitive | `interface{}`, with a fidelity warning |
 | An enum listing `null` beside values of one type, such as `"enum": ["a", "b", null]` | A struct holding an `interface{}` | A pointer to an enum of that type |
 | An enum with `x-enum-varnames: ["Low", "High"]` | Constants named after the type and the value, such as `FooLevelLo` | `Low` and `High` |
 | `oneOf`, `anyOf`, `allOf` or `enum` at the root | No root type | The root type |
@@ -236,6 +237,12 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 * A required property named `-` is decoded. Upstream tagged it `json:"-"`, which `encoding/json` skips.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
   Upstream generated a tag that decodes nothing.
+* A `null` where a schema belongs, such as an entry of `allOf`, a property or a definition, stops generation with an
+  error. Upstream crashed.
+* A `default` is written as a literal of its field's Go type, or left out with a warning when no value of that type
+  can hold it. Upstream's code for such a default did not compile.
+* A `pattern` that Go's regexp cannot compile, such as a lookahead, is left unchecked with a warning. Upstream's
+  check rejected every value.
 * Declarations come out in a fixed order. In upstream's output, an unrelated change could reorder them.
 * The [fidelity warnings](#fidelity-warnings) above.
 * `--version` prints the release.

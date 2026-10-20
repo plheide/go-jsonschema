@@ -20,6 +20,14 @@ Not offered upstream yet:
 * keeping a property literally named `-` as a JSON key (`feat/p16-dash-json-key`);
 * checking `minItems`/`maxItems` on an array type declared in `$defs`, and naming the type in a declared type's
   errors (made directly on `main`);
+* the changes released in v0.25.0-rc.7 to v0.25.0, made on `main`:
+  * the `--openapi-int-formats` opt-in;
+  * pointers for nullable unions and enums;
+  * the wider `--validate-null-types` checks;
+  * the fixes for null subschemas, defaults that did not compile, mixed `anyOf`s in either order, patterns Go's
+    regexp cannot compile, and nullable `$ref`s into another file.
+
+  They are carried into the stack once upstream reviews it;
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 
