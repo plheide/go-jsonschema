@@ -553,7 +553,7 @@ func onlyRequired(sub *schemas.Type) bool {
 // description.
 func isAnnotationOnly(t *schemas.Type) bool {
 	rest := *t
-	rest.Title, rest.Description = "", ""
+	rest.Title, rest.Description, rest.Deprecated = "", "", schemas.Deprecation{}
 
 	return reflect.DeepEqual(rest, schemas.Type{})
 }

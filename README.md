@@ -155,6 +155,7 @@ or is listed as unsupported under [Status](#status).
 | Other `x-` keys | Become struct tags when mapped with `--extension-tag x-key=tag`, and are ignored otherwise. | fork, opt-in |
 | `format: int32` and `format: int64` on an `integer` | Go `int32` and `int64`, the OpenAPI meaning of these formats, with `--openapi-int-formats`. Without it, an `integer` is an `int`, as upstream generates it. | fork, opt-in |
 | `format: uuid` | Checked by `--validate-formats` in every draft, although JSON Schema defines it only from draft 2019-09. | fork, opt-in |
+| `deprecated` given as a string, as schemas generated from TypeScript give it | Marks the field or type as deprecated, as `true` does, with the string as the text of its `Deprecated:` paragraph. A value that is neither a boolean nor a string is ignored. | fork |
 
 ### Choices JSON Schema leaves open
 
@@ -162,6 +163,9 @@ or is listed as unsupported under [Status](#status).
   input: to struct fields, and in the fork also to fields that hold a union wrapper.
 * **`readOnly: true`** properties are rejected when the input contains them, which JSON Schema allows.
   `--disable-readonly-validation` turns that off.
+* **`deprecated: true`** adds a `Deprecated:` paragraph to the doc comment of the field or type, which gopls and
+  staticcheck report wherever it is used. JSON Schema defines the keyword from draft 2019-09; the generator reads it
+  in every draft.
 * **Properties a schema allows without declaring them** are dropped on decode, unless the schema declares
   `additionalProperties`. In that case an `AdditionalProperties` field holds them.
 * **`--strict-additional-properties=strict`** rejects undeclared properties on every object, including where the
@@ -208,7 +212,7 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 | Schema | Upstream | Fork |
 | --- | --- | --- |
 | `"type": ["number", "null"]` | `type FooRate *float64`, a named pointer type, which can have no methods | `*float64` |
-| `oneOf` of `string`, `number`, `boolean` and `null` variants, or `"type": ["string", "number"]` | `interface{}` | A struct holding one of the values, decoded by its JSON kind |
+| `oneOf` of `string`, `number`, `boolean` and `null` variants, or `"type": ["string", "number"]` | `interface{}` | A struct holding one of the values, decoded by its JSON kind. Accessors such as `AsString()` read the value, and constructors such as `NewFooString(v)` build one |
 | `oneOf` of objects told apart by a `const` property | `interface{}` | A struct with a field per variant, decoded by that property |
 | Any other `oneOf` of objects | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches |
 | `oneOf` or `anyOf` of a `$ref`, an object or an array, and `{"type": "null"}` | `interface{}` for a `oneOf`, a copy of the schema for an `anyOf` | A pointer to the schema's own type |
@@ -244,6 +248,8 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 * A `pattern` that Go's regexp cannot compile, such as a lookahead, is left unchecked with a warning. Upstream's
   check rejected every value.
 * Declarations come out in a fixed order. In upstream's output, an unrelated change could reorder them.
+* A field or type whose schema sets `deprecated` has a `Deprecated:` paragraph in its doc comment, as described under
+  [Choices JSON Schema leaves open](#choices-json-schema-leaves-open). Upstream ignores the keyword.
 * The [fidelity warnings](#fidelity-warnings) above.
 * `--version` prints the release.
 

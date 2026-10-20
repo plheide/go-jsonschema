@@ -7,6 +7,72 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// NewWithDefaultDebugBool returns the WithDefaultDebug that holds v, as decoding v
+// does. It does not check v against the schema.
+func NewWithDefaultDebugBool(v bool) WithDefaultDebug {
+	return WithDefaultDebug{value: v, present: true}
+}
+
+// NewWithDefaultDebugString returns the WithDefaultDebug that holds v, as decoding
+// v does. It does not check v against the schema.
+func NewWithDefaultDebugString(v string) WithDefaultDebug {
+	return WithDefaultDebug{value: v, present: true}
+}
+
+// NewWithDefaultLabelNumber returns the WithDefaultLabel that holds v, as decoding
+// v does. It does not check v against the schema.
+func NewWithDefaultLabelNumber(v float64) WithDefaultLabel {
+	return WithDefaultLabel{value: v, present: true}
+}
+
+// NewWithDefaultLabelString returns the WithDefaultLabel that holds v, as decoding
+// v does. It does not check v against the schema.
+func NewWithDefaultLabelString(v string) WithDefaultLabel {
+	return WithDefaultLabel{value: v, present: true}
+}
+
+// NewWithDefaultMismatchBool returns the WithDefaultMismatch that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewWithDefaultMismatchBool(v bool) WithDefaultMismatch {
+	return WithDefaultMismatch{value: v, present: true}
+}
+
+// NewWithDefaultMismatchString returns the WithDefaultMismatch that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewWithDefaultMismatchString(v string) WithDefaultMismatch {
+	return WithDefaultMismatch{value: v, present: true}
+}
+
+// NewWithDefaultNullableNull returns the WithDefaultNullable that holds an
+// explicit null.
+func NewWithDefaultNullableNull() WithDefaultNullable {
+	return WithDefaultNullable{present: true}
+}
+
+// NewWithDefaultNullableNumber returns the WithDefaultNullable that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewWithDefaultNullableNumber(v float64) WithDefaultNullable {
+	return WithDefaultNullable{value: v, present: true}
+}
+
+// NewWithDefaultNullableString returns the WithDefaultNullable that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewWithDefaultNullableString(v string) WithDefaultNullable {
+	return WithDefaultNullable{value: v, present: true}
+}
+
+// NewWithDefaultTabNumber returns the WithDefaultTab that holds v, as decoding v
+// does. It does not check v against the schema.
+func NewWithDefaultTabNumber(v float64) WithDefaultTab {
+	return WithDefaultTab{value: v, present: true}
+}
+
+// NewWithDefaultTabString returns the WithDefaultTab that holds v, as decoding v
+// does. It does not check v against the schema.
+func NewWithDefaultTabString(v string) WithDefaultTab {
+	return WithDefaultTab{value: v, present: true}
+}
+
 // Defaults on primitive union wrappers. A wrapper is a struct, so the default is
 // decoded into it as JSON rather than assigned as a literal. nullable accepts
 // null, so an explicit null is a value and keeps it; only an absent key takes the

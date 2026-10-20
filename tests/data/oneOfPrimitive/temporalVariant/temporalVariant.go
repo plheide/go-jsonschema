@@ -9,6 +9,42 @@ import "github.com/plheide/go-jsonschema/pkg/types"
 import yaml "gopkg.in/yaml.v3"
 import "time"
 
+// NewTemporalVariantClockNumber returns the TemporalVariantClock that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewTemporalVariantClockNumber(v float64) TemporalVariantClock {
+	return TemporalVariantClock{value: v, present: true}
+}
+
+// NewTemporalVariantClockTime returns the TemporalVariantClock that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewTemporalVariantClockTime(v types.SerializableTime) TemporalVariantClock {
+	return TemporalVariantClock{value: v, present: true}
+}
+
+// NewTemporalVariantDayDate returns the TemporalVariantDay that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewTemporalVariantDayDate(v types.SerializableDate) TemporalVariantDay {
+	return TemporalVariantDay{value: v, present: true}
+}
+
+// NewTemporalVariantDayNumber returns the TemporalVariantDay that holds v, as
+// decoding v does. It does not check v against the schema.
+func NewTemporalVariantDayNumber(v float64) TemporalVariantDay {
+	return TemporalVariantDay{value: v, present: true}
+}
+
+// NewTemporalVariantTimeOrNumberDateTime returns the TemporalVariantTimeOrNumber
+// that holds v, as decoding v does. It does not check v against the schema.
+func NewTemporalVariantTimeOrNumberDateTime(v time.Time) TemporalVariantTimeOrNumber {
+	return TemporalVariantTimeOrNumber{value: v, present: true}
+}
+
+// NewTemporalVariantTimeOrNumberNumber returns the TemporalVariantTimeOrNumber
+// that holds v, as decoding v does. It does not check v against the schema.
+func NewTemporalVariantTimeOrNumberNumber(v float64) TemporalVariantTimeOrNumber {
+	return TemporalVariantTimeOrNumber{value: v, present: true}
+}
+
 type TemporalVariant struct {
 	// Likewise a `time` variant holds types.SerializableTime.
 	Clock *TemporalVariantClock `json:"clock,omitempty,omitzero" yaml:"clock,omitempty" mapstructure:"clock,omitempty"`

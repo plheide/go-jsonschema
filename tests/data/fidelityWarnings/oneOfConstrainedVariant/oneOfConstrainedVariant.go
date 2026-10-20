@@ -8,6 +8,41 @@ import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "time"
 
+// NewOneOfConstrainedVariantTimeOrNumberDateTime returns the
+// OneOfConstrainedVariantTimeOrNumber that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewOneOfConstrainedVariantTimeOrNumberDateTime(v time.Time) OneOfConstrainedVariantTimeOrNumber {
+	return OneOfConstrainedVariantTimeOrNumber{value: v, present: true}
+}
+
+// NewOneOfConstrainedVariantTimeOrNumberNumber returns the
+// OneOfConstrainedVariantTimeOrNumber that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewOneOfConstrainedVariantTimeOrNumberNumber(v float64) OneOfConstrainedVariantTimeOrNumber {
+	return OneOfConstrainedVariantTimeOrNumber{value: v, present: true}
+}
+
+// NewOneOfConstrainedVariantUnconstrainedBool returns the
+// OneOfConstrainedVariantUnconstrained that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewOneOfConstrainedVariantUnconstrainedBool(v bool) OneOfConstrainedVariantUnconstrained {
+	return OneOfConstrainedVariantUnconstrained{value: v, present: true}
+}
+
+// NewOneOfConstrainedVariantUnconstrainedNumber returns the
+// OneOfConstrainedVariantUnconstrained that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewOneOfConstrainedVariantUnconstrainedNumber(v float64) OneOfConstrainedVariantUnconstrained {
+	return OneOfConstrainedVariantUnconstrained{value: v, present: true}
+}
+
+// NewOneOfConstrainedVariantUnconstrainedString returns the
+// OneOfConstrainedVariantUnconstrained that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewOneOfConstrainedVariantUnconstrainedString(v string) OneOfConstrainedVariantUnconstrained {
+	return OneOfConstrainedVariantUnconstrained{value: v, present: true}
+}
+
 type OneOfConstrainedVariant struct {
 	// A variant carrying a constraint the wrapper has nowhere to enforce disqualifies
 	// the primitive wrapper, because the wrapper dispatches on JSON token kind alone.

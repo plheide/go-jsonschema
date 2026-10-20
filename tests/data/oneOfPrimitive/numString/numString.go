@@ -7,6 +7,18 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// NewNumStringValueNumber returns the NumStringValue that holds v, as decoding v
+// does. It does not check v against the schema.
+func NewNumStringValueNumber(v float64) NumStringValue {
+	return NumStringValue{value: v, present: true}
+}
+
+// NewNumStringValueString returns the NumStringValue that holds v, as decoding v
+// does. It does not check v against the schema.
+func NewNumStringValueString(v string) NumStringValue {
+	return NumStringValue{value: v, present: true}
+}
+
 type NumString struct {
 	// Value corresponds to the JSON schema field "value".
 	Value NumStringValue `json:"value" yaml:"value" mapstructure:"value"`

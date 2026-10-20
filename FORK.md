@@ -28,6 +28,8 @@ Not offered upstream yet:
     regexp cannot compile, and nullable `$ref`s into another file.
 
   They are carried into the stack once upstream reviews it;
+* constructors for primitive-union wrappers, and the `Deprecated:` paragraph for the `deprecated` keyword (made on
+  `main`);
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 

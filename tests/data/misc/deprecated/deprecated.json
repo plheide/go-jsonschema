@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "description": "deprecated: true adds a \"Deprecated:\" paragraph to the doc comment of the field or type, which gopls and staticcheck report on use. A string in its place, as schemas generated from TypeScript give it, is the paragraph's text; any other value is ignored. A description that has the paragraph already is kept as it is, and a deprecated nullable $ref is still a pointer.",
+  "type": "object",
+  "properties": {
+    "old": { "type": "string", "deprecated": true, "description": "Replaced by new." },
+    "bare": { "type": "integer", "deprecated": true },
+    "explained": {
+      "type": "string",
+      "deprecated": true,
+      "description": "The old name.\n\nDeprecated: Use name instead."
+    },
+    "renamed": { "type": "string", "deprecated": "Use `name` instead.", "description": "The name, as version 1 spelled it." },
+    "prefixed": { "type": "string", "deprecated": "Deprecated: Use name instead." },
+    "ignored": { "type": "string", "deprecated": 1 },
+    "legacy": { "$ref": "#/$defs/Legacy" },
+    "nullableLegacy": { "oneOf": [{ "$ref": "#/$defs/Point" }, { "type": "null" }], "deprecated": true },
+    "level": { "enum": ["low", "high"], "deprecated": "Use priority instead." },
+    "amount": { "oneOf": [{ "type": "string" }, { "type": "number" }], "deprecated": true },
+    "shape": {
+      "oneOf": [
+        { "type": "object", "properties": { "kind": { "const": "circle" } }, "required": ["kind"] },
+        { "type": "object", "properties": { "kind": { "const": "square" } }, "required": ["kind"] }
+      ],
+      "deprecated": true
+    },
+    "contact": {
+      "oneOf": [
+        { "type": "object", "properties": { "email": { "type": "string" } }, "required": ["email"] },
+        { "type": "object", "properties": { "phone": { "type": "string" } }, "required": ["phone"] }
+      ],
+      "deprecated": true
+    },
+    "current": { "type": "string" }
+  },
+  "$defs": {
+    "Legacy": { "type": "string", "deprecated": true, "description": "A code kept for old clients." },
+    "Point": { "type": "object", "properties": { "x": { "type": "number" } } }
+  }
+}

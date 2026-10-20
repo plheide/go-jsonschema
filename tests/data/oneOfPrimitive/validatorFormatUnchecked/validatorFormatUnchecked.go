@@ -7,6 +7,34 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// NewValidatorFormatUncheckedIdOrNumberNumber returns the
+// ValidatorFormatUncheckedIdOrNumber that holds v, as decoding v does. It does not
+// check v against the schema.
+func NewValidatorFormatUncheckedIdOrNumberNumber(v float64) ValidatorFormatUncheckedIdOrNumber {
+	return ValidatorFormatUncheckedIdOrNumber{value: v, present: true}
+}
+
+// NewValidatorFormatUncheckedIdOrNumberString returns the
+// ValidatorFormatUncheckedIdOrNumber that holds v, as decoding v does. It does not
+// check v against the schema.
+func NewValidatorFormatUncheckedIdOrNumberString(v string) ValidatorFormatUncheckedIdOrNumber {
+	return ValidatorFormatUncheckedIdOrNumber{value: v, present: true}
+}
+
+// NewValidatorFormatUncheckedUnknownFormatBool returns the
+// ValidatorFormatUncheckedUnknownFormat that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewValidatorFormatUncheckedUnknownFormatBool(v bool) ValidatorFormatUncheckedUnknownFormat {
+	return ValidatorFormatUncheckedUnknownFormat{value: v, present: true}
+}
+
+// NewValidatorFormatUncheckedUnknownFormatString returns the
+// ValidatorFormatUncheckedUnknownFormat that holds v, as decoding v does. It does
+// not check v against the schema.
+func NewValidatorFormatUncheckedUnknownFormatString(v string) ValidatorFormatUncheckedUnknownFormat {
+	return ValidatorFormatUncheckedUnknownFormat{value: v, present: true}
+}
+
 type ValidatorFormatUnchecked struct {
 	// A validator-backed format no longer disqualifies the wrapper. With format
 	// validation off no check is emitted, which is exactly what the non-oneOf string

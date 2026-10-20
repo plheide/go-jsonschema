@@ -184,3 +184,21 @@ func (j *EmbeddedInStruct) UnmarshalYAML(value *yaml.Node) error {
 	*j = EmbeddedInStruct(plain)
 	return nil
 }
+
+// NewEmbeddedInStructValueOptionalBool returns the EmbeddedInStructValueOptional
+// that holds v, as decoding v does. It does not check v against the schema.
+func NewEmbeddedInStructValueOptionalBool(v bool) EmbeddedInStructValueOptional {
+	return EmbeddedInStructValueOptional{value: v, present: true}
+}
+
+// NewEmbeddedInStructValueOptionalNumber returns the EmbeddedInStructValueOptional
+// that holds v, as decoding v does. It does not check v against the schema.
+func NewEmbeddedInStructValueOptionalNumber(v float64) EmbeddedInStructValueOptional {
+	return EmbeddedInStructValueOptional{value: v, present: true}
+}
+
+// NewEmbeddedInStructValueOptionalString returns the EmbeddedInStructValueOptional
+// that holds v, as decoding v does. It does not check v against the schema.
+func NewEmbeddedInStructValueOptionalString(v string) EmbeddedInStructValueOptional {
+	return EmbeddedInStructValueOptional{value: v, present: true}
+}

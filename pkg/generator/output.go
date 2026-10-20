@@ -109,7 +109,7 @@ func (o *output) uniqueTypeName(scope nameScope) (string, bool) {
 			name := scope.stringFrom(i)
 
 			v, ok := o.declsByName[name]
-			if (!ok || (ok && v.Type == nil)) && !o.declaresConstant(name) {
+			if (!ok || (ok && v.Type == nil)) && !o.declaresValue(name) {
 				// An identifier using the current amount of name context is unique, use it.
 				return name, false
 			}
@@ -121,13 +121,13 @@ func (o *output) uniqueTypeName(scope nameScope) (string, bool) {
 	name := scope.string()
 
 	v, ok := o.declsByName[name]
-	if (!ok || (ok && v.Type == nil)) && !o.declaresConstant(name) {
+	if (!ok || (ok && v.Type == nil)) && !o.declaresValue(name) {
 		return name, false
 	}
 
 	for {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
-		if _, ok := o.declsByName[suffixed]; !ok && !o.declaresConstant(suffixed) {
+		if _, ok := o.declsByName[suffixed]; !ok && !o.declaresValue(suffixed) {
 			return suffixed, true
 		}
 
@@ -164,6 +164,26 @@ func (o *output) declaresConstant(name string) bool {
 	}
 
 	return false
+}
+
+// declaresFunction reports whether the package declares a function or method
+// under name: a wrapper's constructor under its own name, a method under its
+// receiver's name joined to its own by "_".
+func (o *output) declaresFunction(name string) bool {
+	for _, decl := range o.file.Package.Decls {
+		if m, ok := decl.(*codegen.Method); ok && m.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// declaresValue reports whether name is taken by something that is not a
+// type: a constant, a function or a method. A type given such a name would be
+// dropped by AddDecl, so type allocation treats it as taken.
+func (o *output) declaresValue(name string) bool {
+	return o.declaresConstant(name) || o.declaresFunction(name)
 }
 
 // importsName reports whether an import binds name in the file.

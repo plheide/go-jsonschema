@@ -190,3 +190,21 @@ func (j *InField) UnmarshalYAML(value *yaml.Node) error {
 	*j = InField(plain)
 	return nil
 }
+
+// NewInFieldValueBool returns the InFieldValue that holds v, as decoding v does.
+// It does not check v against the schema.
+func NewInFieldValueBool(v bool) InFieldValue {
+	return InFieldValue{value: v, present: true}
+}
+
+// NewInFieldValueNumber returns the InFieldValue that holds v, as decoding v does.
+// It does not check v against the schema.
+func NewInFieldValueNumber(v float64) InFieldValue {
+	return InFieldValue{value: v, present: true}
+}
+
+// NewInFieldValueString returns the InFieldValue that holds v, as decoding v does.
+// It does not check v against the schema.
+func NewInFieldValueString(v string) InFieldValue {
+	return InFieldValue{value: v, present: true}
+}

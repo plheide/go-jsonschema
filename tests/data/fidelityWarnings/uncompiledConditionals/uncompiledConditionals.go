@@ -11,6 +11,18 @@ import "reflect"
 
 type Names []string
 
+// NewUncompiledConditionalsValueNumber returns the UncompiledConditionalsValue
+// that holds v, as decoding v does. It does not check v against the schema.
+func NewUncompiledConditionalsValueNumber(v float64) UncompiledConditionalsValue {
+	return UncompiledConditionalsValue{value: v, present: true}
+}
+
+// NewUncompiledConditionalsValueString returns the UncompiledConditionalsValue
+// that holds v, as decoding v does. It does not check v against the schema.
+func NewUncompiledConditionalsValueString(v string) UncompiledConditionalsValue {
+	return UncompiledConditionalsValue{value: v, present: true}
+}
+
 type Shape struct {
 	// Color corresponds to the JSON schema field "color".
 	Color *string `json:"color,omitempty,omitzero" yaml:"color,omitempty" mapstructure:"color,omitempty"`
