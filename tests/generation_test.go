@@ -669,6 +669,14 @@ func TestNullableBranchCrossFile(t *testing.T) {
 	testExampleFile(t, basicConfig, "./data/nullableBranchCrossFile/crossFile.json")
 }
 
+// TestDeprecated covers deprecated: true, which adds a "Deprecated:" paragraph
+// to the doc comment of the field or type it sits on.
+func TestDeprecated(t *testing.T) {
+	t.Parallel()
+
+	testExampleFile(t, basicConfig, "./data/misc/deprecated/deprecated.json")
+}
+
 func TestStructWithConstraints(t *testing.T) {
 	t.Parallel()
 

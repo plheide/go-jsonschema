@@ -464,7 +464,7 @@ func (g *schemaGenerator) emitPrimitiveWrapper(
 
 	decl := &codegen.TypeDecl{
 		Name:    name,
-		Comment: t.Description,
+		Comment: withDeprecation(t.Description, t),
 		Type: &codegen.StructType{
 			Fields: []codegen.StructField{
 				{Name: "value", Type: codegen.EmptyInterfaceType{}},

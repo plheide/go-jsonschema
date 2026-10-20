@@ -513,7 +513,7 @@ func (g *schemaGenerator) generateOneOfDiscriminator(
 	// than to a type that is never declared. The type is filled in below.
 	holderDecl := &codegen.TypeDecl{
 		Name:       holderName,
-		Comment:    t.Description,
+		Comment:    withDeprecation(t.Description, t),
 		SchemaType: t,
 	}
 	g.output.declsBySchema[t] = holderDecl

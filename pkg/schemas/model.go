@@ -153,6 +153,37 @@ func (t *TypeList) Add(s string) {
 	}
 }
 
+// Deprecation is the value of the deprecated keyword. JSON Schema defines it
+// as a boolean. Schemas generated from TypeScript give it the text of a
+// @deprecated tag instead, which marks the instance as deprecated too. Any
+// other value is ignored, so that an annotation never stops a schema from
+// loading.
+type Deprecation struct {
+	// Marked is true when the keyword is true or a string.
+	Marked bool
+	// Message is the keyword's text, when it is a string.
+	Message string
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (d *Deprecation) UnmarshalJSON(value []byte) error {
+	var v any
+	if err := json.Unmarshal(value, &v); err != nil {
+		return fmt.Errorf("failed to unmarshal deprecated: %w", err)
+	}
+
+	switch v := v.(type) {
+	case bool:
+		*d = Deprecation{Marked: v}
+	case string:
+		*d = Deprecation{Marked: true, Message: v}
+	default:
+		*d = Deprecation{}
+	}
+
+	return nil
+}
+
 // Definitions hold schema definitions.
 // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.26
 // RFC draft-wright-json-schema-validation-00, section 5.26.
@@ -242,6 +273,10 @@ type Type struct {
 	//       under the "draft-handrews-json-schema-validation-00" item it mentions "readOnly" as having been moved
 	//       from hyper-schema to validation meta-data...
 	ReadOnly bool `json:"readOnly,omitempty"`
+
+	// Deprecated is the meta-data keyword of draft 2019-09, section 9.3,
+	// read in every draft: the instance may be removed in the future.
+	Deprecated Deprecation `json:"deprecated,omitzero"`
 
 	// ExtGoCustomType is the name of a (qualified or not) custom Go type
 	// to use for the field.

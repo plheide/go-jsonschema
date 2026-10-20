@@ -155,6 +155,7 @@ or is listed as unsupported under [Status](#status).
 | Other `x-` keys | Become struct tags when mapped with `--extension-tag x-key=tag`, and are ignored otherwise. | fork, opt-in |
 | `format: int32` and `format: int64` on an `integer` | Go `int32` and `int64`, the OpenAPI meaning of these formats, with `--openapi-int-formats`. Without it, an `integer` is an `int`, as upstream generates it. | fork, opt-in |
 | `format: uuid` | Checked by `--validate-formats` in every draft, although JSON Schema defines it only from draft 2019-09. | fork, opt-in |
+| `deprecated` given as a string, as schemas generated from TypeScript give it | Marks the field or type as deprecated, as `true` does, with the string as the text of its `Deprecated:` paragraph. A value that is neither a boolean nor a string is ignored. | fork |
 
 ### Choices JSON Schema leaves open
 
@@ -162,6 +163,9 @@ or is listed as unsupported under [Status](#status).
   input: to struct fields, and in the fork also to fields that hold a union wrapper.
 * **`readOnly: true`** properties are rejected when the input contains them, which JSON Schema allows.
   `--disable-readonly-validation` turns that off.
+* **`deprecated: true`** adds a `Deprecated:` paragraph to the doc comment of the field or type, which gopls and
+  staticcheck report wherever it is used. JSON Schema defines the keyword from draft 2019-09; the generator reads it
+  in every draft.
 * **Properties a schema allows without declaring them** are dropped on decode, unless the schema declares
   `additionalProperties`. In that case an `AdditionalProperties` field holds them.
 * **`--strict-additional-properties=strict`** rejects undeclared properties on every object, including where the

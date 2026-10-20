@@ -92,6 +92,8 @@ type AutoinstallSchema struct {
 	Timezone *string `json:"timezone,omitempty,omitzero" yaml:"timezone,omitempty" mapstructure:"timezone,omitempty"`
 
 	// Compatibility only - use ubuntu-pro instead
+	//
+	// Deprecated: The JSON schema marks this as deprecated.
 	UbuntuAdvantage *AutoinstallSchemaUbuntuAdvantage `json:"ubuntu-advantage,omitempty,omitzero" yaml:"ubuntu-advantage,omitempty" mapstructure:"ubuntu-advantage,omitempty"`
 
 	// UbuntuPro corresponds to the JSON schema field "ubuntu-pro".
@@ -1359,6 +1361,8 @@ type AutoinstallSchemaSsh struct {
 type AutoinstallSchemaStorage map[string]interface{}
 
 // Compatibility only - use ubuntu-pro instead
+//
+// Deprecated: The JSON schema marks this as deprecated.
 type AutoinstallSchemaUbuntuAdvantage struct {
 	// A valid token starts with a C and is followed by 23 to 29 Base58 characters.
 	// See https://pkg.go.dev/github.com/btcsuite/btcutil/base58#CheckEncode

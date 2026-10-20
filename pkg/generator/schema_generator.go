@@ -539,7 +539,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	decl := codegen.TypeDecl{
 		Name:       name,
-		Comment:    t.Description,
+		Comment:    withDeprecation(t.Description, t),
 		SchemaType: t,
 	}
 	g.output.declsBySchema[t] = &decl
@@ -1935,7 +1935,7 @@ func (g *schemaGenerator) addStructField(
 
 	structField := codegen.StructField{
 		Name:         fieldName,
-		Comment:      comment,
+		Comment:      withDeprecation(comment, prop),
 		JSONName:     name,
 		SchemaType:   prop,
 		Tags:         g.generateStructFieldTags(name, extraTags, isRequired),
@@ -2750,6 +2750,7 @@ func (g *schemaGenerator) generateEnumType(
 
 	enumDecl := codegen.TypeDecl{
 		Name:       enumName,
+		Comment:    withDeprecation("", t),
 		Type:       enumType,
 		SchemaType: t,
 	}

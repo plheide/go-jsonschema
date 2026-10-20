@@ -170,3 +170,35 @@ func TestRejectsNullSubschemas(t *testing.T) {
 		t.Errorf("valid schema: err = %v", err)
 	}
 }
+
+// TestDeprecatedKeyword checks the forms deprecated takes in practice: the
+// boolean JSON Schema defines, the message that schemas generated from
+// TypeScript give it instead, and anything else, which is ignored rather than
+// failing the whole schema.
+func TestDeprecatedKeyword(t *testing.T) {
+	t.Parallel()
+
+	s := parseRoot(t, `{
+		"properties": {
+			"flag": {"deprecated": true},
+			"off": {"deprecated": false},
+			"message": {"deprecated": "Use b instead."},
+			"number": {"deprecated": 1},
+			"null": {"deprecated": null},
+			"absent": {}
+		}
+	}`)
+
+	for name, want := range map[string]schemas.Deprecation{
+		"flag":    {Marked: true},
+		"off":     {},
+		"message": {Marked: true, Message: "Use b instead."},
+		"number":  {},
+		"null":    {},
+		"absent":  {},
+	} {
+		if got := s.Properties[name].Deprecated; got != want {
+			t.Errorf("%s: Deprecated = %+v, want %+v", name, got, want)
+		}
+	}
+}
