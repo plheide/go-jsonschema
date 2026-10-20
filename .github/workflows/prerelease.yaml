@@ -19,9 +19,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 1
-      - name: Fetch all tags
-        run: git fetch --force --tags
+          # Full history and every tag, so goreleaser finds the previous tag
+          # and lists the commits since it. A shallow clone lists only the
+          # tagged commit.
+          fetch-depth: 0
+          # Nothing later runs git against the remote: goreleaser publishes
+          # with GITHUB_TOKEN, and docker logs in on its own.
+          persist-credentials: false
       - name: Setup Golang
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
