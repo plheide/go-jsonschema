@@ -248,6 +248,8 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 * A `pattern` that Go's regexp cannot compile, such as a lookahead, is left unchecked with a warning. Upstream's
   check rejected every value.
 * Declarations come out in a fixed order. In upstream's output, an unrelated change could reorder them.
+* A field or type whose schema sets `deprecated` has a `Deprecated:` paragraph in its doc comment, as described under
+  [Choices JSON Schema leaves open](#choices-json-schema-leaves-open). Upstream ignores the keyword.
 * The [fidelity warnings](#fidelity-warnings) above.
 * `--version` prints the release.
 
