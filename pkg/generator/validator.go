@@ -71,6 +71,7 @@ var (
 	_ validator = new(formatValidator)
 	_ validator = new(strictFieldsValidator)
 	_ validator = new(conditionalDiscriminatorValidator)
+	_ validator = new(presenceCountValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )

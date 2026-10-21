@@ -615,6 +615,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
 			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
+			validators = append(validators, presenceCountValidators(t, decl.Name)...)
 			g.generateUnmarshaler(&decl, validators)
 
 			return &codegen.NamedType{Decl: &decl}, nil
@@ -645,6 +646,10 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			cd.declName = decl.Name
 			validators = append(validators, cd)
 		}
+
+		// A oneOf or anyOf whose branches only list required is a count of
+		// the branches whose properties are all present.
+		validators = append(validators, presenceCountValidators(t, decl.Name)...)
 
 		for _, f := range tt.Fields {
 			if f.DefaultValue != nil {
@@ -1556,7 +1561,10 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	// declares `type: object` is the exception: it went through
 	// generateStructType before, which returned the merge error, so it
 	// still fails rather than becoming an unchecked interface{}.
-	if len(t.AnyOf) > 0 {
+	//
+	// An anyOf that is a presence count has nothing to merge: the struct for
+	// t checks it.
+	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) {
 		dt, err := g.generateAnyOfType(t, scope)
 		if err != nil {
 			if slices.Contains(t.Type, schemas.TypeNameObject) {
@@ -1832,7 +1840,7 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		}
 	}
 
-	if len(t.AnyOf) > 0 {
+	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) {
 		return g.generateAnyOfType(t, scope)
 	}
 
@@ -2466,6 +2474,14 @@ func (g *schemaGenerator) generateInlineComposition(t *schemas.Type, scope nameS
 	}
 
 	if len(t.AnyOf) > 0 {
+		// A presence count compiles to a validator that attaches only on a
+		// declared type, so it skips the merge.
+		if isPresenceAnyOf(t) {
+			dt, err := g.generateDeclaredType(t, scope)
+
+			return dt, true, err
+		}
+
 		dt, err := g.generateAnyOfType(t, scope)
 
 		return dt, true, err

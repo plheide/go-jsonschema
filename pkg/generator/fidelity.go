@@ -58,20 +58,29 @@ func (g *schemaGenerator) warnNotEnforced(scope nameScope, reason string) {
 // compiled while t itself became a struct or a map: the struct holds t's own
 // properties, and the map, for a `type: object` without any, holds whatever
 // keys come, and neither checks the branches, so a value matching none or
-// several of them passes. Branches that only list required are one such
-// oneOf, and $ref branches without a discriminator another.
+// several of them passes. $ref branches without a discriminator are one such
+// oneOf. Branches that only list required are a presence count, which the
+// struct checks.
 func (g *schemaGenerator) warnUncompiledOneOf(t *schemas.Type, theType codegen.Type, scope nameScope) {
 	if len(t.OneOf) == 0 || g.config.OnlyModels {
 		return
 	}
 
 	switch theType.(type) {
-	case *codegen.StructType, *codegen.MapType:
-		g.warnNotEnforced(scope, fmt.Sprintf(
-			"oneOf of %d branches not compiled, so a value matching none or several of them passes",
-			len(t.OneOf),
-		))
+	case *codegen.StructType:
+		// A presence count is the struct's to check.
+		if _, ok := presenceBranches(t, t.OneOf); ok {
+			return
+		}
+	case *codegen.MapType:
+	default:
+		return
 	}
+
+	g.warnNotEnforced(scope, fmt.Sprintf(
+		"oneOf of %d branches not compiled, so a value matching none or several of them passes",
+		len(t.OneOf),
+	))
 }
 
 // warnUncompiledConditional warns when t declares an if/then/else or a not

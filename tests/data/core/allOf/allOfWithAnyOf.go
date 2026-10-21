@@ -3,7 +3,6 @@
 package test
 
 import "encoding/json"
-import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
@@ -18,76 +17,32 @@ type Agreement struct {
 	Prohibition *float64 `json:"prohibition,omitempty,omitzero" yaml:"prohibition,omitempty" mapstructure:"prohibition,omitempty"`
 }
 
-type Agreement_0 map[string]interface{}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Agreement_0) UnmarshalJSON(value []byte) error {
-	type Plain Agreement_0
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal Agreement_0: %w", err)
-	}
-	*j = Agreement_0(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Agreement_0) UnmarshalYAML(value *yaml.Node) error {
-	type Plain Agreement_0
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Agreement_0: %w", err)
-	}
-	*j = Agreement_0(plain)
-	return nil
-}
-
-type Agreement_1 map[string]interface{}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Agreement_1) UnmarshalJSON(value []byte) error {
-	type Plain Agreement_1
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal Agreement_1: %w", err)
-	}
-	*j = Agreement_1(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Agreement_1) UnmarshalYAML(value *yaml.Node) error {
-	type Plain Agreement_1
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Agreement_1: %w", err)
-	}
-	*j = Agreement_1(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Agreement) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Agreement: %w", err)
 	}
-	var agreement_0 Agreement_0
-	var agreement_1 Agreement_1
-	var errs []error
-	if err := agreement_0.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
+	if _, ok := raw["@type"]; raw != nil && !ok {
+		return fmt.Errorf("field @type in Agreement: required")
 	}
-	if err := agreement_1.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
+	anyOfMatches := 0
+	if _, ok := raw["permission"]; ok {
+		anyOfMatches++
 	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
+	if _, ok := raw["prohibition"]; ok {
+		anyOfMatches++
+	}
+	if raw != nil && anyOfMatches == 0 {
+		return fmt.Errorf("Agreement: at least one of [permission], [prohibition] must be present")
 	}
 	type Plain Agreement
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal Agreement: %w", err)
+	}
+	if plain.Type != "Agreement" {
+		return fmt.Errorf("field %s: must be equal to %s", "@type", "Agreement")
 	}
 	*j = Agreement(plain)
 	return nil
@@ -99,22 +54,26 @@ func (j *Agreement) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Agreement: %w", err)
 	}
-	var agreement_0 Agreement_0
-	var agreement_1 Agreement_1
-	var errs []error
-	if err := agreement_0.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
+	if _, ok := raw["@type"]; raw != nil && !ok {
+		return fmt.Errorf("field @type in Agreement: required")
 	}
-	if err := agreement_1.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
+	anyOfMatches := 0
+	if _, ok := raw["permission"]; ok {
+		anyOfMatches++
 	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
+	if _, ok := raw["prohibition"]; ok {
+		anyOfMatches++
+	}
+	if raw != nil && anyOfMatches == 0 {
+		return fmt.Errorf("Agreement: at least one of [permission], [prohibition] must be present")
 	}
 	type Plain Agreement
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal Agreement: %w", err)
+	}
+	if plain.Type != "Agreement" {
+		return fmt.Errorf("field %s: must be equal to %s", "@type", "Agreement")
 	}
 	*j = Agreement(plain)
 	return nil

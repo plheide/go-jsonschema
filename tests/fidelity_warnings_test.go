@@ -140,13 +140,13 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		}
 	})
 
-	t.Run("a oneOf of required-only branches on a struct is reported", func(t *testing.T) {
+	t.Run("a oneOf of required-only branches on a struct is checked, not reported", func(t *testing.T) {
 		t.Parallel()
 
-		warnings := generateWithWarnerCapture(t, "./data/fidelityWarnings/oneOfRequiredOnly/oneOfRequiredOnly.json")
-		joined := strings.Join(filterFidelityWarnings(warnings), "\n")
+		// It is a presence count, which the struct checks (TestPresenceCount).
+		warnings := generateWithWarnerCapture(t, "./data/presenceCount/oneOfRequiredOnly/oneOfRequiredOnly.json")
 
-		assert.Contains(t, joined, "does not enforce all it declares: oneOf of 2 branches not compiled")
+		assert.Empty(t, filterFidelityWarnings(warnings))
 	})
 
 	t.Run("a conditional the allOf merge drops is reported", func(t *testing.T) {
