@@ -8,8 +8,8 @@ import yaml "gopkg.in/yaml.v3"
 import "reflect"
 
 // A oneOf whose branches only list required: exactly one of value and ref must be
-// present. No oneOf strategy compiles it, so the struct accepts neither or both,
-// and that is reported.
+// present. The struct counts the branches whose properties are all present, and
+// accepts exactly one.
 type OneOfRequiredOnly struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind OneOfRequiredOnlyKind `json:"kind" yaml:"kind" mapstructure:"kind"`
@@ -80,6 +80,16 @@ func (j *OneOfRequiredOnly) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in OneOfRequiredOnly: required")
 	}
+	oneOfMatches := 0
+	if _, ok := raw["value"]; ok {
+		oneOfMatches++
+	}
+	if _, ok := raw["ref"]; ok {
+		oneOfMatches++
+	}
+	if raw != nil && oneOfMatches != 1 {
+		return fmt.Errorf("OneOfRequiredOnly: exactly one of [value], [ref] must be present, got %d", oneOfMatches)
+	}
 	type Plain OneOfRequiredOnly
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -97,6 +107,16 @@ func (j *OneOfRequiredOnly) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in OneOfRequiredOnly: required")
+	}
+	oneOfMatches := 0
+	if _, ok := raw["value"]; ok {
+		oneOfMatches++
+	}
+	if _, ok := raw["ref"]; ok {
+		oneOfMatches++
+	}
+	if raw != nil && oneOfMatches != 1 {
+		return fmt.Errorf("OneOfRequiredOnly: exactly one of [value], [ref] must be present, got %d", oneOfMatches)
 	}
 	type Plain OneOfRequiredOnly
 	var plain Plain

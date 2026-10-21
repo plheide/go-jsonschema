@@ -231,8 +231,10 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 
 ### Checks the fork adds
 
-* An `allOf` of `if`/`then`/`else` keyed on one property's `const` or `enum` checks each branch's `required`, as
-  described under [Validation](#validation).
+* An `allOf` of `if`/`then`/`else` keyed on one property's `const` or `enum` checks each branch's `required` and a
+  `not` of `required`, also where the property is optional, as described under [Validation](#validation).
+* A `oneOf` or `anyOf` whose branches only list `required` checks how many of the listed property sets an object
+  has: exactly one for a `oneOf`, at least one for an `anyOf`.
 * An array type declared in `$defs` checks its own `minItems` and `maxItems`.
 * A property whose `type` admits `null` but whose `enum` does not list it rejects a `null`.
 
@@ -247,6 +249,8 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   can hold it. Upstream's code for such a default did not compile.
 * A `pattern` that Go's regexp cannot compile, such as a lookahead, is left unchecked with a warning. Upstream's
   check rejected every value.
+* A `oneOf` branch whose `$ref` cannot be resolved is reported, as one in an `anyOf` or `allOf` is. Upstream dropped
+  it without a word.
 * Declarations come out in a fixed order. In upstream's output, an unrelated change could reorder them.
 * A field or type whose schema sets `deprecated` has a `Deprecated:` paragraph in its doc comment, as described under
   [Choices JSON Schema leaves open](#choices-json-schema-leaves-open). Upstream ignores the keyword.
@@ -314,7 +318,7 @@ only specific validations remain to be fully implemented.
     * [ ] `propertyNames`
     * [ ] `maxProperties`
     * [ ] `minProperties`
-  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's required-field check. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check (extra `required`/composition/validation keywords decline detection). Other conditionals
+  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's checks: its `required`, and a `not` of `required` (`not: {required: [a, b]}` forbids both together, `not: {anyOf: [{required: [a]}, {required: [b]}]}` either). Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check, which it may also list in its `required` (other `required`/composition/validation keywords decline detection). The parent must require the discriminator, or else every if must: an absent discriminator then makes each if false, and each `else` applies. Other conditionals
     are not compiled, and a [fidelity warning](#fidelity-warnings) reports them
     * [x] `if`
     * [x] `then`
@@ -322,11 +326,14 @@ only specific validations remain to be fully implemented.
   * [ ] Boolean subschemas (§6.7)
     * [x] `allOf` (merged into one type)
     * [x] `anyOf` (merged into one type that requires a match with at least one branch; a mix of object and
-      non-object branches is `interface{}`)
+      non-object branches is `interface{}`; branches that only list `required` need at least one of their property
+      sets present)
     * [x] `oneOf` (primitive variants — `string`, `number`, `boolean`, `null` — become a wrapper; object variants
-      become a holder that dispatches on a `const` discriminator or tries each variant; **note**: `integer`-typed
-      variants are not currently routed through the wrapper)
-    * [ ] `not` (reported by a [fidelity warning](#fidelity-warnings))
+      become a holder that dispatches on a `const` discriminator or tries each variant; branches that only list
+      `required` need exactly one of their property sets present; **note**: `integer`-typed variants are not
+      currently routed through the wrapper)
+    * [ ] `not` (checked as a `not` of `required` in a conditional's `then` or `else`; any other is reported by a
+      [fidelity warning](#fidelity-warnings))
   * [x] Multi-type unions (§4.2.1) — `{"type": ["string", "number", "boolean", "null"]}` is wire-equivalent to a primitive `oneOf` and routes through the same wrapper. Same primitive set as `oneOf`; same `integer` exclusion. The `["X", "null"]` shape continues to use `*X` for ergonomics; non-primitive types in the union (`object`, `array`) and per-value validation keywords on the union (`format`, `minimum`, etc.) decline detection and fall back to `interface{}`.
   * [ ] Semantic formats (§7.3)
     * [x] Dates and times

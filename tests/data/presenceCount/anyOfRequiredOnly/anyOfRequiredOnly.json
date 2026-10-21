@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "An anyOf whose branches only list required: at least one of email and phone must be present. The struct checks that count, so the anyOf has no type of its own.",
+  "properties": {
+    "name": { "type": "string" },
+    "email": { "type": "string" },
+    "phone": { "type": "string" }
+  },
+  "anyOf": [{ "required": ["email"] }, { "required": ["phone"] }]
+}

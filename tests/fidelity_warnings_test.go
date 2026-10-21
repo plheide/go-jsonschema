@@ -140,23 +140,36 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		}
 	})
 
-	t.Run("a oneOf of required-only branches on a struct is reported", func(t *testing.T) {
+	t.Run("a oneOf of required-only branches on a struct is checked, not reported", func(t *testing.T) {
 		t.Parallel()
 
-		warnings := generateWithWarnerCapture(t, "./data/fidelityWarnings/oneOfRequiredOnly/oneOfRequiredOnly.json")
-		joined := strings.Join(filterFidelityWarnings(warnings), "\n")
+		// It is a presence count, which the struct checks (TestPresenceCount).
+		warnings := generateWithWarnerCapture(t, "./data/presenceCount/oneOfRequiredOnly/oneOfRequiredOnly.json")
 
-		assert.Contains(t, joined, "does not enforce all it declares: oneOf of 2 branches not compiled")
+		assert.Empty(t, filterFidelityWarnings(warnings))
 	})
 
 	t.Run("a conditional the allOf merge drops is reported", func(t *testing.T) {
 		t.Parallel()
 
 		warnings := generateWithWarnerCapture(t,
-			"./data/fidelityWarnings/conditionalRequiredInIf/conditionalRequiredInIf.json")
-		joined := strings.Join(filterFidelityWarnings(warnings), "\n")
+			"./data/fidelityWarnings/conditionalVacuousIf/conditionalVacuousIf.json")
 
-		assert.Contains(t, joined, "does not enforce all it declares: if/then/else not compiled (in allOf branch)")
+		assert.Contains(t, strings.Join(filterFidelityWarnings(warnings), "\n"),
+			"does not enforce all it declares: if/then/else not compiled (in allOf branch)")
+		assert.Contains(t, strings.Join(warnings, "\n"),
+			"must be listed in `required`, or in the `required` of every `if`")
+	})
+
+	t.Run("a conditional whose if requires the optional discriminator is checked, not reported", func(t *testing.T) {
+		t.Parallel()
+
+		// The if is false when the discriminator is absent, which the
+		// conditional discriminator compiles.
+		warnings := generateWithWarnerCapture(t,
+			"./data/conditionalDiscriminator/requiredInIf/requiredInIf.json")
+
+		assert.Empty(t, warnings)
 	})
 
 	t.Run("a $ref branch dropped with its oneOf is named", func(t *testing.T) {
@@ -167,6 +180,47 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 
 		assert.Contains(t, joined, "falls back to interface{} due to oneOf not compiled")
 		assert.Contains(t, joined, "$ref #/definitions/pair")
+	})
+
+	t.Run("a oneOf branch whose $ref leads nowhere is reported", func(t *testing.T) {
+		t.Parallel()
+
+		// As for an anyOf or allOf, each $ref is reported with the reason a
+		// property's $ref fails with: here a missing definition, and a
+		// missing file inside a branch's allOf. Before, the oneOf fell back
+		// to a map without a word, so a schema whose $ref did not load
+		// generated next to nothing, successfully.
+		joined := strings.Join(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/oneOfUnresolvableRef/oneOfUnresolvableRef.json"), "\n")
+
+		assert.Contains(t, joined, `Could not resolve ref "#/definitions/Missing": `+
+			`definition does not exist in schema: "Missing" (from ref "#/definitions/Missing")`)
+		assert.Contains(t, joined, `Could not resolve ref "missing.json#/definitions/B": `+
+			`could not follow $ref "missing.json#/definitions/B" to file "missing.json"`)
+		assert.Contains(t, joined, "type OneOfUnresolvableRef does not enforce all it declares: "+
+			"oneOf of 2 branches not compiled")
+	})
+
+	t.Run("a oneOf that falls back to a map is reported", func(t *testing.T) {
+		t.Parallel()
+
+		// Under type: object, a oneOf no strategy compiles leaves a map when
+		// the schema has no properties of its own. The map checks no branch,
+		// any more than the struct does that the same oneOf leaves beside
+		// properties.
+		const (
+			schema = "./data/fidelityWarnings/oneOfObjectMap/oneOfObjectMap.json"
+			want   = "schema fidelity: type OneOfObjectMap does not enforce all it declares: " +
+				"oneOf of 2 branches not compiled, so a value matching none or several of them passes"
+		)
+
+		assert.Contains(t, generateWithWarnerCapture(t, schema), want)
+
+		// Left undeclared, the map is reported all the same.
+		cfg := basicConfig
+		cfg.DisableCustomTypesForMaps = true
+
+		assert.Contains(t, generateWithConfigAndWarnerCapture(t, cfg, schema), want)
 	})
 
 	t.Run("conditionals and negations no code path compiles are reported once each", func(t *testing.T) {

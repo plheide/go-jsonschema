@@ -409,6 +409,8 @@ func (g *schemaGenerator) generateOneOfComposition(
 	t *schemas.Type,
 	scope nameScope,
 ) (codegen.Type, bool, error) {
+	g.warnUnresolvableBranches(t.OneOf)
+
 	if g.config.OnlyModels {
 		return nil, false, nil
 	}
@@ -445,6 +447,39 @@ func (g *schemaGenerator) generateOneOfComposition(
 	}
 
 	return nil, false, nil
+}
+
+// warnUnresolvableBranches reports each $ref of a oneOf's branches that leads
+// nowhere, saying why, as resolveRefs does for an anyOf or allOf: a branch's
+// own $ref, and those of the allOf a branch is built from, which discriminator
+// detection merges. No oneOf strategy can use such a branch, so the oneOf
+// falls back to the generic type, and nothing else would say that a file did
+// not load or a definition is missing.
+func (g *schemaGenerator) warnUnresolvableBranches(branches []*schemas.Type) {
+	for _, branch := range branches {
+		g.warnUnresolvableRefs(branch)
+	}
+}
+
+// warnUnresolvableRefs reports t's $ref, or else the $refs of t's allOf, when
+// they lead nowhere. A $ref's own allOf is the target's, which generating the
+// target reports.
+func (g *schemaGenerator) warnUnresolvableRefs(t *schemas.Type) {
+	if t == nil {
+		return
+	}
+
+	if t.Ref != "" {
+		if _, err := g.findRef(t); err != nil {
+			g.warner(fmt.Sprintf("Could not resolve ref %q: %v", t.Ref, err))
+		}
+
+		return
+	}
+
+	for _, part := range t.AllOf {
+		g.warnUnresolvableRefs(part)
+	}
 }
 
 // alreadyDeclaredType is the type of t, which declsBySchema holds as decl, for
@@ -553,6 +588,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	if isNamedType(theType) || (isMapType(theType) && g.config.DisableCustomTypesForMaps) {
 		// Don't declare named types under a new name.
 		g.output.forgetDecl(t, &decl, theType)
+		g.warnUncompiledOneOf(t, theType, scope)
 
 		return theType, nil
 	}
@@ -579,6 +615,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
 			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
+			validators = append(validators, presenceCountValidators(t, decl.Name)...)
 			g.generateUnmarshaler(&decl, validators)
 
 			return &codegen.NamedType{Decl: &decl}, nil
@@ -609,6 +646,10 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			cd.declName = decl.Name
 			validators = append(validators, cd)
 		}
+
+		// A oneOf or anyOf whose branches only list required is a count of
+		// the branches whose properties are all present.
+		validators = append(validators, presenceCountValidators(t, decl.Name)...)
 
 		for _, f := range tt.Fields {
 			if f.DefaultValue != nil {
@@ -1520,7 +1561,10 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	// declares `type: object` is the exception: it went through
 	// generateStructType before, which returned the merge error, so it
 	// still fails rather than becoming an unchecked interface{}.
-	if len(t.AnyOf) > 0 {
+	//
+	// An anyOf that is a presence count has nothing to merge: the struct for
+	// t checks it.
+	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) {
 		dt, err := g.generateAnyOfType(t, scope)
 		if err != nil {
 			if slices.Contains(t.Type, schemas.TypeNameObject) {
@@ -1796,7 +1840,7 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		}
 	}
 
-	if len(t.AnyOf) > 0 {
+	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) {
 		return g.generateAnyOfType(t, scope)
 	}
 
@@ -2430,6 +2474,14 @@ func (g *schemaGenerator) generateInlineComposition(t *schemas.Type, scope nameS
 	}
 
 	if len(t.AnyOf) > 0 {
+		// A presence count compiles to a validator that attaches only on a
+		// declared type, so it skips the merge.
+		if isPresenceAnyOf(t) {
+			dt, err := g.generateDeclaredType(t, scope)
+
+			return dt, true, err
+		}
+
 		dt, err := g.generateAnyOfType(t, scope)
 
 		return dt, true, err

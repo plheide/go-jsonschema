@@ -30,6 +30,11 @@ type conditionalDiscriminatorValidator struct {
 	declName      string
 	discriminator string
 	branches      []conditionalBranch
+
+	// optional is set when the parent does not require the discriminator,
+	// which every branch's `if` then requires itself: an absent
+	// discriminator makes each `if` false, so each branch's `else` applies.
+	optional bool
 }
 
 // conditionalBranch is one element of the parent's `allOf`. It pairs the
@@ -42,6 +47,11 @@ type conditionalBranch struct {
 	matchValues []string
 	thenSchema  *schemas.Type
 	elseSchema  *schemas.Type
+
+	// ifRequires is set when the `if` lists the discriminator in its own
+	// `required`, so that it is false, not vacuously true, when the
+	// discriminator is absent.
+	ifRequires bool
 }
 
 // desc satisfies the validator interface. Runs against the raw decoded map
@@ -83,14 +93,29 @@ func (v *conditionalDiscriminatorValidator) generate(out *codegen.Emitter, _ str
 	}
 
 	out.Indent(-1)
+
+	// A null decodes to a nil raw map, which the required checks let
+	// through, and so does the absent discriminator's else.
+	if v.optional && slices.ContainsFunc(v.branches, func(b conditionalBranch) bool { return hasChecks(b.elseSchema) }) {
+		out.Printlnf(`} else if %s != nil {`, varNameRawMap)
+		out.Indent(1)
+
+		absent := fmt.Sprintf("when %s is absent", goStringText(v.discriminator))
+		for _, branch := range v.branches {
+			v.emitChecks(out, branch.elseSchema, absent, "")
+		}
+
+		out.Indent(-1)
+	}
+
 	out.Printlnf(`}`)
 
 	return nil
 }
 
 // emitBranch writes one if/else block: when discStr matches any of the
-// branch's match values, run thenSchema's required checks; when it doesn't
-// and an else is present, run elseSchema's required checks.
+// branch's match values, run thenSchema's checks; when it doesn't and an
+// else is present, run elseSchema's checks.
 //
 // Single-value branches (canonical const form) emit the same byte-for-byte
 // shape as before — `if discStr == "X" { … }` plus a static `(when K='X')`
@@ -103,15 +128,15 @@ func (v *conditionalDiscriminatorValidator) emitBranch(out *codegen.Emitter, bra
 	out.Indent(1)
 
 	thenLabel, thenRuntime := branchContextLabel(v.discriminator, branch.matchValues, false)
-	v.emitRequiredChecks(out, branch.thenSchema, thenLabel, thenRuntime)
+	v.emitChecks(out, branch.thenSchema, thenLabel, thenRuntime)
 	out.Indent(-1)
 
-	if branch.elseSchema != nil && len(branch.elseSchema.Required) > 0 {
+	if hasChecks(branch.elseSchema) {
 		out.Printlnf(`} else {`)
 		out.Indent(1)
 
 		elseLabel, elseRuntime := branchContextLabel(v.discriminator, branch.matchValues, true)
-		v.emitRequiredChecks(out, branch.elseSchema, elseLabel, elseRuntime)
+		v.emitChecks(out, branch.elseSchema, elseLabel, elseRuntime)
 		out.Indent(-1)
 	}
 
@@ -168,6 +193,57 @@ func branchContextLabel(discriminator string, values []string, isElse bool) (str
 	}
 
 	return fmt.Sprintf("when %s='%%s'", disc), "discStr"
+}
+
+// emitChecks writes the checks of a then or else subschema: a presence check
+// per property its `required` lists, then an absence check per property set
+// its `not` forbids.
+func (v *conditionalDiscriminatorValidator) emitChecks(
+	out *codegen.Emitter, sub *schemas.Type, contextLabel, runtimeContextExpr string,
+) {
+	if sub == nil {
+		return
+	}
+
+	v.emitRequiredChecks(out, sub, contextLabel, runtimeContextExpr)
+
+	sets, _ := forbiddenSets(sub.Not)
+	for _, set := range sets {
+		v.emitForbiddenCheck(out, set, contextLabel, runtimeContextExpr)
+	}
+}
+
+// emitForbiddenCheck writes the check that the properties of set are not all
+// present, which a `not` of their `required` asks for. contextLabel and
+// runtimeContextExpr are as for emitRequiredChecks.
+func (v *conditionalDiscriminatorValidator) emitForbiddenCheck(
+	out *codegen.Emitter, set []string, contextLabel, runtimeContextExpr string,
+) {
+	escaped := make([]string, len(set))
+
+	for i, name := range set {
+		escaped[i] = goStringText(name)
+
+		out.Printlnf(`if _, ok := %s[%q]; ok {`, varNameRawMap, name)
+		out.Indent(1)
+	}
+
+	subject, verb := "field "+escaped[0], "must not be present"
+	if len(set) > 1 {
+		subject, verb = "fields "+strings.Join(escaped, ", "), "must not all be present"
+	}
+
+	args := ""
+	if runtimeContextExpr != "" {
+		args = ", " + runtimeContextExpr
+	}
+
+	out.Printlnf(`return fmt.Errorf("%s in %s (%s): %s"%s)`, subject, v.declName, contextLabel, verb, args)
+
+	for range set {
+		out.Indent(-1)
+		out.Printlnf(`}`)
+	}
 }
 
 // emitRequiredChecks writes a presence check per field listed in the
@@ -234,7 +310,7 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 	)
 
 	for i, elem := range t.AllOf {
-		key, matchValues, ok, declineReason := discriminatorIfClause(elem)
+		key, matchValues, ifRequires, ok, declineReason := discriminatorIfClause(elem)
 		if !ok {
 			if declineReason != "" {
 				g.warner(fmt.Sprintf(
@@ -266,6 +342,7 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 			matchValues: matchValues,
 			thenSchema:  elem.Then,
 			elseSchema:  elem.Else,
+			ifRequires:  ifRequires,
 		})
 	}
 
@@ -286,14 +363,17 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 	return &conditionalDiscriminatorValidator{
 		discriminator: discriminator,
 		branches:      branches,
+		optional:      !slices.Contains(t.Required, discriminator),
 	}, true
 }
 
 // discriminatorIfClause matches an allOf element of shape
 // `{if: {properties: {<K>: {const|enum: <string V>|[<V1>, ...]}}},
-// then: <subschema>, else?: <subschema>}`. Returns (K, values, true) on
-// match where `values` is `[V]` for the const form or the enum members
-// (deduplicated, declaration order preserved) for the enum form.
+// then: <subschema>, else?: <subschema>}`. Returns (K, values, ifRequires,
+// true) on match where `values` is `[V]` for the const form or the enum
+// members (deduplicated, declaration order preserved) for the enum form.
+// The `if` may also list K, and only K, in its `required`, which ifRequires
+// reports: the `if` is then false when K is absent.
 //
 // declineReason is non-empty for "looked enum-shaped but failed
 // validation" cases (non-string values, mixed types, empty enum) so the
@@ -301,23 +381,19 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 // all" decisions which fall through silently.
 //
 // The `if` subschema is required to be EXACTLY the single-property
-// const-or-enum check — extra constraints (`required`, additional
-// `properties`, nested composition keywords, type/length/pattern/etc.)
-// are rejected by ifClauseHasExtraConstraints because the generated
-// dispatch only checks the discriminator's value. When both `const` and
-// `enum` are declared on the same property (overlapping but legal in
-// JSON Schema), `const` wins as the more specific assertion.
-func discriminatorIfClause(elem *schemas.Type) (string, []string, bool, string) {
+// const-or-enum check — extra constraints (`required` of another property,
+// additional `properties`, nested composition keywords,
+// type/length/pattern/etc.) are rejected by ifClauseHasExtraConstraints
+// because the generated dispatch only checks the discriminator's value. When
+// both `const` and `enum` are declared on the same property (overlapping but
+// legal in JSON Schema), `const` wins as the more specific assertion.
+func discriminatorIfClause(elem *schemas.Type) (string, []string, bool, bool, string) {
 	if elem == nil || elem.If == nil || elem.Then == nil {
-		return "", nil, false, ""
+		return "", nil, false, false, ""
 	}
 
 	if len(elem.If.Properties) != 1 {
-		return "", nil, false, ""
-	}
-
-	if ifClauseHasExtraConstraints(elem.If) {
-		return "", nil, false, ""
+		return "", nil, false, false, ""
 	}
 
 	var (
@@ -329,20 +405,31 @@ func discriminatorIfClause(elem *schemas.Type) (string, []string, bool, string) 
 		key, sub = k, v
 	}
 
+	ifc, ifRequires := elem.If, false
+	if len(ifc.Required) == 1 && ifc.Required[0] == key {
+		rest := *ifc
+		rest.Required = nil
+		ifc, ifRequires = &rest, true
+	}
+
+	if ifClauseHasExtraConstraints(ifc) {
+		return "", nil, false, false, ""
+	}
+
 	if sub == nil {
-		return "", nil, false, ""
+		return "", nil, false, false, ""
 	}
 
 	// Const path takes precedence over enum (more specific assertion).
 	if sub.Const != nil {
 		constStr, isStr := sub.Const.(string)
 		if !isStr {
-			return "", nil, false, fmt.Sprintf(
+			return "", nil, false, false, fmt.Sprintf(
 				"if-clause property %q has non-string const value", key,
 			)
 		}
 
-		return key, []string{constStr}, true, ""
+		return key, []string{constStr}, ifRequires, true, ""
 	}
 
 	// Enum path: every member must be a string and at least one must
@@ -350,15 +437,15 @@ func discriminatorIfClause(elem *schemas.Type) (string, []string, bool, string) 
 	if sub.Enum != nil {
 		strs, reason := stringEnumValues(sub.Enum)
 		if reason != "" {
-			return "", nil, false, fmt.Sprintf("if-clause property %q %s", key, reason)
+			return "", nil, false, false, fmt.Sprintf("if-clause property %q %s", key, reason)
 		}
 
-		return key, strs, true, ""
+		return key, strs, ifRequires, true, ""
 	}
 
 	// Neither const nor enum — silent decline (the schema isn't claiming
 	// to be a discriminator at all).
-	return "", nil, false, ""
+	return "", nil, false, false, ""
 }
 
 // stringEnumValues filters an `enum` value list to its string members
@@ -462,7 +549,8 @@ func ifClauseHasExtraStructure(ifc *schemas.Type) bool {
 
 // discriminatorInvalidReason returns "" when the parent schema validly
 // declares the discriminator property (string-typed, string-enum, listed
-// in required, and every branch's const value is a member of the enum).
+// in required, or else in the `required` of every branch's `if`, and every
+// branch's const value is a member of the enum).
 // Otherwise it returns a human-readable reason; callers should surface the
 // reason via the warner so a malformed conditional-discriminator schema
 // doesn't silently fall through to the plain allOf merge path.
@@ -499,8 +587,15 @@ func discriminatorInvalidReason(t *schemas.Type, discriminator string, branches 
 		}
 	}
 
-	if !slices.Contains(t.Required, discriminator) {
-		return fmt.Sprintf("property %q must be listed in `required`", discriminator)
+	// Where the parent lets the discriminator be absent, each `if` must
+	// require it, which makes the `if` false, and its `else` apply, when the
+	// discriminator is absent. An `if` that does not require it holds then,
+	// vacuously, and its `then` would apply: that case is not compiled.
+	everyIfRequires := !slices.ContainsFunc(branches, func(b conditionalBranch) bool { return !b.ifRequires })
+	if !slices.Contains(t.Required, discriminator) && !everyIfRequires {
+		return fmt.Sprintf(
+			"property %q must be listed in `required`, or in the `required` of every `if`", discriminator,
+		)
 	}
 
 	return ""
@@ -513,8 +608,8 @@ func unsupportedConditionalReason(elem *schemas.Type) string {
 	case hasUnsupportedConditionalSubschema(elem.Then) || hasUnsupportedConditionalSubschema(elem.Else):
 		return "then/else nests a composition or a conditional, which would not be enforced"
 
-	case !onlyRequired(elem.Then) || !onlyRequired(elem.Else):
-		return "then/else declares keywords besides required, which would not be enforced"
+	case !onlyChecks(elem.Then) || !onlyChecks(elem.Else):
+		return "then/else declares keywords besides required and a not of required, which would not be enforced"
 
 	case !onlyConditional(elem):
 		return "the element declares keywords besides if/then/else, which would not be enforced"
@@ -547,6 +642,70 @@ func onlyRequired(sub *schemas.Type) bool {
 	}
 
 	return isAnnotationOnly(&rest)
+}
+
+// onlyChecks reports whether a then/else subschema declares nothing the
+// validator cannot check: besides what onlyRequired allows, a `not` that
+// forbiddenSets reads. A nil subschema qualifies.
+func onlyChecks(sub *schemas.Type) bool {
+	if sub == nil {
+		return true
+	}
+
+	if _, ok := forbiddenSets(sub.Not); !ok {
+		return false
+	}
+
+	rest := *sub
+	rest.Not = nil
+
+	return onlyRequired(&rest)
+}
+
+// hasChecks reports whether a then/else subschema has something to check: a
+// `required`, or a `not` that forbids a property set.
+func hasChecks(sub *schemas.Type) bool {
+	if sub == nil {
+		return false
+	}
+
+	sets, _ := forbiddenSets(sub.Not)
+
+	return len(sub.Required) > 0 || len(sets) > 0
+}
+
+// forbiddenSets reads a `not` of a then/else subschema as the property sets it
+// forbids: `not: {required: [a, b]}` forbids having both a and b, and
+// `not: {anyOf: [{required: [a]}, {required: [b]}]}` forbids having either.
+// It returns false for any other `not`, which the validator cannot check,
+// and no sets for a nil one.
+func forbiddenSets(not *schemas.Type) ([][]string, bool) {
+	if not == nil {
+		return nil, true
+	}
+
+	if len(not.Required) > 0 && onlyRequired(not) {
+		return [][]string{not.Required}, true
+	}
+
+	rest := *not
+	rest.AnyOf = nil
+
+	if len(not.AnyOf) == 0 || !isAnnotationOnly(&rest) {
+		return nil, false
+	}
+
+	sets := make([][]string, 0, len(not.AnyOf))
+
+	for _, branch := range not.AnyOf {
+		if branch == nil || len(branch.Required) == 0 || !onlyRequired(branch) {
+			return nil, false
+		}
+
+		sets = append(sets, branch.Required)
+	}
+
+	return sets, true
 }
 
 // isAnnotationOnly reports whether t declares nothing but a title or a

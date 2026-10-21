@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/optionalDiscriminator",
+  "description": "An optional discriminator that the if requires: an absent kind makes the if false, so the else applies.",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["float", "enum"], "description": "Optional; absent means float." },
+    "values": { "type": "array", "items": { "type": "string" } },
+    "unit": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "enum" } }, "required": ["kind"] },
+      "then": { "required": ["values"] },
+      "else": { "required": ["unit"] }
+    }
+  ]
+}

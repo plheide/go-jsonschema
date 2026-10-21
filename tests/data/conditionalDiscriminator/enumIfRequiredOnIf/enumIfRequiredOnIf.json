@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/enumIfWithExtraRequiredOnIf",
+  "$id": "https://example.com/enumIfRequiredOnIf",
+  "description": "The if lists the discriminator in its own required. The parent requires it anyway, so the if means what it would without it, and compiles.",
   "type": "object",
   "additionalProperties": false,
   "properties": {

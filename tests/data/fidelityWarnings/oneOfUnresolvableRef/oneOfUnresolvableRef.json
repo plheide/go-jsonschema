@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "A oneOf whose branches' $refs lead nowhere: a missing definition, and a missing file inside a branch's allOf. Each $ref is reported, as for an anyOf or allOf, and so is the oneOf, which falls back to a map.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/definitions/Missing" },
+    { "allOf": [{ "properties": { "kind": { "const": "b" } } }, { "$ref": "missing.json#/definitions/B" }] }
+  ]
+}

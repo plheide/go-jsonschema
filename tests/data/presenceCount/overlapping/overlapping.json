@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Overlapping required lists count branch by branch: an object with both a and b matches two branches, so the oneOf rejects it. A name with a percent sign stays literal in the error.",
+  "properties": {
+    "a": { "type": "string" },
+    "b": { "type": "string" },
+    "50%": { "type": "string" }
+  },
+  "oneOf": [{ "required": ["a"] }, { "required": ["a", "b"] }, { "required": ["50%"] }]
+}
