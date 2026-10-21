@@ -74,11 +74,11 @@ func TestConditionalDiscriminatorDeclineWarnings(t *testing.T) {
 func TestConditionalDiscriminatorSilentDeclines(t *testing.T) {
 	t.Parallel()
 
-	t.Run("extra required on if clause is silently declined", func(t *testing.T) {
+	t.Run("a required of another property on the if clause is silently declined", func(t *testing.T) {
 		t.Parallel()
 
 		warnings := generateWithWarnerCapture(t,
-			"./data/conditionalDiscriminator/enumIfWithExtraRequiredOnIf/enumIfWithExtraRequiredOnIf.json")
+			"./data/conditionalDiscriminator/ifRequiresOtherProperty/ifRequiresOtherProperty.json")
 		joined := strings.Join(warnings, "\n")
 		assert.NotContains(t, joined, "conditional-discriminator detection declined",
 			"extra-constraints on if clause should fall through silently; got:\n%s", joined)

@@ -153,10 +153,23 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		t.Parallel()
 
 		warnings := generateWithWarnerCapture(t,
-			"./data/fidelityWarnings/conditionalRequiredInIf/conditionalRequiredInIf.json")
-		joined := strings.Join(filterFidelityWarnings(warnings), "\n")
+			"./data/fidelityWarnings/conditionalVacuousIf/conditionalVacuousIf.json")
 
-		assert.Contains(t, joined, "does not enforce all it declares: if/then/else not compiled (in allOf branch)")
+		assert.Contains(t, strings.Join(filterFidelityWarnings(warnings), "\n"),
+			"does not enforce all it declares: if/then/else not compiled (in allOf branch)")
+		assert.Contains(t, strings.Join(warnings, "\n"),
+			"must be listed in `required`, or in the `required` of every `if`")
+	})
+
+	t.Run("a conditional whose if requires the optional discriminator is checked, not reported", func(t *testing.T) {
+		t.Parallel()
+
+		// The if is false when the discriminator is absent, which the
+		// conditional discriminator compiles.
+		warnings := generateWithWarnerCapture(t,
+			"./data/conditionalDiscriminator/requiredInIf/requiredInIf.json")
+
+		assert.Empty(t, warnings)
 	})
 
 	t.Run("a $ref branch dropped with its oneOf is named", func(t *testing.T) {

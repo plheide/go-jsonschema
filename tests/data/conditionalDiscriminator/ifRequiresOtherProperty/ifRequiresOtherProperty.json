@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/ifRequiresOtherProperty",
+  "description": "The if requires a property other than the discriminator, which a dispatch on the discriminator's value cannot check, so detection declines without a word of its own.",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["a", "b"] },
+    "details": { "type": "string" },
+    "extra": { "type": "string" }
+  },
+  "required": ["kind"],
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "a" } }, "required": ["extra"] },
+      "then": { "required": ["details"] }
+    }
+  ]
+}

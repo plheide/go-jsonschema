@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A conditional on an optional discriminator whose if does not require it: when kind is absent, the if holds vacuously and its then applies. The conditional discriminator does not compile that, and the allOf merge drops the conditional, so values are required neither for kind enum nor without kind; that is reported.",
+  "properties": {
+    "kind": { "type": "string", "enum": ["float", "enum", "boolean"] },
+    "values": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "enum" } } },
+      "then": { "required": ["values"] }
+    }
+  ]
+}

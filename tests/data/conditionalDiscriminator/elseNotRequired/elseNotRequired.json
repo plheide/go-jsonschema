@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/elseNotRequired",
+  "description": "An optional discriminator whose else forbids a property: transform is required for normalized, and forbidden otherwise, including when space is absent.",
+  "type": "object",
+  "properties": {
+    "space": { "type": "string", "enum": ["physical", "normalized"] },
+    "transform": { "type": "object", "properties": { "lo": { "type": "string" }, "hi": { "type": "string" } } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "space": { "const": "normalized" } }, "required": ["space"] },
+      "then": { "required": ["transform"] },
+      "else": { "not": { "required": ["transform"] } }
+    }
+  ]
+}

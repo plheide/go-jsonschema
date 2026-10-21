@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/notRequired",
+  "description": "A not of required in a then forbids properties: one, two together, or any of several.",
+  "type": "object",
+  "required": ["kind"],
+  "properties": {
+    "kind": { "type": "string", "enum": ["fixed", "live", "stream", "off"] },
+    "value": { "type": "number" },
+    "ref": { "type": "string" },
+    "rate": { "type": "number" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "fixed" } } },
+      "then": { "required": ["value"], "not": { "required": ["ref"] } }
+    },
+    {
+      "if": { "properties": { "kind": { "enum": ["live", "stream"] } } },
+      "then": { "required": ["ref"], "not": { "required": ["value", "rate"] } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "off" } } },
+      "then": { "not": { "anyOf": [{ "required": ["value"] }, { "required": ["ref"] }] } }
+    }
+  ]
+}
