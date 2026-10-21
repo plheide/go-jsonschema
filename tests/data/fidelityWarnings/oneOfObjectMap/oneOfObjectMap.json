@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "A oneOf of $refs without a discriminator, under type: object and with no properties of its own. No strategy compiles it, so the type is a map, which checks no branch, and the oneOf is reported.",
+  "type": "object",
+  "oneOf": [{ "$ref": "#/definitions/Email" }, { "$ref": "#/definitions/Phone" }],
+  "definitions": {
+    "Email": { "type": "object", "properties": { "email": { "type": "string" } }, "required": ["email"] },
+    "Phone": { "type": "object", "properties": { "phone": { "type": "string" } }, "required": ["phone"] }
+  }
+}

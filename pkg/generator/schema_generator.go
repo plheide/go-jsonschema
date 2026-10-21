@@ -409,6 +409,8 @@ func (g *schemaGenerator) generateOneOfComposition(
 	t *schemas.Type,
 	scope nameScope,
 ) (codegen.Type, bool, error) {
+	g.warnUnresolvableBranches(t.OneOf)
+
 	if g.config.OnlyModels {
 		return nil, false, nil
 	}
@@ -445,6 +447,39 @@ func (g *schemaGenerator) generateOneOfComposition(
 	}
 
 	return nil, false, nil
+}
+
+// warnUnresolvableBranches reports each $ref of a oneOf's branches that leads
+// nowhere, saying why, as resolveRefs does for an anyOf or allOf: a branch's
+// own $ref, and those of the allOf a branch is built from, which discriminator
+// detection merges. No oneOf strategy can use such a branch, so the oneOf
+// falls back to the generic type, and nothing else would say that a file did
+// not load or a definition is missing.
+func (g *schemaGenerator) warnUnresolvableBranches(branches []*schemas.Type) {
+	for _, branch := range branches {
+		g.warnUnresolvableRefs(branch)
+	}
+}
+
+// warnUnresolvableRefs reports t's $ref, or else the $refs of t's allOf, when
+// they lead nowhere. A $ref's own allOf is the target's, which generating the
+// target reports.
+func (g *schemaGenerator) warnUnresolvableRefs(t *schemas.Type) {
+	if t == nil {
+		return
+	}
+
+	if t.Ref != "" {
+		if _, err := g.findRef(t); err != nil {
+			g.warner(fmt.Sprintf("Could not resolve ref %q: %v", t.Ref, err))
+		}
+
+		return
+	}
+
+	for _, part := range t.AllOf {
+		g.warnUnresolvableRefs(part)
+	}
 }
 
 // alreadyDeclaredType is the type of t, which declsBySchema holds as decl, for
@@ -553,6 +588,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	if isNamedType(theType) || (isMapType(theType) && g.config.DisableCustomTypesForMaps) {
 		// Don't declare named types under a new name.
 		g.output.forgetDecl(t, &decl, theType)
+		g.warnUncompiledOneOf(t, theType, scope)
 
 		return theType, nil
 	}

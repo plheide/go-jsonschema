@@ -55,15 +55,18 @@ func (g *schemaGenerator) warnNotEnforced(scope nameScope, reason string) {
 }
 
 // warnUncompiledOneOf warns when t declares a oneOf that no oneOf strategy
-// compiled while t itself became a struct: the struct holds t's own
-// properties and checks none of the branches, such as branches that only list
-// required, so a value matching none or several of them passes.
+// compiled while t itself became a struct or a map: the struct holds t's own
+// properties, and the map, for a `type: object` without any, holds whatever
+// keys come, and neither checks the branches, so a value matching none or
+// several of them passes. Branches that only list required are one such
+// oneOf, and $ref branches without a discriminator another.
 func (g *schemaGenerator) warnUncompiledOneOf(t *schemas.Type, theType codegen.Type, scope nameScope) {
 	if len(t.OneOf) == 0 || g.config.OnlyModels {
 		return
 	}
 
-	if _, isStruct := theType.(*codegen.StructType); isStruct {
+	switch theType.(type) {
+	case *codegen.StructType, *codegen.MapType:
 		g.warnNotEnforced(scope, fmt.Sprintf(
 			"oneOf of %d branches not compiled, so a value matching none or several of them passes",
 			len(t.OneOf),

@@ -169,6 +169,47 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Contains(t, joined, "$ref #/definitions/pair")
 	})
 
+	t.Run("a oneOf branch whose $ref leads nowhere is reported", func(t *testing.T) {
+		t.Parallel()
+
+		// As for an anyOf or allOf, each $ref is reported with the reason a
+		// property's $ref fails with: here a missing definition, and a
+		// missing file inside a branch's allOf. Before, the oneOf fell back
+		// to a map without a word, so a schema whose $ref did not load
+		// generated next to nothing, successfully.
+		joined := strings.Join(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/oneOfUnresolvableRef/oneOfUnresolvableRef.json"), "\n")
+
+		assert.Contains(t, joined, `Could not resolve ref "#/definitions/Missing": `+
+			`definition does not exist in schema: "Missing" (from ref "#/definitions/Missing")`)
+		assert.Contains(t, joined, `Could not resolve ref "missing.json#/definitions/B": `+
+			`could not follow $ref "missing.json#/definitions/B" to file "missing.json"`)
+		assert.Contains(t, joined, "type OneOfUnresolvableRef does not enforce all it declares: "+
+			"oneOf of 2 branches not compiled")
+	})
+
+	t.Run("a oneOf that falls back to a map is reported", func(t *testing.T) {
+		t.Parallel()
+
+		// Under type: object, a oneOf no strategy compiles leaves a map when
+		// the schema has no properties of its own. The map checks no branch,
+		// any more than the struct does that the same oneOf leaves beside
+		// properties.
+		const (
+			schema = "./data/fidelityWarnings/oneOfObjectMap/oneOfObjectMap.json"
+			want   = "schema fidelity: type OneOfObjectMap does not enforce all it declares: " +
+				"oneOf of 2 branches not compiled, so a value matching none or several of them passes"
+		)
+
+		assert.Contains(t, generateWithWarnerCapture(t, schema), want)
+
+		// Left undeclared, the map is reported all the same.
+		cfg := basicConfig
+		cfg.DisableCustomTypesForMaps = true
+
+		assert.Contains(t, generateWithConfigAndWarnerCapture(t, cfg, schema), want)
+	})
+
 	t.Run("conditionals and negations no code path compiles are reported once each", func(t *testing.T) {
 		t.Parallel()
 

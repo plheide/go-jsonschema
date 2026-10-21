@@ -220,35 +220,45 @@ func (g *schemaGenerator) reachesSchema(from, target *schemas.Type, seen map[*sc
 }
 
 // lookupRef returns the schema a $ref points at without generating it, or nil
-// when it cannot be found.
+// when it cannot be found. findRef says why.
 func (g *schemaGenerator) lookupRef(t *schemas.Type) *schemas.Type {
+	target, _ := g.findRef(t)
+
+	return target
+}
+
+// findRef returns the schema a $ref points at without generating it, or the
+// reason it cannot be found, worded as for a property's $ref: a pointer that
+// names no definition, a file that does not load, or a definition the file
+// does not have.
+func (g *schemaGenerator) findRef(t *schemas.Type) (*schemas.Type, error) {
 	if t.Ref == "#" {
-		return (*schemas.Type)(g.schema.ObjectAsType)
+		return (*schemas.Type)(g.schema.ObjectAsType), nil
 	}
 
 	defName, fileName, err := g.extractRefNames(t)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	schema := g.schema
 
 	if fileName != "" {
 		if schema, err = g.loader.Load(fileName, g.schemaFileName); err != nil {
-			return nil
+			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", t.Ref, fileName, err)
 		}
 	}
 
 	if defName == "" {
-		return (*schemas.Type)(schema.ObjectAsType)
+		return (*schemas.Type)(schema.ObjectAsType), nil
 	}
 
 	def, err := resolveRefPath(schema.Definitions, defName)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("%w: %q (from ref %q)", err, defName, t.Ref)
 	}
 
-	return def
+	return def, nil
 }
 
 // arrayElementSchema returns the single schema describing every element of an
