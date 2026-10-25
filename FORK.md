@@ -33,6 +33,7 @@ Not offered upstream yet:
 * presence counts for a `oneOf` or `anyOf` of `required`-only branches, an optional discriminator and a `not` of
   `required` in conditionals, and the warnings for a `oneOf` whose `$ref` leads nowhere or that is left as a map
   (made on `main`);
+* conditionals on the object itself, and on a discriminator declared through a `$ref` (made on `main`);
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 
