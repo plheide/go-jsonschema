@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "An if/then of an object's own, which also holds a oneOf of objects told apart by a const property. The oneOf compiles into a holder, which checks no conditional of its parent's, so the if/then is reported.",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["a", "b"] },
+    "x": { "type": "string" }
+  },
+  "oneOf": [
+    { "type": "object", "properties": { "kind": { "const": "a" } }, "required": ["kind"] },
+    { "type": "object", "properties": { "kind": { "const": "b" } }, "required": ["kind"] }
+  ],
+  "if": { "properties": { "kind": { "const": "a" } }, "required": ["kind"] },
+  "then": { "required": ["x"] }
+}

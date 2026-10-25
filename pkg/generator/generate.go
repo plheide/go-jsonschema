@@ -50,11 +50,18 @@ type Generator struct {
 	// reportedConditionals holds the schemas whose uncompiled conditional or
 	// not has been reported, so it is not reported a second time.
 	reportedConditionals map[*schemas.Type]struct{}
-	outputs              map[string]*output
-	warner               func(string)
-	formatters           []formatter
-	loader               schemas.Loader
-	minimalNames         bool
+	// reportedDiscriminators holds the conditional-discriminator declines
+	// reported for a schema, which detection, run from more than one place,
+	// would otherwise repeat.
+	reportedDiscriminators map[discriminatorDecline]struct{}
+	// declaring holds the schemas generateDeclaredType is generating the type
+	// of. Only their struct takes the conditional discriminator's validator.
+	declaring    map[*schemas.Type]struct{}
+	outputs      map[string]*output
+	warner       func(string)
+	formatters   []formatter
+	loader       schemas.Loader
+	minimalNames bool
 }
 
 type qualifiedDefinition struct {
@@ -107,17 +114,19 @@ func New(config Config) (*Generator, error) {
 	}
 
 	generator := &Generator{
-		caser:                text.NewCaser(config.Capitalizations, config.ResolveExtensions),
-		config:               config,
-		inScope:              map[qualifiedDefinition]struct{}{},
-		mergingAllOf:         map[*schemas.Type]*schemas.Type{},
-		resolvingRefs:        map[*schemas.Type]struct{}{},
-		reportedConditionals: map[*schemas.Type]struct{}{},
-		outputs:              map[string]*output{},
-		warner:               config.Warner,
-		formatters:           formatters,
-		loader:               config.Loader,
-		minimalNames:         config.MinimalNames,
+		caser:                  text.NewCaser(config.Capitalizations, config.ResolveExtensions),
+		config:                 config,
+		inScope:                map[qualifiedDefinition]struct{}{},
+		mergingAllOf:           map[*schemas.Type]*schemas.Type{},
+		resolvingRefs:          map[*schemas.Type]struct{}{},
+		reportedConditionals:   map[*schemas.Type]struct{}{},
+		reportedDiscriminators: map[discriminatorDecline]struct{}{},
+		declaring:              map[*schemas.Type]struct{}{},
+		outputs:                map[string]*output{},
+		warner:                 config.Warner,
+		formatters:             formatters,
+		loader:                 config.Loader,
+		minimalNames:           config.MinimalNames,
 	}
 
 	if config.Loader == nil {
