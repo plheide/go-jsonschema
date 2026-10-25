@@ -2,7 +2,7 @@ module github.com/plheide/go-jsonschema
 
 go 1.25.0
 
-toolchain go1.25.12
+toolchain go1.26.10
 
 require (
 	dario.cat/mergo v1.0.2
