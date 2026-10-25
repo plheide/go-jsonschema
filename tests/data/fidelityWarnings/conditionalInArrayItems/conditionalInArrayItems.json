@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Conditionals on the elements of a declared array, which are generated inline, where no validator attaches: of the element's own and in its allOf. Both are reported, not dropped.",
+  "type": "object",
+  "properties": {
+    "own": { "$ref": "#/definitions/OwnList" },
+    "merged": { "$ref": "#/definitions/AllOfList" }
+  },
+  "definitions": {
+    "OwnList": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": { "kind": { "type": "string", "enum": ["start", "stop"] }, "reason": { "type": "string" } },
+        "if": { "properties": { "kind": { "const": "stop" } } },
+        "then": { "required": ["reason"] }
+      }
+    },
+    "AllOfList": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": { "kind": { "type": "string", "enum": ["start", "stop"] }, "reason": { "type": "string" } },
+        "allOf": [{ "if": { "properties": { "kind": { "const": "stop" } } }, "then": { "required": ["reason"] } }]
+      }
+    }
+  }
+}

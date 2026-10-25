@@ -161,6 +161,29 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 			"must be listed in `required`, or in the `required` of every `if`")
 	})
 
+	t.Run("a conditional no validator attaches to is reported", func(t *testing.T) {
+		t.Parallel()
+
+		// The conditional discriminator's validator attaches only to a
+		// declared type's struct. A oneOf holder checks no conditional of its
+		// parent's, and the elements of a declared array are generated inline.
+		for fixture, want := range map[string][]string{
+			"ownConditionalOnOneOf": {
+				"schema fidelity: type OwnConditionalOnOneOf does not enforce all it declares: if/then/else not compiled",
+			},
+			"conditionalInArrayItems": {
+				"schema fidelity: type OwnListElem does not enforce all it declares: if/then/else not compiled",
+				"schema fidelity: type AllOfListElem does not enforce all it declares: " +
+					"if/then/else not compiled (in allOf branch)",
+			},
+		} {
+			warnings := filterFidelityWarnings(generateWithWarnerCapture(t,
+				"./data/fidelityWarnings/"+fixture+"/"+fixture+".json"))
+
+			assert.ElementsMatch(t, want, warnings, fixture)
+		}
+	})
+
 	t.Run("a conditional whose if requires the optional discriminator is checked, not reported", func(t *testing.T) {
 		t.Parallel()
 

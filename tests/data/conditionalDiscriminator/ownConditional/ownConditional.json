@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/ownConditional",
+  "description": "An if/then/else on the object itself, not under allOf, which JSON Schema reads as one more allOf element: it compiles as the conditional discriminator does, at the root, in a definition and in an inline object.",
+  "type": "object",
+  "properties": {
+    "state": { "type": "string", "enum": ["done", "skipped"] },
+    "skip": { "type": "string" },
+    "events": { "type": "array", "items": { "$ref": "#/definitions/Event" } },
+    "last": {
+      "type": "object",
+      "properties": {
+        "state": { "type": "string", "enum": ["done", "skipped"] },
+        "skip": { "type": "string" }
+      },
+      "if": { "properties": { "state": { "const": "skipped" } }, "required": ["state"] },
+      "then": { "required": ["skip"] }
+    }
+  },
+  "if": { "properties": { "state": { "const": "skipped" } }, "required": ["state"] },
+  "then": { "required": ["skip"] },
+  "definitions": {
+    "Event": {
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "enum": ["start", "stop"] },
+        "reason": { "type": "string" }
+      },
+      "required": ["kind"],
+      "if": { "properties": { "kind": { "const": "stop" } } },
+      "then": { "required": ["reason"] },
+      "else": { "not": { "required": ["reason"] } }
+    }
+  }
+}

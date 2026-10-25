@@ -530,6 +530,27 @@ func (g *schemaGenerator) alreadyDeclaredType(
 	return &codegen.NamedType{Decl: decl}, nil
 }
 
+// generateEnumOrOneOf generates t as an enum or as a oneOf composition, which
+// return before generateType sees t and check no conditional of t's own, so
+// that is reported. handled reports whether t was one of them.
+func (g *schemaGenerator) generateEnumOrOneOf(t *schemas.Type, scope nameScope) (codegen.Type, bool, error) {
+	if t.Enum != nil {
+		g.reportOwnConditional(t, t, scope)
+
+		dt, err := g.generateEnumType(t, scope)
+
+		return dt, true, err
+	}
+
+	if dt, handled, err := g.generateOneOfComposition(t, scope); handled {
+		g.reportOwnConditional(t, t, scope)
+
+		return dt, true, err
+	}
+
+	return nil, false, nil
+}
+
 //nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
@@ -552,14 +573,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		}
 	}
 
-	// Enums and oneOf compositions return before generateType sees t.
-	g.warnUncompiledConditional(t, scope)
-
-	if t.Enum != nil {
-		return g.generateEnumType(t, scope)
-	}
-
-	if dt, handled, err := g.generateOneOfComposition(t, scope); handled {
+	if dt, handled, err := g.generateEnumOrOneOf(t, scope); handled {
 		return dt, err
 	}
 
@@ -580,7 +594,13 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	g.output.declsBySchema[t] = &decl
 	g.output.declsByName[decl.Name] = &decl
 
+	// The struct of a declared type is where the conditional discriminator's
+	// validator attaches.
+	g.declaring[t] = struct{}{}
 	theType, err := g.generateType(t, scope)
+
+	delete(g.declaring, t)
+
 	if err != nil {
 		return nil, err
 	}
@@ -1534,7 +1554,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		}
 	}
 
-	g.warnUncompiledConditional(t, scope)
+	g.warnUncompiledConditional(t, scope, g.isDeclaring(t))
 
 	if t.Enum != nil {
 		return g.generateEnumType(t, scope)
@@ -1580,18 +1600,25 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	}
 
 	// Conditional-discriminator pattern: allOf of {if: {<K>: const}, then,
-	// else?} keyed on a single discriminator property's const value.
+	// else?} keyed on a single discriminator property's const value. Only a
+	// declared type takes its validator: elsewhere, such as an element of a
+	// declared array, t goes the general way, which reports what it drops.
 	// Bypass the AllOf merge (which would lose the parent's struct shape)
 	// and emit the struct as a regular object — the per-discriminator
 	// conditional checks attach as a runtime validator in
 	// generateDeclaredType.
-	if _, ok := g.detectConditionalDiscriminator(t); ok {
+	if cd, ok := g.detectConditionalDiscriminator(t); ok && g.isDeclaring(t) {
 		tCopy := *t
 		tCopy.AllOf = nil
 
-		// The allOf's conditionals compile into the discriminator; one the
-		// schema declares itself does not.
-		g.warnUncompiledConditional(&tCopy, scope)
+		// The allOf's conditionals compile into the discriminator, and so
+		// does the schema's own if/then/else where it is a branch too; any
+		// other conditional of its own does not, and is reported for t.
+		if cd.compilesOwn {
+			tCopy = *withoutOwnConditional(&tCopy)
+		}
+
+		g.reportOwnConditional(t, &tCopy, scope)
 
 		return g.generateStructType(&tCopy, scope)
 	}
@@ -2518,7 +2545,9 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			}
 		}
 
-		g.warnUncompiledConditional(t, scope)
+		// An object, the only schema the conditional discriminator takes, is
+		// declared below.
+		g.warnUncompiledConditional(t, scope, true)
 
 		if dt, handled, err := g.generateInlineComposition(t, scope); handled {
 			return dt, err

@@ -35,6 +35,10 @@ type conditionalDiscriminatorValidator struct {
 	// which every branch's `if` then requires itself: an absent
 	// discriminator makes each `if` false, so each branch's `else` applies.
 	optional bool
+
+	// compilesOwn is set when the schema's own if/then/else, besides its
+	// allOf, is one of the branches.
+	compilesOwn bool
 }
 
 // conditionalBranch is one element of the parent's `allOf`. It pairs the
@@ -292,10 +296,6 @@ func (v *conditionalDiscriminatorValidator) emitRequiredChecks(
 // end-to-end correctly, to avoid surprising users who relied on today's
 // silent-fallback behavior.
 func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*conditionalDiscriminatorValidator, bool) {
-	if len(t.AllOf) == 0 {
-		return nil, false
-	}
-
 	if len(t.Type) != 1 || t.Type[0] != schemas.TypeNameObject {
 		return nil, false
 	}
@@ -304,18 +304,90 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 		return nil, false
 	}
 
-	var (
-		discriminator string
-		branches      = make([]conditionalBranch, 0, len(t.AllOf))
-	)
+	// t's own if/then/else, as the schema declares it. A merged allOf or
+	// anyOf carries its elements' conditionals over, which the merge reports,
+	// so its own is left out.
+	own := (t.If != nil || t.Then != nil || t.Else != nil) && t.GetSubSchemaType() == ""
+
+	if v, ok := g.detectDiscriminatorIn(t, conditionalClauses(t, own)); ok || !own || len(t.AllOf) == 0 {
+		if ok {
+			v.compilesOwn = own
+		}
+
+		return v, ok
+	}
+
+	// t's own conditional does not fit the allOf's discriminator, which then
+	// compiles on its own, as before; the own conditional is reported.
+	return g.detectDiscriminatorIn(t, conditionalClauses(t, false))
+}
+
+// conditionalClause is one if/then/else that conditional-discriminator
+// detection reads, and where it sits, for the decline warning.
+type conditionalClause struct {
+	elem  *schemas.Type
+	label string
+}
+
+// conditionalClauses returns the elements of t's allOf, then, when own is set,
+// t's own if/then/else, which JSON Schema applies as it would one more allOf
+// element.
+func conditionalClauses(t *schemas.Type, own bool) []conditionalClause {
+	clauses := make([]conditionalClause, 0, len(t.AllOf)+1)
 
 	for i, elem := range t.AllOf {
+		clauses = append(clauses, conditionalClause{elem, fmt.Sprintf("allOf[%d]", i)})
+	}
+
+	if own {
+		clauses = append(clauses, conditionalClause{
+			&schemas.Type{If: t.If, Then: t.Then, Else: t.Else}, "its own if/then/else",
+		})
+	}
+
+	return clauses
+}
+
+// discriminatorDecline is a decline warning detection has given for a schema.
+type discriminatorDecline struct {
+	schema  *schemas.Type
+	message string
+}
+
+// warnDecline reports why detection declined t, once.
+func (g *schemaGenerator) warnDecline(t *schemas.Type, message string) {
+	key := discriminatorDecline{t, message}
+	if _, reported := g.reportedDiscriminators[key]; reported {
+		return
+	}
+
+	g.reportedDiscriminators[key] = struct{}{}
+	g.warner(message)
+}
+
+// detectDiscriminatorIn matches clauses, the if/then/else clauses of t, to
+// the conditional-discriminator pattern.
+func (g *schemaGenerator) detectDiscriminatorIn(
+	t *schemas.Type, clauses []conditionalClause,
+) (*conditionalDiscriminatorValidator, bool) {
+	if len(clauses) == 0 {
+		return nil, false
+	}
+
+	var (
+		discriminator string
+		branches      = make([]conditionalBranch, 0, len(clauses))
+	)
+
+	for i, clause := range clauses {
+		elem := clause.elem
+
 		key, matchValues, ifRequires, ok, declineReason := discriminatorIfClause(elem)
 		if !ok {
 			if declineReason != "" {
-				g.warner(fmt.Sprintf(
-					"conditional-discriminator detection declined on allOf[%d]: %s",
-					i, declineReason,
+				g.warnDecline(t, fmt.Sprintf(
+					"conditional-discriminator detection declined on %s: %s",
+					clause.label, declineReason,
 				))
 			}
 
@@ -327,7 +399,9 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 		// would have it dropped, so detection declines, and says why: the
 		// allOf merge path it falls back to does not warn.
 		if reason := unsupportedConditionalReason(elem); reason != "" {
-			g.warner(fmt.Sprintf("conditional-discriminator detection declined on allOf[%d]: %s", i, reason))
+			g.warnDecline(t, fmt.Sprintf(
+				"conditional-discriminator detection declined on %s: %s", clause.label, reason,
+			))
 
 			return nil, false
 		}
@@ -346,15 +420,20 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 		})
 	}
 
-	if reason := discriminatorInvalidReason(t, discriminator, branches); reason != "" {
+	if reason := g.discriminatorInvalidReason(t, discriminator, branches); reason != "" {
 		// Structural match but the discriminator declaration is wrong:
 		// surface the schema bug instead of silently routing back to the
 		// allOf merge path (which would produce a less-useful Go type and
 		// leave the user wondering why their conditional schema didn't
 		// generate the expected dispatch).
-		g.warner(fmt.Sprintf(
-			"conditional-discriminator pattern detected on %q-keyed allOf, but %s; falling back to plain allOf merge",
-			discriminator, reason,
+		where, fallback := string(schemas.SubSchemaTypeAllOf), "falling back to plain allOf merge"
+		if len(t.AllOf) == 0 {
+			where, fallback = "if/then/else", "it is not compiled"
+		}
+
+		g.warnDecline(t, fmt.Sprintf(
+			"conditional-discriminator pattern detected on %q-keyed %s, but %s; %s",
+			discriminator, where, reason, fallback,
 		))
 
 		return nil, false
@@ -550,15 +629,20 @@ func ifClauseHasExtraStructure(ifc *schemas.Type) bool {
 // discriminatorInvalidReason returns "" when the parent schema validly
 // declares the discriminator property (string-typed, string-enum, listed
 // in required, or else in the `required` of every branch's `if`, and every
-// branch's const value is a member of the enum).
+// branch's const value is a member of the enum). A property declared through
+// a $ref, such as to a shared enum, is read as the schema the $ref points at.
 // Otherwise it returns a human-readable reason; callers should surface the
 // reason via the warner so a malformed conditional-discriminator schema
 // doesn't silently fall through to the plain allOf merge path.
-func discriminatorInvalidReason(t *schemas.Type, discriminator string, branches []conditionalBranch) string {
+func (g *schemaGenerator) discriminatorInvalidReason(
+	t *schemas.Type, discriminator string, branches []conditionalBranch,
+) string {
 	prop, ok := t.Properties[discriminator]
 	if !ok {
 		return fmt.Sprintf("property %q is not declared on the parent schema", discriminator)
 	}
+
+	prop = g.followRefs(prop)
 
 	if len(prop.Type) != 1 || prop.Type[0] != schemas.TypeNameString {
 		return fmt.Sprintf("property %q must be declared as `type: string`", discriminator)
@@ -599,6 +683,30 @@ func discriminatorInvalidReason(t *schemas.Type, discriminator string, branches 
 	}
 
 	return ""
+}
+
+// followRefs returns the schema that a chain of $refs from t ends at, or t
+// itself when it has none, or the last schema reached when one does not
+// resolve or the chain comes back on itself. It generates nothing.
+func (g *schemaGenerator) followRefs(t *schemas.Type) *schemas.Type {
+	seen := map[*schemas.Type]struct{}{}
+
+	for t.Ref != "" {
+		if _, again := seen[t]; again {
+			return t
+		}
+
+		seen[t] = struct{}{}
+
+		target := g.lookupRef(t)
+		if target == nil {
+			return t
+		}
+
+		t = target
+	}
+
+	return t
 }
 
 // unsupportedConditionalReason explains why the conditional validator cannot

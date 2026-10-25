@@ -90,12 +90,29 @@ func (g *schemaGenerator) warnUncompiledOneOf(t *schemas.Type, theType codegen.T
 // the schema it refers to; and a schema that the goJSONSchema extension maps to
 // a Go type of the user's to that type. A schema is reported once, though it
 // may pass through more than one of the generator's entry points.
-func (g *schemaGenerator) warnUncompiledConditional(t *schemas.Type, scope nameScope) {
-	if g.config.OnlyModels || len(t.AllOf) > 0 || t.Ref != "" {
+//
+// An if/then/else of t's own that the conditional discriminator compiles is
+// not reported where t's type is declared, which willDeclare says: its
+// validator attaches only there. A not beside it still is.
+func (g *schemaGenerator) warnUncompiledConditional(t *schemas.Type, scope nameScope, willDeclare bool) {
+	subject := t
+	if len(t.AllOf) == 0 && !g.config.OnlyModels && willDeclare && ownConditional(t) == conditionalIfThenElse {
+		if cd, ok := g.detectConditionalDiscriminator(t); ok && cd.compilesOwn {
+			subject = withoutOwnConditional(t)
+		}
+	}
+
+	g.reportOwnConditional(t, subject, scope)
+}
+
+// reportOwnConditional reports the conditional of subject's own, which stands
+// for t, once for t: subject is t, or t with what compiles of it taken out.
+func (g *schemaGenerator) reportOwnConditional(t, subject *schemas.Type, scope nameScope) {
+	if g.config.OnlyModels || len(subject.AllOf) > 0 || subject.Ref != "" {
 		return
 	}
 
-	if ext := t.GoJSONSchemaExtension; ext != nil && ext.Type != nil {
+	if ext := subject.GoJSONSchemaExtension; ext != nil && ext.Type != nil {
 		return
 	}
 
@@ -103,10 +120,26 @@ func (g *schemaGenerator) warnUncompiledConditional(t *schemas.Type, scope nameS
 		return
 	}
 
-	if reason := ownConditionalReason(t); reason != "" {
+	if reason := ownConditionalReason(subject); reason != "" {
 		g.reportedConditionals[t] = struct{}{}
 		g.warnNotEnforced(scope, reason)
 	}
+}
+
+// isDeclaring reports whether generateDeclaredType is generating t's type,
+// whose struct takes the conditional discriminator's validator.
+func (g *schemaGenerator) isDeclaring(t *schemas.Type) bool {
+	_, ok := g.declaring[t]
+
+	return ok
+}
+
+// withoutOwnConditional is a copy of t without its own if/then/else.
+func withoutOwnConditional(t *schemas.Type) *schemas.Type {
+	rest := *t
+	rest.If, rest.Then, rest.Else = nil, nil, nil
+
+	return &rest
 }
 
 // warnUncompiledVariants reports the if/then/else or not of a primitive

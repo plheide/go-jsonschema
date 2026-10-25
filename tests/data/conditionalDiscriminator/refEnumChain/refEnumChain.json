@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/refEnumChain",
+  "description": "A discriminator declared through a chain of ten $refs, followed to the enum at its end however long it is.",
+  "type": "object",
+  "required": [
+    "state"
+  ],
+  "properties": {
+    "state": {
+      "$ref": "#/definitions/Link0"
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "if": {
+    "properties": {
+      "state": {
+        "const": "skipped"
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "reason"
+    ]
+  },
+  "definitions": {
+    "Link0": {
+      "$ref": "#/definitions/Link1"
+    },
+    "Link1": {
+      "$ref": "#/definitions/Link2"
+    },
+    "Link2": {
+      "$ref": "#/definitions/Link3"
+    },
+    "Link3": {
+      "$ref": "#/definitions/Link4"
+    },
+    "Link4": {
+      "$ref": "#/definitions/Link5"
+    },
+    "Link5": {
+      "$ref": "#/definitions/Link6"
+    },
+    "Link6": {
+      "$ref": "#/definitions/Link7"
+    },
+    "Link7": {
+      "$ref": "#/definitions/Link8"
+    },
+    "Link8": {
+      "$ref": "#/definitions/Link9"
+    },
+    "Link9": {
+      "$ref": "#/definitions/Link10"
+    },
+    "Link10": {
+      "type": "string",
+      "enum": [
+        "done",
+        "skipped"
+      ]
+    }
+  }
+}

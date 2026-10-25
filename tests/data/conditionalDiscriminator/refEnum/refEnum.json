@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/refEnum",
+  "description": "A discriminator declared through a $ref to a shared enum, which is read as the enum it points at: in an allOf at the root, and in an if/then of an object's own.",
+  "type": "object",
+  "required": ["state"],
+  "properties": {
+    "state": { "$ref": "#/definitions/State" },
+    "reason": { "type": "string" },
+    "event": { "$ref": "#/definitions/Event" }
+  },
+  "allOf": [{ "if": { "properties": { "state": { "const": "skipped" } } }, "then": { "required": ["reason"] } }],
+  "definitions": {
+    "State": { "type": "string", "enum": ["done", "skipped"] },
+    "Event": {
+      "type": "object",
+      "required": ["state"],
+      "properties": { "state": { "$ref": "#/definitions/State" }, "skip": { "type": "string" } },
+      "if": { "properties": { "state": { "const": "skipped" } }, "required": ["state"] },
+      "then": { "required": ["skip"] }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/ownOtherKey",
+  "description": "An allOf of conditionals on kind, and an if/then of the object's own on mode: the allOf compiles, and the own conditional, keyed on another property, is reported.",
+  "type": "object",
+  "required": ["kind", "mode"],
+  "properties": {
+    "kind": { "type": "string", "enum": ["a", "b"] },
+    "mode": { "type": "string", "enum": ["fast", "slow"] },
+    "x": { "type": "string" },
+    "y": { "type": "string" }
+  },
+  "allOf": [{ "if": { "properties": { "kind": { "const": "a" } } }, "then": { "required": ["x"] } }],
+  "if": { "properties": { "mode": { "const": "slow" } } },
+  "then": { "required": ["y"] }
+}
