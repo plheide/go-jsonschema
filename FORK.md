@@ -34,6 +34,8 @@ Not offered upstream yet:
   `required` in conditionals, and the warnings for a `oneOf` whose `$ref` leads nowhere or that is left as a map
   (made on `main`);
 * conditionals on the object itself, and on a discriminator declared through a `$ref` (made on `main`);
+* the changes made on `main` for v0.27.0:
+  * decoding from JSON an `integer` written with a fraction or an exponent, such as `2.0` or `1e2`;
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 

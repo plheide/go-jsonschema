@@ -11,6 +11,7 @@ type formatter interface {
 	generate(output *output, declType *codegen.TypeDecl, validators []validator) func(*codegen.Emitter) error
 	enumMarshal(declType *codegen.TypeDecl) func(*codegen.Emitter) error
 	enumUnmarshal(
+		output *output,
 		declType codegen.TypeDecl,
 		enumType codegen.Type,
 		valueConstant *codegen.Var,
