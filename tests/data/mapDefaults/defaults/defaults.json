@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/mapDefaults/defaults",
+  "title": "Defaults",
+  "description": "A map property with a default starts empty, as a value of its own Go type.",
+  "type": "object",
+  "properties": {
+    "headers": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } },
+      "default": {}
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": { "a": "b" }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": { "type": "integer" },
+      "default": {}
+    },
+    "settings": {
+      "type": "object",
+      "properties": { "x": { "type": "string" } },
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

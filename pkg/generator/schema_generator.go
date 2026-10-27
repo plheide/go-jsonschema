@@ -1657,6 +1657,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	}
 
 	g.warnUncompiledConditional(t, scope, g.isDeclaring(t))
+	g.warnUnenforcedKeywords(t, scope)
 
 	if t.Enum != nil {
 		return g.generateEnumType(t, scope)
@@ -1721,6 +1722,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		}
 
 		g.reportOwnConditional(t, &tCopy, scope)
+		g.reportUnenforcedKeywords(t, scope)
 
 		return g.generateStructType(&tCopy, scope)
 	}
@@ -2360,9 +2362,11 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	g.output.anyOfVariants[anyOfType] = variantNames
 	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t, shared: shared}
 
-	// The merge carries the conditionals of t, reported with t, and of its
-	// branches, reported with each branch's type above.
+	// The merge carries the conditionals and the unchecked keywords of t,
+	// reported with t, and of its branches, reported with each branch's type
+	// above.
 	g.reportedConditionals[anyOfType] = struct{}{}
+	g.reportedKeywords[anyOfType] = struct{}{}
 
 	return g.generateTypeInline(anyOfType, scope)
 }
@@ -2421,6 +2425,10 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 		}
 
 		g.warnFallback(t, scope, trigger)
+
+		// The fallback warning lists the unchecked keywords of t and of its
+		// branches, which the merge carries.
+		g.reportedKeywords[allOfType] = struct{}{}
 	} else if reason, has := constrainingComposition(t); has {
 		// The merged type keeps its shape, but the conditional or the not
 		// it drops goes unchecked. A declined conditional discriminator has
@@ -2533,21 +2541,14 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 			return prop.Default
 		}
 
+		// The default is an empty object, which its literal writes as a value
+		// of the field's own type. A Go map written here would be one of the
+		// value type alone, which a field of a declared map type, or of a map
+		// of another element type, cannot hold.
 		switch prop.AdditionalProperties.Type[0] {
-		case schemas.TypeNameString:
-			return map[string]string{}
-
-		case schemas.TypeNameArray:
-			return map[string][]any{}
-
-		case schemas.TypeNameNumber:
-			return map[string]float64{}
-
-		case schemas.TypeNameInteger:
-			return map[string]int{}
-
-		case schemas.TypeNameBoolean:
-			return map[string]bool{}
+		case schemas.TypeNameString, schemas.TypeNameArray, schemas.TypeNameNumber,
+			schemas.TypeNameInteger, schemas.TypeNameBoolean:
+			return map[string]any{}
 
 		default:
 			return prop.Default
@@ -2653,6 +2654,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		// An object, the only schema the conditional discriminator takes, is
 		// declared below.
 		g.warnUncompiledConditional(t, scope, true)
+		g.warnUnenforcedKeywords(t, scope)
 
 		if dt, handled, err := g.generateInlineComposition(t, scope); handled {
 			return dt, err

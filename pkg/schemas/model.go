@@ -272,6 +272,16 @@ type Type struct {
 	Definitions      Definitions      `json:"$defs,omitempty"`
 	DependentSchemas map[string]*Type `json:"dependentSchemas,omitempty"`
 
+	// Keywords of draft 06 and later. minContains and maxContains are counts,
+	// held as numbers so that one written as 2.0 parses, as JSON Schema counts
+	// it as an integer.
+	PropertyNames         *Type    `json:"propertyNames,omitempty"`
+	Contains              *Type    `json:"contains,omitempty"`
+	MinContains           *float64 `json:"minContains,omitempty"`
+	MaxContains           *float64 `json:"maxContains,omitempty"`
+	UnevaluatedProperties *Type    `json:"unevaluatedProperties,omitempty"`
+	UnevaluatedItems      *Type    `json:"unevaluatedItems,omitempty"`
+
 	// TODO: add correct section where "readOnly" is mentioned in the spec
 	//       I'm not sure which section I should put here, but I did notice in the 2020-12 validation schema changelog,
 	//       under the "draft-handrews-json-schema-validation-00" item it mentions "readOnly" as having been moved

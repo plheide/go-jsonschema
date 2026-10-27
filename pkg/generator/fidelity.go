@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/plheide/go-jsonschema/pkg/codegen"
@@ -28,6 +29,19 @@ func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger
 	// trigger names something else.
 	if conditional, has := findConditional(t, ownConditional); has {
 		dropped = append(dropped, conditional)
+	}
+
+	// So are the keywords of its own that no generated code checks, unless
+	// warnUnenforcedKeywords has reported them, as it reports those of a type
+	// that is not an allOf.
+	if _, reported := g.reportedKeywords[t]; !reported {
+		g.reportedKeywords[t] = struct{}{}
+
+		for _, keyword := range unenforcedKeywords(t) {
+			if !slices.Contains(dropped, keyword) {
+				dropped = append(dropped, keyword)
+			}
+		}
 	}
 
 	if len(dropped) == 0 {
@@ -103,6 +117,96 @@ func (g *schemaGenerator) warnUncompiledConditional(t *schemas.Type, scope nameS
 	}
 
 	g.reportOwnConditional(t, subject, scope)
+}
+
+// warnUnenforcedKeywords reports, once for t, the keywords of t's own that no
+// generated code checks, such as minProperties. An allOf leaves them to its
+// merge, which carries those of t and of its branches, or, where the
+// conditional discriminator compiles the allOf, to the struct it declares
+// instead, which reports them with reportUnenforcedKeywords.
+func (g *schemaGenerator) warnUnenforcedKeywords(t *schemas.Type, scope nameScope) {
+	if len(t.AllOf) == 0 {
+		g.reportUnenforcedKeywords(t, scope)
+	}
+}
+
+// reportUnenforcedKeywords is warnUnenforcedKeywords for any t. A $ref leaves
+// them to the schema it refers to, and a schema that the goJSONSchema
+// extension maps to a Go type of the user's to that type.
+func (g *schemaGenerator) reportUnenforcedKeywords(t *schemas.Type, scope nameScope) {
+	if g.config.OnlyModels || t.Ref != "" {
+		return
+	}
+
+	if ext := t.GoJSONSchemaExtension; ext != nil && ext.Type != nil {
+		return
+	}
+
+	if _, reported := g.reportedKeywords[t]; reported {
+		return
+	}
+
+	g.reportedKeywords[t] = struct{}{}
+
+	if keywords := unenforcedKeywords(t); len(keywords) > 0 {
+		g.warnNotEnforced(scope, strings.Join(keywords, ", ")+" not checked")
+	}
+}
+
+// unenforcedKeywords lists, in alphabetical order, the keywords of t's own
+// that no generated code checks. Draft 07's dependencies count as the
+// dependentRequired and dependentSchemas they are read as. A subschema that
+// admits every value, such as `propertyNames: true`, checks nothing, as do
+// patternProperties and dependentSchemas whose subschemas all admit every
+// value, and minContains and maxContains apply only beside contains.
+func unenforcedKeywords(t *schemas.Type) []string {
+	var keywords []string
+
+	add := func(present bool, keyword string) {
+		if present {
+			keywords = append(keywords, keyword)
+		}
+	}
+
+	add(t.Contains != nil, "contains")
+	add(len(t.DependentRequired) > 0, "dependentRequired")
+	add(anyConstrains(t.DependentSchemas), "dependentSchemas")
+	add(t.Contains != nil && t.MaxContains != nil, "maxContains")
+	add(t.MaxProperties != 0, "maxProperties")
+	add(t.Contains != nil && t.MinContains != nil, "minContains")
+	add(t.MinProperties != 0, "minProperties")
+	add(anyConstrains(t.PatternProperties), "patternProperties")
+	add(constrains(t.PropertyNames), "propertyNames")
+	add(constrains(t.UnevaluatedItems), "unevaluatedItems")
+	add(constrains(t.UnevaluatedProperties), "unevaluatedProperties")
+
+	return keywords
+}
+
+// constrains reports whether s is present and may reject a value: a schema
+// that declares nothing but annotations, such as a default, readOnly or x-
+// extensions, admits every value.
+func constrains(s *schemas.Type) bool {
+	if s == nil {
+		return false
+	}
+
+	rest := *s
+	rest.Default, rest.ReadOnly, rest.Version = nil, false, ""
+	rest.Definitions, rest.Extensions, rest.XEnumVarnames = nil, nil, nil
+
+	return !isAnnotationOnly(&rest)
+}
+
+// anyConstrains reports whether any of subschemas may reject a value.
+func anyConstrains(subschemas map[string]*schemas.Type) bool {
+	for _, s := range subschemas {
+		if constrains(s) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // reportOwnConditional reports the conditional of subject's own, which stands
@@ -236,7 +340,7 @@ func imposes(t *schemas.Type) bool {
 		return false
 	}
 
-	if len(collectDroppedKeywords(t)) > 0 {
+	if len(collectDroppedKeywords(t)) > 0 || len(unenforcedKeywords(t)) > 0 {
 		return true
 	}
 
@@ -249,7 +353,9 @@ func imposes(t *schemas.Type) bool {
 // user expects the generator to enforce something. The list returned here is
 // what gets silently lost when the type degrades to interface{}. Recurses
 // into allOf/anyOf/oneOf branches so constraints declared inside a branch
-// are surfaced even when the parent is a thin composition wrapper.
+// are surfaced even when the parent is a thin composition wrapper, together
+// with the keywords of a branch's own that no generated code checks; t's own
+// are the caller's to report.
 //
 // Does NOT recurse into if/then/else/not — those are conditional or negated
 // schemas whose nested keywords aren't declarations on the parent type;
@@ -261,6 +367,7 @@ func collectDroppedKeywords(t *schemas.Type) []string {
 		dropped []string
 		seen    = make(map[string]struct{})
 		visited = make(map[*schemas.Type]struct{})
+		root    = t
 	)
 
 	add := func(kw string) {
@@ -332,6 +439,12 @@ func collectDroppedKeywords(t *schemas.Type) []string {
 		// constraints, which go unchecked with the branch.
 		if t.Ref != "" {
 			add("$ref " + t.Ref)
+		}
+
+		if t != root {
+			for _, keyword := range unenforcedKeywords(t) {
+				add(keyword)
+			}
 		}
 
 		for _, child := range t.AllOf {

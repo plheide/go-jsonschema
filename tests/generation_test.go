@@ -632,6 +632,12 @@ func TestConstConstantsGolden(t *testing.T) {
 	testExamples(t, basicConfig, "./data/constConstants")
 }
 
+func TestMapDefaultsGolden(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/mapDefaults")
+}
+
 func TestUseNumberGolden(t *testing.T) {
 	t.Parallel()
 
