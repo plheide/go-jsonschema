@@ -27,15 +27,19 @@ import (
 // single Go struct shape, not a holder of variants. Respecting that intent
 // is why this lives as a validator rather than emitting a holder type.
 type conditionalDiscriminatorValidator struct {
-	declName      string
+	declName string
+	// path leads from the parent to the discriminator, through the objects
+	// that hold it, such as [meta status]. discriminator names it, as
+	// meta.status.
+	path          []string
 	discriminator string
 	branches      []conditionalBranch
 
-	// optional is set when the parent does not require the discriminator.
-	// An absent discriminator makes an `if` that requires it false, so its
-	// `else` applies, and one that does not true, vacuously, so its `then`
-	// applies.
-	optional bool
+	// optional is set, for each level of path, when the object that holds
+	// it does not require it. An absent level makes an `if` that requires
+	// it false, so its `else` applies, and one that does not true,
+	// vacuously, so its `then` applies.
+	optional []bool
 
 	// compilesOwn is set when the schema's own if/then/else, besides its
 	// allOf, is one of the branches.
@@ -53,21 +57,30 @@ type conditionalBranch struct {
 	thenSchema  *schemas.Type
 	elseSchema  *schemas.Type
 
-	// ifRequires is set when the `if` lists the discriminator in its own
-	// `required`, so that it is false, not vacuously true, when the
-	// discriminator is absent.
-	ifRequires bool
+	// ifRequires is set, for each level of the discriminator's path, when
+	// the `if` lists that level in its `required`, so that it is false, not
+	// vacuously true, when that level is absent.
+	ifRequires []bool
 }
 
-// absentSchema returns the subschema that applies when the discriminator is
-// absent: the `else` of an `if` that requires it, which is false then, and
-// otherwise the `then` of an `if` that holds vacuously.
-func (b conditionalBranch) absentSchema() *schemas.Type {
-	if b.ifRequires {
+// absentSchema returns the subschema that applies when the discriminator's
+// path is absent at level: the `else` of an `if` that requires that level,
+// which is false then, and otherwise the `then` of an `if` that holds
+// vacuously.
+func (b conditionalBranch) absentSchema(level int) *schemas.Type {
+	if b.ifRequires[level] {
 		return b.elseSchema
 	}
 
 	return b.thenSchema
+}
+
+// absentChecks reports whether a branch has something to check when the
+// discriminator's path is absent at level.
+func (v *conditionalDiscriminatorValidator) absentChecks(level int) bool {
+	return v.optional[level] && slices.ContainsFunc(v.branches, func(b conditionalBranch) bool {
+		return hasChecks(b.absentSchema(level))
+	})
 }
 
 // desc satisfies the validator interface. Runs against the raw decoded map
@@ -91,6 +104,12 @@ func (v *conditionalDiscriminatorValidator) desc() *validatorDesc {
 // is unused — the body is identical for JSON and YAML because the raw map
 // has already been decoded by the unmarshal-body helper.
 func (v *conditionalDiscriminatorValidator) generate(out *codegen.Emitter, _ string) error {
+	if len(v.path) > 1 {
+		v.generateNested(out)
+
+		return nil
+	}
+
 	out.Printlnf(`rawDisc, hasDisc := %s[%q]`, varNameRawMap, v.discriminator)
 	out.Printlnf(`if hasDisc {`)
 	out.Indent(1)
@@ -112,14 +131,13 @@ func (v *conditionalDiscriminatorValidator) generate(out *codegen.Emitter, _ str
 
 	// A null decodes to a nil raw map, which the required checks let
 	// through, and so do the checks of an absent discriminator.
-	absentChecks := slices.ContainsFunc(v.branches, func(b conditionalBranch) bool { return hasChecks(b.absentSchema()) })
-	if v.optional && absentChecks {
+	if v.absentChecks(0) {
 		out.Printlnf(`} else if %s != nil {`, varNameRawMap)
 		out.Indent(1)
 
 		absent := fmt.Sprintf("when %s is absent", goStringText(v.discriminator))
 		for _, branch := range v.branches {
-			v.emitChecks(out, branch.absentSchema(), absent, "")
+			v.emitChecks(out, branch.absentSchema(0), absent, "")
 		}
 
 		out.Indent(-1)
@@ -128,6 +146,88 @@ func (v *conditionalDiscriminatorValidator) generate(out *codegen.Emitter, _ str
 	out.Printlnf(`}`)
 
 	return nil
+}
+
+// generateNested emits the checks for a discriminator that nested objects
+// hold. It walks the raw map down the path, which stops at the first level
+// that is absent, and dispatches on the value at its end, or applies what
+// each branch's `if` makes of the absent level.
+func (v *conditionalDiscriminatorValidator) generateNested(out *codegen.Emitter) {
+	out.Printlnf(`discAbsentAt, discStr := -1, ""`)
+
+	holder := varNameRawMap
+
+	for i, key := range v.path {
+		value := fmt.Sprintf("discValue%d", i)
+		label := goStringText(strings.Join(v.path[:i+1], "."))
+
+		if i == 0 {
+			out.Printlnf(`if %s, ok := %s[%q]; !ok {`, value, holder, key)
+		} else {
+			out.Printlnf(`} else if %s, ok := %s[%q]; !ok {`, value, holder, key)
+		}
+
+		out.Indent(1)
+		out.Printlnf(`discAbsentAt = %d`, i)
+		out.Indent(-1)
+
+		if i < len(v.path)-1 {
+			holder = fmt.Sprintf("discObject%d", i+1)
+
+			out.Printlnf(`} else if %s, isObject := %s.(map[string]interface{}); !isObject {`, holder, value)
+			out.Indent(1)
+			out.Printlnf(
+				`return fmt.Errorf("field %s in %s: must be an object for discriminator dispatch")`, label, v.declName,
+			)
+			out.Indent(-1)
+
+			continue
+		}
+
+		out.Printlnf(`} else if s, isStr := %s.(string); !isStr {`, value)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %s in %s: must be a string for discriminator dispatch")`, label, v.declName)
+		out.Indent(-1)
+		out.Printlnf(`} else {`)
+		out.Indent(1)
+		out.Printlnf(`discStr = s`)
+		out.Indent(-1)
+		out.Printlnf(`}`)
+	}
+
+	out.Printlnf(`if discAbsentAt < 0 {`)
+	out.Indent(1)
+
+	for _, branch := range v.branches {
+		v.emitBranch(out, branch)
+	}
+
+	out.Indent(-1)
+	out.Printlnf(`}`)
+
+	for i := range v.path {
+		if !v.absentChecks(i) {
+			continue
+		}
+
+		// A null decodes to a nil raw map, which the required checks let
+		// through, and so do these.
+		if i == 0 {
+			out.Printlnf(`if discAbsentAt == 0 && %s != nil {`, varNameRawMap)
+		} else {
+			out.Printlnf(`if discAbsentAt == %d {`, i)
+		}
+
+		out.Indent(1)
+
+		absent := fmt.Sprintf("when %s is absent", goStringText(strings.Join(v.path[:i+1], ".")))
+		for _, branch := range v.branches {
+			v.emitChecks(out, branch.absentSchema(i), absent, "")
+		}
+
+		out.Indent(-1)
+		out.Printlnf(`}`)
+	}
 }
 
 // emitBranch writes one if/else block: when discStr matches any of the
@@ -388,14 +488,14 @@ func (g *schemaGenerator) detectDiscriminatorIn(
 	}
 
 	var (
-		discriminator string
-		branches      = make([]conditionalBranch, 0, len(clauses))
+		path     []string
+		branches = make([]conditionalBranch, 0, len(clauses))
 	)
 
 	for i, clause := range clauses {
 		elem := clause.elem
 
-		key, matchValues, ifRequires, ok, declineReason := discriminatorIfClause(elem)
+		clausePath, matchValues, ifRequires, ok, declineReason := discriminatorIfClause(elem)
 		if !ok {
 			if declineReason != "" {
 				g.warnDecline(t, fmt.Sprintf(
@@ -420,8 +520,8 @@ func (g *schemaGenerator) detectDiscriminatorIn(
 		}
 
 		if i == 0 {
-			discriminator = key
-		} else if key != discriminator {
+			path = clausePath
+		} else if !slices.Equal(clausePath, path) {
 			return nil, false
 		}
 
@@ -433,7 +533,10 @@ func (g *schemaGenerator) detectDiscriminatorIn(
 		})
 	}
 
-	if reason := g.discriminatorInvalidReason(t, discriminator, branches); reason != "" {
+	discriminator := strings.Join(path, ".")
+
+	optional, reason := g.discriminatorInvalidReason(t, path, branches)
+	if reason != "" {
 		// Structural match but the discriminator declaration is wrong:
 		// surface the schema bug instead of silently routing back to the
 		// allOf merge path (which would produce a less-useful Go type and
@@ -453,19 +556,25 @@ func (g *schemaGenerator) detectDiscriminatorIn(
 	}
 
 	return &conditionalDiscriminatorValidator{
+		path:          path,
 		discriminator: discriminator,
 		branches:      branches,
-		optional:      !slices.Contains(t.Required, discriminator),
+		optional:      optional,
 	}, true
 }
 
 // discriminatorIfClause matches an allOf element of shape
 // `{if: {properties: {<K>: {const|enum: <string V>|[<V1>, ...]}}},
-// then: <subschema>, else?: <subschema>}`. Returns (K, values, ifRequires,
+// then: <subschema>, else?: <subschema>}`. Returns ([K], values, ifRequires,
 // true) on match where `values` is `[V]` for the const form or the enum
 // members (deduplicated, declaration order preserved) for the enum form.
 // The `if` may also list K, and only K, in its `required`, which ifRequires
 // reports: the `if` is then false when K is absent.
+//
+// K may hold a single-property check in turn, such as `{properties: {status:
+// {const: "failed"}}}`, which makes the discriminator a path through the
+// objects that hold it, [K status]. Each level is matched as K is, and
+// ifRequires has an entry per level.
 //
 // declineReason is non-empty for "looked enum-shaped but failed
 // validation" cases (non-string values, mixed types, empty enum) so the
@@ -479,65 +588,75 @@ func (g *schemaGenerator) detectDiscriminatorIn(
 // because the generated dispatch only checks the discriminator's value. When
 // both `const` and `enum` are declared on the same property (overlapping but
 // legal in JSON Schema), `const` wins as the more specific assertion.
-func discriminatorIfClause(elem *schemas.Type) (string, []string, bool, bool, string) {
+func discriminatorIfClause(elem *schemas.Type) ([]string, []string, []bool, bool, string) {
 	if elem == nil || elem.If == nil || elem.Then == nil {
-		return "", nil, false, false, ""
-	}
-
-	if len(elem.If.Properties) != 1 {
-		return "", nil, false, false, ""
+		return nil, nil, nil, false, ""
 	}
 
 	var (
-		key string
-		sub *schemas.Type
+		path       []string
+		ifRequires []bool
 	)
 
-	for k, v := range elem.If.Properties {
-		key, sub = k, v
-	}
-
-	ifc, ifRequires := elem.If, false
-	if len(ifc.Required) == 1 && ifc.Required[0] == key {
-		rest := *ifc
-		rest.Required = nil
-		ifc, ifRequires = &rest, true
-	}
-
-	if ifClauseHasExtraConstraints(ifc) {
-		return "", nil, false, false, ""
-	}
-
-	if sub == nil {
-		return "", nil, false, false, ""
-	}
-
-	// Const path takes precedence over enum (more specific assertion).
-	if sub.Const != nil {
-		constStr, isStr := sub.Const.(string)
-		if !isStr {
-			return "", nil, false, false, fmt.Sprintf(
-				"if-clause property %q has non-string const value", key,
-			)
+	for level := elem.If; ; {
+		if len(level.Properties) != 1 {
+			return nil, nil, nil, false, ""
 		}
 
-		return key, []string{constStr}, ifRequires, true, ""
-	}
+		var (
+			key string
+			sub *schemas.Type
+		)
 
-	// Enum path: every member must be a string and at least one must
-	// remain after dedup.
-	if sub.Enum != nil {
-		strs, reason := stringEnumValues(sub.Enum)
-		if reason != "" {
-			return "", nil, false, false, fmt.Sprintf("if-clause property %q %s", key, reason)
+		for k, v := range level.Properties {
+			key, sub = k, v
 		}
 
-		return key, strs, ifRequires, true, ""
-	}
+		ifc, requires := level, false
+		if len(ifc.Required) == 1 && ifc.Required[0] == key {
+			rest := *ifc
+			rest.Required = nil
+			ifc, requires = &rest, true
+		}
 
-	// Neither const nor enum — silent decline (the schema isn't claiming
-	// to be a discriminator at all).
-	return "", nil, false, false, ""
+		if ifClauseHasExtraConstraints(ifc) || sub == nil {
+			return nil, nil, nil, false, ""
+		}
+
+		path, ifRequires = append(path, key), append(ifRequires, requires)
+		label := strings.Join(path, ".")
+
+		// Const path takes precedence over enum (more specific assertion).
+		if sub.Const != nil {
+			constStr, isStr := sub.Const.(string)
+			if !isStr {
+				return nil, nil, nil, false, fmt.Sprintf(
+					"if-clause property %q has non-string const value", label,
+				)
+			}
+
+			return path, []string{constStr}, ifRequires, true, ""
+		}
+
+		// Enum path: every member must be a string and at least one must
+		// remain after dedup.
+		if sub.Enum != nil {
+			strs, reason := stringEnumValues(sub.Enum)
+			if reason != "" {
+				return nil, nil, nil, false, fmt.Sprintf("if-clause property %q %s", label, reason)
+			}
+
+			return path, strs, ifRequires, true, ""
+		}
+
+		// Neither const nor enum, nor one more level — silent decline (the
+		// schema isn't claiming to be a discriminator at all).
+		if len(sub.Properties) != 1 {
+			return nil, nil, nil, false, ""
+		}
+
+		level = sub
+	}
 }
 
 // stringEnumValues filters an `enum` value list to its string members
@@ -641,27 +760,50 @@ func ifClauseHasExtraStructure(ifc *schemas.Type) bool {
 
 // discriminatorInvalidReason returns "" when the parent schema validly
 // declares the discriminator property (string-typed, string-enum, and every
-// branch's const value is a member of the enum). A property declared through
-// a $ref, such as to a shared enum, is read as the schema the $ref points at.
-// Otherwise it returns a human-readable reason; callers should surface the
-// reason via the warner so a malformed conditional-discriminator schema
-// doesn't silently fall through to the plain allOf merge path.
+// branch's const value is a member of the enum), and each object on its path
+// (`type: object`). A property declared through a $ref, such as to a shared
+// enum, is read as the schema the $ref points at. Otherwise it returns a
+// human-readable reason; callers should surface the reason via the warner so
+// a malformed conditional-discriminator schema doesn't silently fall through
+// to the plain allOf merge path. It also returns, for each level of path,
+// whether the object that holds it lets it be absent.
 func (g *schemaGenerator) discriminatorInvalidReason(
-	t *schemas.Type, discriminator string, branches []conditionalBranch,
-) string {
-	prop, ok := t.Properties[discriminator]
-	if !ok {
-		return fmt.Sprintf("property %q is not declared on the parent schema", discriminator)
+	t *schemas.Type, path []string, branches []conditionalBranch,
+) ([]bool, string) {
+	var (
+		optional = make([]bool, len(path))
+		holder   = t
+		prop     *schemas.Type
+	)
+
+	for i, key := range path {
+		label := strings.Join(path[:i+1], ".")
+
+		declared, ok := holder.Properties[key]
+		if !ok {
+			return nil, fmt.Sprintf("property %q is not declared on the parent schema", label)
+		}
+
+		optional[i] = !slices.Contains(holder.Required, key)
+		prop = g.followRefs(declared)
+
+		if i < len(path)-1 {
+			if len(prop.Type) != 1 || prop.Type[0] != schemas.TypeNameObject {
+				return nil, fmt.Sprintf("property %q must be declared as `type: object`", label)
+			}
+
+			holder = prop
+		}
 	}
 
-	prop = g.followRefs(prop)
+	discriminator := strings.Join(path, ".")
 
 	if len(prop.Type) != 1 || prop.Type[0] != schemas.TypeNameString {
-		return fmt.Sprintf("property %q must be declared as `type: string`", discriminator)
+		return nil, fmt.Sprintf("property %q must be declared as `type: string`", discriminator)
 	}
 
 	if prop.Enum == nil {
-		return fmt.Sprintf("property %q must declare an `enum` listing the valid values", discriminator)
+		return nil, fmt.Sprintf("property %q must declare an `enum` listing the valid values", discriminator)
 	}
 
 	enumValues := make(map[string]struct{}, len(prop.Enum))
@@ -675,7 +817,7 @@ func (g *schemaGenerator) discriminatorInvalidReason(
 	for branchIdx, b := range branches {
 		for _, val := range b.matchValues {
 			if _, ok := enumValues[val]; !ok {
-				return fmt.Sprintf(
+				return nil, fmt.Sprintf(
 					"branch %d value %q is not a member of the %q enum",
 					branchIdx, val, discriminator,
 				)
@@ -683,7 +825,7 @@ func (g *schemaGenerator) discriminatorInvalidReason(
 		}
 	}
 
-	return ""
+	return optional, ""
 }
 
 // followRefs returns the schema that a chain of $refs from t ends at, or t

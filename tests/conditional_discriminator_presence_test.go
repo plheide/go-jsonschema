@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	testCondDiscElseNot "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/elseNotRequired"
+	testCondDiscNestedPath "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/nestedPath"
 	testCondDiscNot "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/notRequired"
 	testCondDiscOptional "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/optionalDiscriminator"
 	testCondDiscOwnAndAllOf "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/ownAndAllOf"
@@ -55,6 +56,39 @@ func TestConditionalDiscriminatorOptionalAndNot(t *testing.T) {
 			{`{"kind": "enum", "values": ["a"], "label": "x"}`, ""},
 			{`{"kind": "enum", "values": ["a"]}`, "field label in VacuousIf (when kind!='float'): required"},
 			{`{"kind": "enum", "label": "x"}`, "field values in VacuousIf (when kind='enum'): required"},
+		})
+	})
+
+	// The discriminator meta.status is held by an object. Its absence at
+	// either level makes an `if` that requires that level false, and one
+	// that does not true.
+	t.Run("a discriminator that a nested object holds", func(t *testing.T) {
+		t.Parallel()
+
+		checkDecode[testCondDiscNestedPath.NestedPath](t, []decodeCase{
+			{`{"meta": {"status": "ok"}, "note": "n"}`, ""},
+			{`{"meta": {"status": "ok"}}`, "field note in NestedPath (when meta.status='ok'): required"},
+			{`{"meta": {"status": "failed"}}`, "field failure in NestedPath (when meta.status='failed'): required"},
+			{`{"meta": {"status": "failed"}, "failure": "x"}`, ""},
+			{
+				`{"meta": {"status": "failed"}, "failure": "x", "reason": "r"}`,
+				"field reason in NestedPath (when meta.status!='skipped'): must not be present",
+			},
+			{`{"meta": {"status": "skipped"}}`, "field reason in NestedPath (when meta.status='skipped'): required"},
+			{`{"meta": {"status": "skipped"}, "reason": "r"}`, ""},
+
+			{`{"meta": {}}`, "field note in NestedPath (when meta.status is absent): required"},
+			{`{"meta": {}, "note": "n"}`, ""},
+			{
+				`{"meta": {}, "note": "n", "reason": "r"}`,
+				"field reason in NestedPath (when meta.status is absent): must not be present",
+			},
+			{`{}`, "field note in NestedPath (when meta is absent): required"},
+			{`{"note": "n"}`, ""},
+			{`{"note": "n", "reason": "r"}`, "field reason in NestedPath (when meta is absent): must not be present"},
+
+			{`{"meta": "x"}`, "field meta in NestedPath: must be an object for discriminator dispatch"},
+			{`{"meta": {"status": 1}}`, "field meta.status in NestedPath: must be a string for discriminator dispatch"},
 		})
 	})
 

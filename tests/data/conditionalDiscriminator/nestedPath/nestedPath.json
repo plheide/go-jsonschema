@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/conditionalDiscriminator/nestedPath",
+  "title": "NestedPath",
+  "description": "A conditional keyed on a property that a nested object holds, meta.status. An absent meta or status makes an if that requires it false, and one that does not true, vacuously.",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["ok", "failed", "skipped"] }
+      }
+    },
+    "failure": { "type": "string" },
+    "reason": { "type": "string" },
+    "note": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "meta": { "properties": { "status": { "const": "failed" } }, "required": ["status"] } },
+        "required": ["meta"]
+      },
+      "then": { "required": ["failure"] }
+    },
+    {
+      "if": {
+        "properties": { "meta": { "properties": { "status": { "const": "skipped" } }, "required": ["status"] } },
+        "required": ["meta"]
+      },
+      "then": { "required": ["reason"] },
+      "else": { "not": { "required": ["reason"] } }
+    },
+    {
+      "if": { "properties": { "meta": { "properties": { "status": { "const": "ok" } } } } },
+      "then": { "required": ["note"] }
+    }
+  ]
+}

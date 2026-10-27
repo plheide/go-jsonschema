@@ -159,6 +159,14 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Empty(t, warnings)
 	})
 
+	t.Run("a conditional keyed on a property a nested object holds is compiled", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t, "./data/conditionalDiscriminator/nestedPath/nestedPath.json")
+
+		assert.Empty(t, warnings)
+	})
+
 	t.Run("a conditional no validator attaches to is reported", func(t *testing.T) {
 		t.Parallel()
 
