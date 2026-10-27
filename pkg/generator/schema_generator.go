@@ -2533,21 +2533,14 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 			return prop.Default
 		}
 
+		// The default is an empty object, which its literal writes as a value
+		// of the field's own type. A Go map written here would be one of the
+		// value type alone, which a field of a declared map type, or of a map
+		// of another element type, cannot hold.
 		switch prop.AdditionalProperties.Type[0] {
-		case schemas.TypeNameString:
-			return map[string]string{}
-
-		case schemas.TypeNameArray:
-			return map[string][]any{}
-
-		case schemas.TypeNameNumber:
-			return map[string]float64{}
-
-		case schemas.TypeNameInteger:
-			return map[string]int{}
-
-		case schemas.TypeNameBoolean:
-			return map[string]bool{}
+		case schemas.TypeNameString, schemas.TypeNameArray, schemas.TypeNameNumber,
+			schemas.TypeNameInteger, schemas.TypeNameBoolean:
+			return map[string]any{}
 
 		default:
 			return prop.Default
