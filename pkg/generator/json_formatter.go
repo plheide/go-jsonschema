@@ -9,6 +9,9 @@ import (
 
 const (
 	formatJSON = "json"
+	// jsonPackage is the import path of the package generated code decodes
+	// JSON with.
+	jsonPackage = "encoding/json"
 )
 
 var ErrCannotUnmarshalEnum = fmt.Errorf("cannot unmarshal enum")

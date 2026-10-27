@@ -989,9 +989,9 @@ func emitStringVariantFormatCheck(out *codegen.Emitter, typeName string, sf stri
 	}
 
 	fv := &formatValidator{
-		jsonName:  typeName,
-		format:    sf.validate,
-		valueExpr: "v",
+		checkTarget: checkTarget{valueExpr: "v"},
+		jsonName:    typeName,
+		format:      sf.validate,
 	}
 
 	return fv.generate(out, "")

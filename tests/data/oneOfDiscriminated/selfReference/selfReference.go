@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strings"
 
 // A variant refers back to the oneOf that holds it. The holder is registered
 // before its variants, so Friend resolves to it; before, Friend got a type that
@@ -29,6 +30,14 @@ func (j *PetCat) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in PetCat: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"cat\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"cat\"")
+		}
+	}
 	type Plain PetCat
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -46,6 +55,11 @@ func (j *PetCat) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in PetCat: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"cat\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"cat\"")
+		}
 	}
 	type Plain PetCat
 	var plain Plain
@@ -73,6 +87,14 @@ func (j *PetDog) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in PetDog: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
+		}
+	}
 	type Plain PetDog
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -90,6 +112,11 @@ func (j *PetDog) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in PetDog: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
+		}
 	}
 	type Plain PetDog
 	var plain Plain

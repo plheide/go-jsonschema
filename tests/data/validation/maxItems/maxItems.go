@@ -25,8 +25,8 @@ func (j *MaxItems) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field %s length: must be <= %d", "myNestedArray", 5)
 	}
 	for i1 := range plain.MyNestedArray {
-		if len(plain.MyNestedArray[i1]) > 5 {
-			return fmt.Errorf("field %s length: must be <= %d", fmt.Sprintf("%s[%d]", "myNestedArray", i1), 5)
+		if len(plain.MyNestedArray[i1]) > 3 {
+			return fmt.Errorf("field %s length: must be <= %d", fmt.Sprintf("%s[%d]", "myNestedArray", i1), 3)
 		}
 	}
 	if len(plain.MyStringArray) > 5 {
@@ -47,8 +47,8 @@ func (j *MaxItems) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field %s length: must be <= %d", "myNestedArray", 5)
 	}
 	for i1 := range plain.MyNestedArray {
-		if len(plain.MyNestedArray[i1]) > 5 {
-			return fmt.Errorf("field %s length: must be <= %d", fmt.Sprintf("%s[%d]", "myNestedArray", i1), 5)
+		if len(plain.MyNestedArray[i1]) > 3 {
+			return fmt.Errorf("field %s length: must be <= %d", fmt.Sprintf("%s[%d]", "myNestedArray", i1), 3)
 		}
 	}
 	if len(plain.MyStringArray) > 5 {

@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strings"
 
 type CaseCollision struct {
 	// "dog" and "Dog" are distinct discriminator values that map to one Go
@@ -47,6 +48,14 @@ func (j *CaseCollisionPetDog_2) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in CaseCollisionPetDog_2: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"Dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"Dog\"")
+		}
+	}
 	type Plain CaseCollisionPetDog_2
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -64,6 +73,11 @@ func (j *CaseCollisionPetDog_2) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in CaseCollisionPetDog_2: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"Dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"Dog\"")
+		}
 	}
 	type Plain CaseCollisionPetDog_2
 	var plain Plain
@@ -83,6 +97,14 @@ func (j *CaseCollisionPetDog) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in CaseCollisionPetDog: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
+		}
+	}
 	type Plain CaseCollisionPetDog
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -100,6 +122,11 @@ func (j *CaseCollisionPetDog) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in CaseCollisionPetDog: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
+		}
 	}
 	type Plain CaseCollisionPetDog
 	var plain Plain

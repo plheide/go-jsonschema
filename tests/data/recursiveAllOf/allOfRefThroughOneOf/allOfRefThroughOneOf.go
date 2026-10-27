@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strings"
 
 // A discriminated oneOf whose variants refer back to it through allOf. Each allOf
 // merges the oneOf into a copy with the same variants, so generation used to
@@ -59,6 +60,14 @@ func (j *NodeEveryFilterEvery) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeEveryFilterEvery: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"every\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"every\"")
+		}
+	}
 	type Plain NodeEveryFilterEvery
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -79,6 +88,11 @@ func (j *NodeEveryFilterEvery) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeEveryFilterEvery: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"every\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"every\"")
+		}
 	}
 	type Plain NodeEveryFilterEvery
 	var plain Plain
@@ -109,6 +123,14 @@ func (j *NodeEveryFilterLeaf) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["value"]; raw != nil && !ok {
 		return fmt.Errorf("field value in NodeEveryFilterLeaf: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"leaf\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"leaf\"")
+		}
+	}
 	type Plain NodeEveryFilterLeaf
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -129,6 +151,11 @@ func (j *NodeEveryFilterLeaf) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["value"]; raw != nil && !ok {
 		return fmt.Errorf("field value in NodeEveryFilterLeaf: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"leaf\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"leaf\"")
+		}
 	}
 	type Plain NodeEveryFilterLeaf
 	var plain Plain
@@ -159,6 +186,14 @@ func (j *NodeEveryFilterSome) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeEveryFilterSome: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"some\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"some\"")
+		}
+	}
 	type Plain NodeEveryFilterSome
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -179,6 +214,11 @@ func (j *NodeEveryFilterSome) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeEveryFilterSome: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"some\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"some\"")
+		}
 	}
 	type Plain NodeEveryFilterSome
 	var plain Plain
@@ -348,6 +388,14 @@ func (j *NodeEvery) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeEvery: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"every\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"every\"")
+		}
+	}
 	type Plain NodeEvery
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -368,6 +416,11 @@ func (j *NodeEvery) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeEvery: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"every\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"every\"")
+		}
 	}
 	type Plain NodeEvery
 	var plain Plain
@@ -398,6 +451,14 @@ func (j *NodeLeaf) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["value"]; raw != nil && !ok {
 		return fmt.Errorf("field value in NodeLeaf: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"leaf\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"leaf\"")
+		}
+	}
 	type Plain NodeLeaf
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -418,6 +479,11 @@ func (j *NodeLeaf) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["value"]; raw != nil && !ok {
 		return fmt.Errorf("field value in NodeLeaf: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"leaf\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"leaf\"")
+		}
 	}
 	type Plain NodeLeaf
 	var plain Plain
@@ -464,6 +530,14 @@ func (j *NodeSomeFilterEvery) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeSomeFilterEvery: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"every\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"every\"")
+		}
+	}
 	type Plain NodeSomeFilterEvery
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -484,6 +558,11 @@ func (j *NodeSomeFilterEvery) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeSomeFilterEvery: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"every\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"every\"")
+		}
 	}
 	type Plain NodeSomeFilterEvery
 	var plain Plain
@@ -514,6 +593,14 @@ func (j *NodeSomeFilterLeaf) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["value"]; raw != nil && !ok {
 		return fmt.Errorf("field value in NodeSomeFilterLeaf: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"leaf\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"leaf\"")
+		}
+	}
 	type Plain NodeSomeFilterLeaf
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -534,6 +621,11 @@ func (j *NodeSomeFilterLeaf) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["value"]; raw != nil && !ok {
 		return fmt.Errorf("field value in NodeSomeFilterLeaf: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"leaf\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"leaf\"")
+		}
 	}
 	type Plain NodeSomeFilterLeaf
 	var plain Plain
@@ -564,6 +656,14 @@ func (j *NodeSomeFilterSome) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeSomeFilterSome: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"some\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"some\"")
+		}
+	}
 	type Plain NodeSomeFilterSome
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -584,6 +684,11 @@ func (j *NodeSomeFilterSome) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeSomeFilterSome: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"some\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"some\"")
+		}
 	}
 	type Plain NodeSomeFilterSome
 	var plain Plain
@@ -753,6 +858,14 @@ func (j *NodeSome) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeSome: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"some\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"some\"")
+		}
+	}
 	type Plain NodeSome
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -773,6 +886,11 @@ func (j *NodeSome) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in NodeSome: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"some\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"some\"")
+		}
 	}
 	type Plain NodeSome
 	var plain Plain

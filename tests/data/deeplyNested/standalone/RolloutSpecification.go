@@ -241,6 +241,38 @@ type IncidentOptions struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
+func (j *IncidentOptions) UnmarshalJSON(value []byte) error {
+	type Plain IncidentOptions
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal IncidentOptions: %w", err)
+	}
+	for i1 := range plain.When {
+		if matched, _ := regexp.MatchString(`(?i)(^onLastAutoRestart$|^onValidationRollout$)`, string(plain.When[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "when", i1), `(?i)(^onLastAutoRestart$|^onValidationRollout$)`)
+		}
+	}
+	*j = IncidentOptions(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *IncidentOptions) UnmarshalYAML(value *yaml.Node) error {
+	type Plain IncidentOptions
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal IncidentOptions: %w", err)
+	}
+	for i1 := range plain.When {
+		if matched, _ := regexp.MatchString(`(?i)(^onLastAutoRestart$|^onValidationRollout$)`, string(plain.When[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "when", i1), `(?i)(^onLastAutoRestart$|^onValidationRollout$)`)
+		}
+	}
+	*j = IncidentOptions(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
 func (j *Incident) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
@@ -315,6 +347,11 @@ func (j *Options) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("field %s pattern match: must match %s", "Verbosity", `(?i)(^All$|^SummaryOnly$|^Compact$)`)
 		}
 	}
+	for i1 := range plain.When {
+		if matched, _ := regexp.MatchString(`(onStart|onError|onComplete)`, string(plain.When[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "when", i1), `(onStart|onError|onComplete)`)
+		}
+	}
 	*j = Options(plain)
 	return nil
 }
@@ -329,6 +366,11 @@ func (j *Options) UnmarshalYAML(value *yaml.Node) error {
 	if plain.Verbosity != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^All$|^SummaryOnly$|^Compact$)`, string(*plain.Verbosity)); !matched {
 			return fmt.Errorf("field %s pattern match: must match %s", "Verbosity", `(?i)(^All$|^SummaryOnly$|^Compact$)`)
+		}
+	}
+	for i1 := range plain.When {
+		if matched, _ := regexp.MatchString(`(onStart|onError|onComplete)`, string(plain.When[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "when", i1), `(onStart|onError|onComplete)`)
 		}
 	}
 	*j = Options(plain)
@@ -377,6 +419,11 @@ func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal OrchestratedStep: %w", err)
 	}
+	for i1 := range plain.Actions {
+		if matched, _ := regexp.MatchString(`(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)/+[\w\W]+)`, string(plain.Actions[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "actions", i1), `(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)/+[\w\W]+)`)
+		}
+	}
 	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
@@ -406,6 +453,11 @@ func (j *OrchestratedStep) UnmarshalYAML(value *yaml.Node) error {
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal OrchestratedStep: %w", err)
+	}
+	for i1 := range plain.Actions {
+		if matched, _ := regexp.MatchString(`(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)/+[\w\W]+)`, string(plain.Actions[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "actions", i1), `(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)/+[\w\W]+)`)
+		}
 	}
 	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)

@@ -127,7 +127,7 @@ func (o *output) integralHelper(typeName string) string {
 
 	o.integralHelperName = name
 
-	for _, pkg := range []string{"bytes", "encoding/json", "strconv", "strings"} {
+	for _, pkg := range []string{"bytes", jsonPackage, "strconv", "strings"} {
 		o.file.Package.AddImport(pkg, "")
 	}
 
