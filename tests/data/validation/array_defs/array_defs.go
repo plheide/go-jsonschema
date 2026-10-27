@@ -23,6 +23,18 @@ type ArrayDefs struct {
 	MyTags Tags `json:"myTags" yaml:"myTags" mapstructure:"myTags"`
 }
 
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j ArrayDefs) MarshalJSON() ([]byte, error) {
+	type Plain ArrayDefs
+	plain := Plain(j)
+	if plain.MyTags == nil {
+		plain.MyTags = Tags{}
+	}
+	return json.Marshal(plain)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ArrayDefs) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}

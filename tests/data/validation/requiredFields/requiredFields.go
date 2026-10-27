@@ -131,6 +131,30 @@ func (j *RequiredFieldsMyObject) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j RequiredFields) MarshalJSON() ([]byte, error) {
+	type Plain RequiredFields
+	plain := Plain(j)
+	if plain.MyBooleanArray == nil {
+		plain.MyBooleanArray = []bool{}
+	}
+	if plain.MyNullArray == nil {
+		plain.MyNullArray = []interface{}{}
+	}
+	if plain.MyNumberArray == nil {
+		plain.MyNumberArray = []float64{}
+	}
+	if plain.MyObjectArray == nil {
+		plain.MyObjectArray = []RequiredFieldsMyObjectArrayElem{}
+	}
+	if plain.MyStringArray == nil {
+		plain.MyStringArray = []string{}
+	}
+	return json.Marshal(plain)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RequiredFields) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}

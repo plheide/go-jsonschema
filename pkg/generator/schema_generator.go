@@ -632,6 +632,8 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	switch tt := theType.(type) {
 	case *codegen.StructType:
+		g.generateEmptyWhenNilMarshaler(&decl, g.emptyWhenNilFields(tt))
+
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
 			validators = append(validators, g.anyOfParentValidators(t, tt, decl.Name, scope)...)
 			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))

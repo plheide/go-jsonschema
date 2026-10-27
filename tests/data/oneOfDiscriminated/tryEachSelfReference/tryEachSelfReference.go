@@ -61,6 +61,18 @@ type NodeVariant1 struct {
 	Children []Node `json:"children" yaml:"children" mapstructure:"children"`
 }
 
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j NodeVariant1) MarshalJSON() ([]byte, error) {
+	type Plain NodeVariant1
+	plain := Plain(j)
+	if plain.Children == nil {
+		plain.Children = []Node{}
+	}
+	return json.Marshal(plain)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeVariant1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}

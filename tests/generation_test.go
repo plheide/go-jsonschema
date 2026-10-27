@@ -620,6 +620,12 @@ func TestAnyOfParentGolden(t *testing.T) {
 	testExamples(t, basicConfig, "./data/anyOfParent")
 }
 
+func TestEmptyWhenNilGolden(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/emptyWhenNil")
+}
+
 // TestConditionalDiscriminator drives generation for the
 // allOf+if[const]/then[/else] tagged-union pattern. Walks every fixture
 // under tests/data/conditionalDiscriminator and diffs against the sibling

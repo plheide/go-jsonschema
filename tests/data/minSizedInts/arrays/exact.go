@@ -35,6 +35,39 @@ type Exact struct {
 	U8 []uint8 `json:"u8" yaml:"u8" mapstructure:"u8"`
 }
 
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j Exact) MarshalJSON() ([]byte, error) {
+	type Plain Exact
+	plain := Plain(j)
+	if plain.I16 == nil {
+		plain.I16 = []int16{}
+	}
+	if plain.I32 == nil {
+		plain.I32 = []int32{}
+	}
+	if plain.I64 == nil {
+		plain.I64 = []int64{}
+	}
+	if plain.I8 == nil {
+		plain.I8 = []int8{}
+	}
+	if plain.U16 == nil {
+		plain.U16 = []uint16{}
+	}
+	if plain.U32 == nil {
+		plain.U32 = []uint32{}
+	}
+	if plain.U64 == nil {
+		plain.U64 = []uint64{}
+	}
+	if plain.U8 == nil {
+		plain.U8 = []uint8{}
+	}
+	return json.Marshal(plain)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Exact) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
