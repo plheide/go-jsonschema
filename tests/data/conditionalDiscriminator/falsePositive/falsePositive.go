@@ -7,6 +7,9 @@ import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
 
+// Detection once declined an optional discriminator. JSON Schema reads an if that
+// does not require mode as true when mode is absent, so its then applies, which is
+// compiled now.
 type FalsePositive struct {
 	// Extra corresponds to the JSON schema field "extra".
 	Extra *string `json:"extra,omitempty,omitzero" yaml:"extra,omitempty" mapstructure:"extra,omitempty"`
@@ -62,5 +65,67 @@ func (j *FalsePositiveMode) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_FalsePositiveMode, v)
 	}
 	*j = FalsePositiveMode(v)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *FalsePositive) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw FalsePositive: %w", err)
+	}
+	rawDisc, hasDisc := raw["mode"]
+	if hasDisc {
+		discStr, isStr := rawDisc.(string)
+		if !isStr {
+			return fmt.Errorf("field mode in FalsePositive: must be a string for discriminator dispatch")
+		}
+		if discStr == "a" {
+			if _, ok := raw["extra"]; !ok {
+				return fmt.Errorf("field extra in FalsePositive (when mode='a'): required")
+			}
+		}
+	} else if raw != nil {
+		if _, ok := raw["extra"]; !ok {
+			return fmt.Errorf("field extra in FalsePositive (when mode is absent): required")
+		}
+	}
+	type Plain FalsePositive
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal FalsePositive: %w", err)
+	}
+	*j = FalsePositive(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *FalsePositive) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw FalsePositive: %w", err)
+	}
+	rawDisc, hasDisc := raw["mode"]
+	if hasDisc {
+		discStr, isStr := rawDisc.(string)
+		if !isStr {
+			return fmt.Errorf("field mode in FalsePositive: must be a string for discriminator dispatch")
+		}
+		if discStr == "a" {
+			if _, ok := raw["extra"]; !ok {
+				return fmt.Errorf("field extra in FalsePositive (when mode='a'): required")
+			}
+		}
+	} else if raw != nil {
+		if _, ok := raw["extra"]; !ok {
+			return fmt.Errorf("field extra in FalsePositive (when mode is absent): required")
+		}
+	}
+	type Plain FalsePositive
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal FalsePositive: %w", err)
+	}
+	*j = FalsePositive(plain)
 	return nil
 }

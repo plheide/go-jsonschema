@@ -14,6 +14,7 @@ import (
 	testCondDiscOwnOtherKey "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/ownOtherKey"
 	testCondDiscRefEnum "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/refEnum"
 	testCondDiscRefEnumChain "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/refEnumChain"
+	testCondDiscVacuousIf "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/vacuousIf"
 )
 
 // TestConditionalDiscriminatorOptionalAndNot covers two extensions of the
@@ -36,6 +37,24 @@ func TestConditionalDiscriminatorOptionalAndNot(t *testing.T) {
 			{`{"kind": "float"}`, "field unit in OptionalDiscriminator (when kind!='enum'): required"},
 			{`{"kind": "enum", "values": ["a"]}`, ""},
 			{`{"kind": "enum"}`, "field values in OptionalDiscriminator (when kind='enum'): required"},
+		})
+	})
+
+	// JSON Schema reads an `if` whose discriminator is absent as true, unless
+	// the `if` requires it: `properties` holds vacuously for an absent key.
+	t.Run("an absent optional discriminator applies the then of an if that does not require it", func(t *testing.T) {
+		t.Parallel()
+
+		checkDecode[testCondDiscVacuousIf.VacuousIf](t, []decodeCase{
+			{`null`, ""},
+			{`{}`, "field values in VacuousIf (when kind is absent): required"},
+			{`{"values": []}`, "field label in VacuousIf (when kind is absent): required"},
+			{`{"values": [], "label": "x"}`, ""},
+			{`{"kind": "float", "unit": "m"}`, ""},
+			{`{"kind": "float"}`, "field unit in VacuousIf (when kind='float'): required"},
+			{`{"kind": "enum", "values": ["a"], "label": "x"}`, ""},
+			{`{"kind": "enum", "values": ["a"]}`, "field label in VacuousIf (when kind!='float'): required"},
+			{`{"kind": "enum", "label": "x"}`, "field values in VacuousIf (when kind='enum'): required"},
 		})
 	})
 

@@ -31,9 +31,10 @@ type conditionalDiscriminatorValidator struct {
 	discriminator string
 	branches      []conditionalBranch
 
-	// optional is set when the parent does not require the discriminator,
-	// which every branch's `if` then requires itself: an absent
-	// discriminator makes each `if` false, so each branch's `else` applies.
+	// optional is set when the parent does not require the discriminator.
+	// An absent discriminator makes an `if` that requires it false, so its
+	// `else` applies, and one that does not true, vacuously, so its `then`
+	// applies.
 	optional bool
 
 	// compilesOwn is set when the schema's own if/then/else, besides its
@@ -56,6 +57,17 @@ type conditionalBranch struct {
 	// `required`, so that it is false, not vacuously true, when the
 	// discriminator is absent.
 	ifRequires bool
+}
+
+// absentSchema returns the subschema that applies when the discriminator is
+// absent: the `else` of an `if` that requires it, which is false then, and
+// otherwise the `then` of an `if` that holds vacuously.
+func (b conditionalBranch) absentSchema() *schemas.Type {
+	if b.ifRequires {
+		return b.elseSchema
+	}
+
+	return b.thenSchema
 }
 
 // desc satisfies the validator interface. Runs against the raw decoded map
@@ -99,14 +111,15 @@ func (v *conditionalDiscriminatorValidator) generate(out *codegen.Emitter, _ str
 	out.Indent(-1)
 
 	// A null decodes to a nil raw map, which the required checks let
-	// through, and so does the absent discriminator's else.
-	if v.optional && slices.ContainsFunc(v.branches, func(b conditionalBranch) bool { return hasChecks(b.elseSchema) }) {
+	// through, and so do the checks of an absent discriminator.
+	absentChecks := slices.ContainsFunc(v.branches, func(b conditionalBranch) bool { return hasChecks(b.absentSchema()) })
+	if v.optional && absentChecks {
 		out.Printlnf(`} else if %s != nil {`, varNameRawMap)
 		out.Indent(1)
 
 		absent := fmt.Sprintf("when %s is absent", goStringText(v.discriminator))
 		for _, branch := range v.branches {
-			v.emitChecks(out, branch.elseSchema, absent, "")
+			v.emitChecks(out, branch.absentSchema(), absent, "")
 		}
 
 		out.Indent(-1)
@@ -627,8 +640,7 @@ func ifClauseHasExtraStructure(ifc *schemas.Type) bool {
 }
 
 // discriminatorInvalidReason returns "" when the parent schema validly
-// declares the discriminator property (string-typed, string-enum, listed
-// in required, or else in the `required` of every branch's `if`, and every
+// declares the discriminator property (string-typed, string-enum, and every
 // branch's const value is a member of the enum). A property declared through
 // a $ref, such as to a shared enum, is read as the schema the $ref points at.
 // Otherwise it returns a human-readable reason; callers should surface the
@@ -669,17 +681,6 @@ func (g *schemaGenerator) discriminatorInvalidReason(
 				)
 			}
 		}
-	}
-
-	// Where the parent lets the discriminator be absent, each `if` must
-	// require it, which makes the `if` false, and its `else` apply, when the
-	// discriminator is absent. An `if` that does not require it holds then,
-	// vacuously, and its `then` would apply: that case is not compiled.
-	everyIfRequires := !slices.ContainsFunc(branches, func(b conditionalBranch) bool { return !b.ifRequires })
-	if !slices.Contains(t.Required, discriminator) && !everyIfRequires {
-		return fmt.Sprintf(
-			"property %q must be listed in `required`, or in the `required` of every `if`", discriminator,
-		)
 	}
 
 	return ""
