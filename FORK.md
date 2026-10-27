@@ -39,6 +39,7 @@ Not offered upstream yet:
   * checking the values arrays and maps hold, at every depth, a `const` of no declared type, and `uniqueItems`;
   * checking the object's own keywords on a struct merged from an `anyOf`;
   * conditionals keyed on a property a nested object holds, and on an absent discriminator an `if` does not require;
+  * writing a required array or object left nil as empty, constants for `const` values, and the `--use-number` opt-in;
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 

@@ -171,6 +171,10 @@ or is listed as unsupported under [Status](#status).
 * **`--strict-additional-properties=strict`** rejects undeclared properties on every object, including where the
   schema allows them. That is stricter than JSON Schema.
 * **`--only-models`** generates the types without unmarshalers, so nothing is checked.
+* **Numbers in untyped values**, `interface{}` fields and the values they hold, are decoded from JSON as `float64`,
+  which loses integers beyond 2^53. `--use-number` decodes them as `json.Number`, which keeps them exact, and writes
+  their defaults so too. Typed fields, enum values and `AdditionalProperties` are decoded as before, and so is YAML,
+  since yaml.v3 decodes integers exactly.
 
 ### Checks that are off by default
 
@@ -250,6 +254,10 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 ### Other differences
 
 * A required property named `-` is decoded. Upstream tagged it `json:"-"`, which `encoding/json` skips.
+* A required array or object whose type excludes `null` is written to JSON as `[]` or `{}` when it is nil. Upstream
+  wrote `null`, which the schema rejects.
+* A property with a `const` of a string, a number, an integer or a boolean has an exported constant, named after the
+  struct and the field, such as `ConfigSchema` for a `$schema` property.
 * An `integer` written with a fraction or an exponent, such as `2.0` or `1e2`, is decoded from JSON, as JSON Schema
   counts it as an integer. Upstream's code rejected it, as `encoding/json` does for a Go integer.
 * A nested array is held to its own `minItems` and `maxItems`. Upstream held each level to the property's, which
@@ -284,7 +292,7 @@ only specific validations remain to be fully implemented.
     * [x] `object`
     * [x] `array`
     * [x] `number`
-      * [ ] Option to use `json.Number`
+      * [x] Option to use `json.Number` (`--use-number`, for untyped values)
     * [x] `string`
   * [ ] Location identifiers (§8.2.3)
     * [x] References against top-level names: `#/$defs/someName`
