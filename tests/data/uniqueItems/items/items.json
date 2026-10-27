@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/uniqueItems/items",
+  "title": "Items",
+  "description": "uniqueItems on properties, nested arrays, declared arrays and additional properties.",
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "numbers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "number"
+      }
+    },
+    "points": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "anything": {
+      "type": "array",
+      "uniqueItems": true
+    },
+    "grid": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "type": "integer"
+        }
+      }
+    },
+    "repeats": {
+      "type": "array",
+      "uniqueItems": false,
+      "items": {
+        "type": "string"
+      }
+    },
+    "set": {
+      "$ref": "#/definitions/set"
+    }
+  },
+  "additionalProperties": {
+    "type": "array",
+    "uniqueItems": true,
+    "items": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "set": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

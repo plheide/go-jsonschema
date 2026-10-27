@@ -52,6 +52,11 @@ type validatorDesc struct {
 	// decodes what it needs itself, so it also suits a type that is not an
 	// object, which the raw map cannot hold.
 	beforeRawDecode bool
+
+	// requiresNumbers has the JSON body decode the input once more, into
+	// `numbers`, with its numbers kept exact, which the raw map holds as
+	// float64. The YAML body reads the raw map, whose integers are exact.
+	requiresNumbers bool
 }
 
 var (
@@ -74,6 +79,7 @@ var (
 	_ validator = new(presenceCountValidator)
 	_ validator = new(elementsValidator)
 	_ validator = new(untypedConstValidator)
+	_ validator = new(uniqueItemsValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
@@ -242,13 +248,24 @@ func emitRawKeyMatch(
 	caseVariants []string,
 	exactOnly, nullOnly bool,
 ) {
+	emitMapKeyMatch(out, varNameRawMap, format, jsonName, caseVariants, exactOnly, nullOnly)
+}
+
+// emitMapKeyMatch is emitRawKeyMatch for the entries of the map that mapExpr
+// holds, decoded as the raw map is.
+func emitMapKeyMatch(
+	out *codegen.Emitter,
+	mapExpr, format, jsonName string,
+	caseVariants []string,
+	exactOnly, nullOnly bool,
+) {
 	if format != formatJSON || exactOnly {
 		cond := "ok"
 		if nullOnly {
 			cond = "ok && fieldValue == nil"
 		}
 
-		out.Printlnf(`if fieldValue, ok := %s[%q]; %s {`, varNameRawMap, jsonName, cond)
+		out.Printlnf(`if fieldValue, ok := %s[%q]; %s {`, mapExpr, jsonName, cond)
 		out.Indent(1)
 
 		return
@@ -256,7 +273,7 @@ func emitRawKeyMatch(
 
 	// `fieldValue` is deliberately not named `value`: that is the
 	// UnmarshalJSON parameter, and shadowing it reads as a bug.
-	out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
+	out.Printlnf(`for fieldName, fieldValue := range %s {`, mapExpr)
 	out.Indent(1)
 
 	if nullOnly {

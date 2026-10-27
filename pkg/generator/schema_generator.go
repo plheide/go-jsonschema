@@ -772,6 +772,10 @@ func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t
 		validators = append(validators, v)
 	}
 
+	if uv := g.uniqueItemsValidatorFor(field, tt, uniqueItemsSelf); uv != nil {
+		validators = append(validators, uv)
+	}
+
 	if (isMap && t.IsSubSchemaTypeElem()) || len(validators) > 0 {
 		g.generateUnmarshaler(decl, validators)
 	}
@@ -1197,9 +1201,17 @@ func (g *schemaGenerator) structFieldValidators(
 			validators = append(validators, ev)
 		}
 
+		if uv := g.uniqueItemsValidatorFor(f, v, uniqueItemsSourceOf(f)); uv != nil {
+			validators = append(validators, uv)
+		}
+
 	case codegen.ArrayType, *codegen.MapType, codegen.MapType:
 		if ev := g.elementValidatorFor(f, t, isNillable); ev != nil {
 			validators = append(validators, ev)
+		}
+
+		if uv := g.uniqueItemsValidatorFor(f, t, uniqueItemsSourceOf(f)); uv != nil {
+			validators = append(validators, uv)
 		}
 
 	case codegen.EmptyInterfaceType:
@@ -1456,6 +1468,12 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			if rv, ok := v.(rawKeyedValidator); ok {
 				rv.matchStructKeys(st.Fields)
 			}
+		}
+	}
+
+	for _, v := range validators {
+		if hv, ok := v.(fileHelperValidator); ok {
+			hv.useFileHelpers(g.output, decl.Name)
 		}
 	}
 

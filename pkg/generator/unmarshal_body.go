@@ -26,6 +26,10 @@ func hasAdditionalPropertiesField(declType *codegen.TypeDecl) bool {
 	return false
 }
 
+// varNameNumbers holds the input decoded with its numbers kept exact, for the
+// checks that declare requiresNumbers.
+const varNameNumbers = "numbers"
+
 // unmarshalContext captures the format-specific bits that distinguish
 // UnmarshalJSON generation from UnmarshalYAML generation. Everything else
 // in the body is identical across formats.
@@ -64,10 +68,13 @@ func generateUnmarshalBody(
 		// that map is decoded.
 		apValidators []validator
 		forceBefore  bool
+		// numbers is set when a check reads the input with exact numbers.
+		numbers bool
 	)
 
 	for _, v := range validators {
 		d := v.desc()
+		numbers = numbers || d.requiresNumbers
 
 		switch {
 		case d.beforeRawDecode:
@@ -110,6 +117,19 @@ func generateUnmarshalBody(
 			out.Printlnf("if err := %s; err != nil {", ctx.decodeCall(varNameRawMap))
 			out.Indent(1)
 			out.Printlnf(`return fmt.Errorf("unmarshal raw %s: %%w", err)`, declType.Name)
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
+
+		if numbers && ctx.formatName == formatJSON {
+			out.Printlnf("var %s map[string]interface{}", varNameNumbers)
+			out.Printlnf("{")
+			out.Indent(1)
+			out.Printlnf("dec := json.NewDecoder(bytes.NewReader(value))")
+			out.Printlnf("dec.UseNumber()")
+			// The raw map, decoded above, reports an input that is not an
+			// object; one that is cannot fail here.
+			out.Printlnf("_ = dec.Decode(&%s)", varNameNumbers)
 			out.Indent(-1)
 			out.Printlnf("}")
 		}

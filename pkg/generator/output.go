@@ -28,6 +28,9 @@ type output struct {
 	// integralHelperName is the name of the file's helper that retries a
 	// JSON decode with integral numbers written as integers, once declared.
 	integralHelperName string
+	// uniqueKeyHelperName is the name of the file's helper that keys the
+	// items of a uniqueItems check, once declared.
+	uniqueKeyHelperName string
 }
 
 func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.TypeDecl {
