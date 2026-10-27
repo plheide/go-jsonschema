@@ -6,6 +6,7 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
+import "strconv"
 import "strings"
 
 type NumericNull struct {
@@ -51,7 +52,7 @@ func (j *NumericNullWithNullConst1) UnmarshalJSON(value []byte) error {
 		if !strings.EqualFold(fieldName, "version") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "1" {
+		if key, ok := uniqueItemKey_NumericNullWithNullConst1(fieldValue); !ok || key != "1e0" {
 			return fmt.Errorf("field %s: must be equal to %s", "version", "1")
 		}
 	}
@@ -74,7 +75,7 @@ func (j *NumericNullWithNullConst1) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field version in NumericNullWithNullConst1: required")
 	}
 	if fieldValue, ok := raw["version"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "1" {
+		if key, ok := uniqueItemKey_NumericNullWithNullConst1(fieldValue); !ok || key != "1e0" {
 			return fmt.Errorf("field %s: must be equal to %s", "version", "1")
 		}
 	}
@@ -110,7 +111,7 @@ func (j *NumericNullWithNullConst2) UnmarshalJSON(value []byte) error {
 		if !strings.EqualFold(fieldName, "version") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "2" {
+		if key, ok := uniqueItemKey_NumericNullWithNullConst1(fieldValue); !ok || key != "2e0" {
 			return fmt.Errorf("field %s: must be equal to %s", "version", "2")
 		}
 	}
@@ -133,7 +134,7 @@ func (j *NumericNullWithNullConst2) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field version in NumericNullWithNullConst2: required")
 	}
 	if fieldValue, ok := raw["version"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "2" {
+		if key, ok := uniqueItemKey_NumericNullWithNullConst1(fieldValue); !ok || key != "2e0" {
 			return fmt.Errorf("field %s: must be equal to %s", "version", "2")
 		}
 	}
@@ -432,7 +433,7 @@ func (j *NumericNullWithZeroConst0) UnmarshalJSON(value []byte) error {
 		if !strings.EqualFold(fieldName, "version") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "0" {
+		if key, ok := uniqueItemKey_NumericNullWithNullConst1(fieldValue); !ok || key != "0" {
 			return fmt.Errorf("field %s: must be equal to %s", "version", "0")
 		}
 	}
@@ -455,7 +456,7 @@ func (j *NumericNullWithZeroConst0) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field version in NumericNullWithZeroConst0: required")
 	}
 	if fieldValue, ok := raw["version"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "0" {
+		if key, ok := uniqueItemKey_NumericNullWithNullConst1(fieldValue); !ok || key != "0" {
 			return fmt.Errorf("field %s: must be equal to %s", "version", "0")
 		}
 	}
@@ -491,7 +492,7 @@ func (j *NumericNullWithZeroConst1) UnmarshalJSON(value []byte) error {
 		if !strings.EqualFold(fieldName, "version") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "1" {
+		if key, ok := uniqueItemKey_NumericNullWithNullConst1(fieldValue); !ok || key != "1e0" {
 			return fmt.Errorf("field %s: must be equal to %s", "version", "1")
 		}
 	}
@@ -514,7 +515,7 @@ func (j *NumericNullWithZeroConst1) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field version in NumericNullWithZeroConst1: required")
 	}
 	if fieldValue, ok := raw["version"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "1" {
+		if key, ok := uniqueItemKey_NumericNullWithNullConst1(fieldValue); !ok || key != "1e0" {
 			return fmt.Errorf("field %s: must be equal to %s", "version", "1")
 		}
 	}
@@ -655,4 +656,79 @@ func (j *NumericNullWithZero) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("NumericNullWithZero: unknown version value %v", disc)
 	}
 	return nil
+}
+
+// uniqueItemKey_NumericNullWithNullConst1 returns the JSON encoding of v with each
+// number written in one form, so that items JSON Schema counts as equal, such as 1
+// and 1.0, get the same key, and integers a float64 cannot tell apart do not. It
+// reports false for a value with no JSON encoding. Every uniqueItems check in this
+// file calls it; it is named after the first, so that no other file of the package
+// declares it.
+func uniqueItemKey_NumericNullWithNullConst1(v interface{}) (string, bool) {
+	var canon func(interface{}) interface{}
+	canon = func(n interface{}) interface{} {
+		switch n := n.(type) {
+		case json.Number:
+			return uniqueItemKey_NumericNullWithNullConst1_number(string(n))
+		case float64:
+			return uniqueItemKey_NumericNullWithNullConst1_number(strconv.FormatFloat(n, 'g', -1, 64))
+		case int:
+			return uniqueItemKey_NumericNullWithNullConst1_number(strconv.Itoa(n))
+		case int64:
+			return uniqueItemKey_NumericNullWithNullConst1_number(strconv.FormatInt(n, 10))
+		case uint64:
+			return uniqueItemKey_NumericNullWithNullConst1_number(strconv.FormatUint(n, 10))
+		case map[string]interface{}:
+			m := make(map[string]interface{}, len(n))
+			for k, e := range n {
+				m[k] = canon(e)
+			}
+			return m
+		case []interface{}:
+			a := make([]interface{}, len(n))
+			for i, e := range n {
+				a[i] = canon(e)
+			}
+			return a
+		}
+		return n
+	}
+	b, err := json.Marshal(canon(v))
+	if err != nil {
+		return "", false
+	}
+	return string(b), true
+}
+
+// uniqueItemKey_NumericNullWithNullConst1_number writes the number s in one form:
+// its significant digits as d.ddd, and the exponent, such as 9.007199254740993e15.
+// A number with an exponent beyond a billion is left as it is.
+func uniqueItemKey_NumericNullWithNullConst1_number(s string) json.Number {
+	neg := strings.HasPrefix(s, "-")
+	mantissa, exp := strings.TrimPrefix(s, "-"), 0
+	if i := strings.IndexAny(mantissa, "eE"); i >= 0 {
+		e, err := strconv.Atoi(mantissa[i+1:])
+		if err != nil || e > 1e9 || e < -1e9 {
+			return json.Number(s)
+		}
+		mantissa, exp = mantissa[:i], e
+	}
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	all := intPart + frac
+	trimmed := strings.TrimLeft(all, "0")
+	digits := strings.TrimRight(trimmed, "0")
+	if digits == "" {
+		return "0"
+	}
+	// The value is 0.digits times 10 to the power of point.
+	point := exp + len(intPart) - (len(all) - len(trimmed))
+	canonical := digits[:1]
+	if len(digits) > 1 {
+		canonical += "." + digits[1:]
+	}
+	canonical += "e" + strconv.Itoa(point-1)
+	if neg {
+		canonical = "-" + canonical
+	}
+	return json.Number(canonical)
 }

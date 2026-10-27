@@ -632,6 +632,15 @@ func TestConstConstantsGolden(t *testing.T) {
 	testExamples(t, basicConfig, "./data/constConstants")
 }
 
+func TestUseNumberGolden(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.UseNumber = true
+
+	testExamples(t, cfg, "./data/useNumber")
+}
+
 // TestConditionalDiscriminator drives generation for the
 // allOf+if[const]/then[/else] tagged-union pattern. Walks every fixture
 // under tests/data/conditionalDiscriminator and diffs against the sibling

@@ -546,6 +546,9 @@ func (v *nullTypeValidator) desc() *validatorDesc {
 }
 
 type defaultValidator struct {
+	// useNumber writes the numbers of an untyped default as json.Number in
+	// JSON, as --use-number decodes them.
+	useNumber        bool
 	jsonName         string
 	fieldName        string
 	defaultValueType codegen.Type
@@ -558,7 +561,7 @@ type defaultValidator struct {
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
-	defaultValue, err := v.dumpDefaultValueAssignment(out)
+	defaultValue, err := v.dumpDefaultValueAssignment(out, format)
 	if err != nil {
 		return fmt.Errorf("cannot generate default validator: %w", err)
 	}
@@ -576,7 +579,7 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
 	return nil
 }
 
-func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any, error) {
+func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter, format string) (any, error) {
 	if _, ok := v.defaultValueType.(codegen.DurationType); ok {
 		defaultDurationISO8601, ok := v.defaultValue.(string)
 
@@ -641,7 +644,7 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 		}
 	}
 
-	lit, ok := defaultLiteral(v.defaultValue, v.defaultValueType)
+	lit, ok := defaultLiteral(v.defaultValue, v.defaultValueType, v.useNumber && format == formatJSON)
 	if !ok {
 		v.leaveOut()
 

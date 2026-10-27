@@ -102,6 +102,19 @@ func (v *elementsValidator) generate(out *codegen.Emitter, format string) error 
 	return nil
 }
 
+var _ fileHelperValidator = new(elementsValidator)
+
+// useFileHelpers gives the checks of every level the file's helpers they call.
+func (v *elementsValidator) useFileHelpers(o *output, typeName string) {
+	for _, level := range v.levels {
+		for _, c := range level.checks {
+			if hv, ok := c.(fileHelperValidator); ok {
+				hv.useFileHelpers(o, typeName)
+			}
+		}
+	}
+}
+
 func (v *elementsValidator) desc() *validatorDesc {
 	d := &validatorDesc{
 		hasError:                  true,
@@ -209,8 +222,9 @@ func (n elementName) expr() string {
 
 // untypedConstValidator checks the `const` of a schema that declares no type,
 // whose value decodes into an interface{}. JSON Schema compares the value as
-// JSON, so the check compares its JSON encoding with the const's, which
-// encoding/json writes with sorted keys. A property is read from the raw map,
+// JSON, so the check compares the value's key from the file's key helper,
+// which writes each number in one form, with the const's: 1.0 equals 1, also
+// as a json.Number under --use-number. A property is read from the raw map,
 // where an absent one is told apart from a null one, under each key the
 // decoder assigns to it; an element is read where the element walk reaches
 // it.
@@ -219,19 +233,34 @@ type untypedConstValidator struct {
 	rawKeyMatch
 
 	jsonName string
-	// encoded is the const's JSON encoding.
+	// encoded is the const's JSON encoding, for the error.
 	encoded string
+	// canonical is the const's key, as canonicalKey writes it.
+	canonical string
 	// property marks the check on a property, read from the raw map.
 	property bool
+	// keyHelper is the file's key helper, given with the struct's fields.
+	keyHelper string
 }
 
-var _ rawKeyedValidator = new(untypedConstValidator)
+var (
+	_ rawKeyedValidator   = new(untypedConstValidator)
+	_ fileHelperValidator = new(untypedConstValidator)
+)
 
 func (v *untypedConstValidator) matchStructKeys(fields []codegen.StructField) {
 	v.matchKeysOf(fields, v.jsonName)
 }
 
+func (v *untypedConstValidator) useFileHelpers(o *output, typeName string) {
+	v.keyHelper = o.uniqueKeyHelper(typeName)
+}
+
 func (v *untypedConstValidator) generate(out *codegen.Emitter, format string) error {
+	if v.keyHelper == "" {
+		return errUniqueKeyHelperUnbound
+	}
+
 	value := v.valueExpr
 
 	if v.property {
@@ -240,7 +269,7 @@ func (v *untypedConstValidator) generate(out *codegen.Emitter, format string) er
 		value = "fieldValue"
 	}
 
-	out.Printlnf("if b, err := json.Marshal(%s); err != nil || string(b) != %q {", value, v.encoded)
+	out.Printlnf("if key, ok := %s(%s); !ok || key != %q {", v.keyHelper, value, v.canonical)
 	out.Indent(1)
 	out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%s", %s, %q)`,
 		v.name(fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))), v.encoded)

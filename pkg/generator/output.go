@@ -31,6 +31,12 @@ type output struct {
 	// constProperties holds the properties with a primitive const, whose
 	// constants Sources declares.
 	constProperties []constProperty
+	// useNumber decodes the numbers of untyped values from JSON as
+	// json.Number, as Config.UseNumber.
+	useNumber bool
+	// numbersHelperName is the name of the file's helper that decodes JSON
+	// with useNumber, once declared.
+	numbersHelperName string
 	// integralHelperName is the name of the file's helper that retries a
 	// JSON decode with integral numbers written as integers, once declared.
 	integralHelperName string

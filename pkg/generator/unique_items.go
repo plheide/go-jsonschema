@@ -1,8 +1,11 @@
 package generator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/plheide/go-jsonschema/pkg/codegen"
 )
@@ -196,7 +199,7 @@ func (v *uniqueItemsValidator) desc() *validatorDesc {
 		afterAdditionalProperties: v.source == uniqueItemsAdditional,
 		beforeRawDecode:           v.source == uniqueItemsSelf,
 		requiresNumbers:           v.source != uniqueItemsSelf,
-		imports:                   []packageImport{{qualifiedName: jsonPackage}, {qualifiedName: "bytes"}},
+		imports:                   []packageImport{{qualifiedName: jsonPackage}, {qualifiedName: bytesPackage}},
 	}
 
 	if v.source == uniqueItemsProperty {
@@ -261,6 +264,8 @@ func emitUniqueKeyHelper(name string) func(*codegen.Emitter) error {
 		out.Printlnf("return %s(strconv.FormatFloat(n, 'g', -1, 64))", number)
 		out.Printlnf("case int:")
 		out.Printlnf("return %s(strconv.Itoa(n))", number)
+		out.Printlnf("case int64:")
+		out.Printlnf("return %s(strconv.FormatInt(n, 10))", number)
 		out.Printlnf("case uint64:")
 		out.Printlnf("return %s(strconv.FormatUint(n, 10))", number)
 		out.Printlnf("case map[string]interface{}:")
@@ -385,4 +390,86 @@ func (g *schemaGenerator) uniqueItemsValidatorFor(
 	}
 
 	return &uniqueItemsValidator{jsonName: f.JSONName, source: source, levels: levels[:checked]}
+}
+
+// canonicalKey returns the key that the file's key helper gives v, computed as
+// the generated helper computes it, so that a const can be compared with a
+// value by their keys. The two must stay the same.
+func canonicalKey(v any) (string, bool) {
+	b, err := json.Marshal(canonicalValue(v))
+	if err != nil {
+		return "", false
+	}
+
+	return string(b), true
+}
+
+// canonicalValue is the generated helper's canon.
+func canonicalValue(v any) any {
+	switch n := v.(type) {
+	case json.Number:
+		return canonicalNumber(string(n))
+	case float64:
+		return canonicalNumber(strconv.FormatFloat(n, 'g', -1, 64))
+	case int:
+		return canonicalNumber(strconv.Itoa(n))
+	case int64:
+		return canonicalNumber(strconv.FormatInt(n, 10))
+	case uint64:
+		return canonicalNumber(strconv.FormatUint(n, 10))
+	case map[string]any:
+		m := make(map[string]any, len(n))
+		for k, e := range n {
+			m[k] = canonicalValue(e)
+		}
+
+		return m
+	case []any:
+		a := make([]any, len(n))
+		for i, e := range n {
+			a[i] = canonicalValue(e)
+		}
+
+		return a
+	}
+
+	return v
+}
+
+// canonicalNumber is the generated helper's _number function.
+func canonicalNumber(s string) json.Number {
+	neg := strings.HasPrefix(s, "-")
+
+	mantissa, exp := strings.TrimPrefix(s, "-"), 0
+	if i := strings.IndexAny(mantissa, "eE"); i >= 0 {
+		e, err := strconv.Atoi(mantissa[i+1:])
+		if err != nil || e > 1e9 || e < -1e9 {
+			return json.Number(s)
+		}
+
+		mantissa, exp = mantissa[:i], e
+	}
+
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	all := intPart + frac
+	trimmed := strings.TrimLeft(all, "0")
+
+	digits := strings.TrimRight(trimmed, "0")
+	if digits == "" {
+		return "0"
+	}
+
+	point := exp + len(intPart) - (len(all) - len(trimmed))
+
+	canonical := digits[:1]
+	if len(digits) > 1 {
+		canonical += "." + digits[1:]
+	}
+
+	canonical += "e" + strconv.Itoa(point-1)
+	if neg {
+		canonical = "-" + canonical
+	}
+
+	return json.Number(canonical)
 }

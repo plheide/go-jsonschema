@@ -12,25 +12,42 @@ const (
 	// jsonPackage is the import path of the package generated code decodes
 	// JSON with.
 	jsonPackage = "encoding/json"
+	// bytesPackage is the import path of the package a generated JSON decoder
+	// reads its input through, where it needs a json.Decoder.
+	bytesPackage = "bytes"
 )
 
 var ErrCannotUnmarshalEnum = fmt.Errorf("cannot unmarshal enum")
 
-type jsonFormatter struct{}
+type jsonFormatter struct {
+	// useNumber decodes the numbers of untyped values as json.Number.
+	useNumber bool
+}
 
 func (jf *jsonFormatter) generate(
 	output *output,
 	declType *codegen.TypeDecl,
 	validators []validator,
 ) func(*codegen.Emitter) error {
-	return generateUnmarshalBody(unmarshalContext{
+	ctx := unmarshalContext{
 		formatName:   formatJSON,
 		methodSuffix: strings.ToUpper(formatJSON),
 		paramDecl:    "value []byte",
 		decodeCall: func(target string) string {
 			return fmt.Sprintf("%s.Unmarshal(value, &%s)", formatJSON, target)
 		},
-	}, output, declType, validators)
+	}
+
+	// The raw map feeds the validators and keeps its float64s; only the
+	// typed decode keeps numbers exact.
+	if jf.useNumber {
+		helper := output.numbersHelper(declType.Name)
+		ctx.typedDecodeCall = func(target string) string {
+			return fmt.Sprintf("%s(value, &%s)", helper, target)
+		}
+	}
+
+	return generateUnmarshalBody(ctx, output, declType, validators)
 }
 
 func (jf *jsonFormatter) enumMarshal(declType *codegen.TypeDecl) func(*codegen.Emitter) error {

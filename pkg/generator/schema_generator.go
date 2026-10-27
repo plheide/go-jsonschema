@@ -1345,13 +1345,15 @@ func (g *schemaGenerator) untypedConstValidatorFor(owner string, s *schemas.Type
 	}
 
 	encoded, err := json.Marshal(s.Const)
-	if err != nil {
-		g.warner(fmt.Sprintf("schema fidelity: const of %q is not checked: %v", owner, err))
+	canonical, ok := canonicalKey(s.Const)
+
+	if err != nil || !ok {
+		g.warner(fmt.Sprintf("schema fidelity: const of %q is not checked: it has no JSON encoding", owner))
 
 		return nil
 	}
 
-	return &untypedConstValidator{jsonName: owner, encoded: string(encoded)}
+	return &untypedConstValidator{jsonName: owner, encoded: string(encoded), canonical: canonical}
 }
 
 // containerElement steps from an inline array or map to the element it holds,
@@ -1457,6 +1459,7 @@ func (g *schemaGenerator) defaultValidatorFor(
 	}
 
 	return &defaultValidator{
+		useNumber:        g.config.UseNumber,
 		jsonName:         f.JSONName,
 		fieldName:        f.Name,
 		defaultValueType: dvType,
