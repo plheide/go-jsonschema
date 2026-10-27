@@ -38,6 +38,7 @@ Not offered upstream yet:
   * decoding from JSON an `integer` written with a fraction or an exponent, such as `2.0` or `1e2`;
   * checking the values arrays and maps hold, at every depth, a `const` of no declared type, and `uniqueItems`;
   * checking the object's own keywords on a struct merged from an `anyOf`;
+  * conditionals keyed on a property a nested object holds, and on an absent discriminator an `if` does not require;
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 
