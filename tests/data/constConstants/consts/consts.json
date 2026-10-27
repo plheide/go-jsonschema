@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/constConstants/consts",
+  "title": "Consts",
+  "description": "Each property with a primitive const has an exported constant, named after the struct and the field.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string", "const": "https://example.com/consts/v1" },
+    "version": { "type": "integer", "const": 2 },
+    "ratio": { "type": "number", "const": 0.5 },
+    "enabled": { "type": "boolean", "const": true },
+    "untyped": { "const": "fixed" },
+    "build": { "type": "integer", "const": 9007199254740993 },
+    "precise": { "type": "number", "const": 0.1000000000000000000001 },
+    "label": { "type": "string", "const": "x" },
+    "other": { "$ref": "#/definitions/ConstsLabel" }
+  },
+  "definitions": {
+    "ConstsLabel": { "type": "object", "properties": { "text": { "type": "string" } } }
+  }
+}

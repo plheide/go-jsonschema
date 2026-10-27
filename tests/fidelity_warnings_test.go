@@ -367,6 +367,11 @@ func generateWithConfigAndWarnerCapture(t *testing.T, cfg generator.Config, sche
 	require.NoError(t, err)
 	require.NoError(t, gen.DoFile(abs))
 
+	// Sources declares some things last, such as the constants of `const`
+	// properties, and warns about them then.
+	_, err = gen.Sources()
+	require.NoError(t, err)
+
 	mu.Lock()
 	defer mu.Unlock()
 

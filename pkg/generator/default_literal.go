@@ -21,8 +21,9 @@ import (
 // fields are found by their JSON names, a pointer field gets an address, and
 // a nested struct, map or list gets a literal of its own type rather than of
 // the JSON value's. Where the literal written before compiled, it is
-// unchanged.
-func defaultLiteral(value any, t codegen.Type) (string, bool) {
+// unchanged. With numbers, an untyped value holds its numbers as
+// json.Number, as --use-number decodes them.
+func defaultLiteral(value any, t codegen.Type, numbers bool) (string, bool) {
 	// A value the generator made itself, such as the empty map that starts
 	// the additionalProperties field, is already of its field's Go type.
 	if !isDecodedJSON(value) {
@@ -31,27 +32,27 @@ func defaultLiteral(value any, t codegen.Type) (string, bool) {
 
 	switch tt := t.(type) {
 	case codegen.PointerType:
-		return pointerLiteral(value, tt.Type)
+		return pointerLiteral(value, tt.Type, numbers)
 	case *codegen.PointerType:
-		return pointerLiteral(value, tt.Type)
+		return pointerLiteral(value, tt.Type, numbers)
 	case codegen.NamedType:
-		return namedLiteral(value, &tt)
+		return namedLiteral(value, &tt, numbers)
 	case *codegen.NamedType:
-		return namedLiteral(value, tt)
+		return namedLiteral(value, tt, numbers)
 	case codegen.PrimitiveType:
 		return primitiveLiteral(value, tt.Type)
 	case *codegen.PrimitiveType:
 		return primitiveLiteral(value, tt.Type)
 	case codegen.ArrayType:
-		return listLiteral(value, typeString(t), tt.Type)
+		return listLiteral(value, typeString(t), tt.Type, numbers)
 	case *codegen.ArrayType:
-		return listLiteral(value, typeString(t), tt.Type)
+		return listLiteral(value, typeString(t), tt.Type, numbers)
 	case codegen.MapType:
-		return mapLiteral(value, typeString(t), tt)
+		return mapLiteral(value, typeString(t), tt, numbers)
 	case *codegen.MapType:
-		return mapLiteral(value, typeString(t), *tt)
+		return mapLiteral(value, typeString(t), *tt, numbers)
 	case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
-		return litter.Sdump(value), true
+		return untypedLiteral(value, numbers), true
 	case codegen.CustomNameType, *codegen.CustomNameType:
 		// A type named by the goJSONSchema.type extension. Its kind is the
 		// user's, so the value is written as it always was.
@@ -74,12 +75,12 @@ func isDecodedJSON(value any) bool {
 
 // pointerLiteral writes value for a pointer to elem. A composite literal can
 // have its address taken; any other value goes through a typed variable.
-func pointerLiteral(value any, elem codegen.Type) (string, bool) {
+func pointerLiteral(value any, elem codegen.Type, numbers bool) (string, bool) {
 	if value == nil {
 		return "nil", true
 	}
 
-	lit, ok := defaultLiteral(value, elem)
+	lit, ok := defaultLiteral(value, elem, numbers)
 	if !ok {
 		return "", false
 	}
@@ -106,24 +107,24 @@ func isCompositeType(t codegen.Type) bool {
 	return false
 }
 
-func namedLiteral(value any, nt *codegen.NamedType) (string, bool) {
+func namedLiteral(value any, nt *codegen.NamedType, numbers bool) (string, bool) {
 	if isEmptyInterfaceDecl(nt) {
-		return litter.Sdump(value), true
+		return untypedLiteral(value, numbers), true
 	}
 
 	name := typeString(nt)
 
 	switch dt := nt.Decl.Type.(type) {
 	case *codegen.StructType:
-		return structLiteral(value, name, dt)
+		return structLiteral(value, name, dt, numbers)
 	case codegen.MapType:
-		return mapLiteral(value, name, dt)
+		return mapLiteral(value, name, dt, numbers)
 	case *codegen.MapType:
-		return mapLiteral(value, name, *dt)
+		return mapLiteral(value, name, *dt, numbers)
 	case codegen.ArrayType:
-		return listLiteral(value, name, dt.Type)
+		return listLiteral(value, name, dt.Type, numbers)
 	case *codegen.ArrayType:
-		return listLiteral(value, name, dt.Type)
+		return listLiteral(value, name, dt.Type, numbers)
 	case codegen.PrimitiveType:
 		return primitiveLiteral(value, dt.Type)
 	case *codegen.PrimitiveType:
@@ -142,7 +143,7 @@ func namedLiteral(value any, nt *codegen.NamedType) (string, bool) {
 	return litter.Sdump(value), true
 }
 
-func structLiteral(value any, name string, st *codegen.StructType) (string, bool) {
+func structLiteral(value any, name string, st *codegen.StructType, numbers bool) (string, bool) {
 	m, ok := value.(map[string]any)
 	if !ok {
 		return "", false
@@ -158,7 +159,7 @@ func structLiteral(value any, name string, st *codegen.StructType) (string, bool
 			return "", false
 		}
 
-		lit, ok := defaultLiteral(m[key], field.Type)
+		lit, ok := defaultLiteral(m[key], field.Type, numbers)
 		if !ok {
 			return "", false
 		}
@@ -181,7 +182,7 @@ func structFieldByJSONName(st *codegen.StructType, jsonName string) *codegen.Str
 	return nil
 }
 
-func mapLiteral(value any, name string, mt codegen.MapType) (string, bool) {
+func mapLiteral(value any, name string, mt codegen.MapType, numbers bool) (string, bool) {
 	m, ok := value.(map[string]any)
 	if !ok || !isStringType(mt.KeyType) {
 		return "", false
@@ -192,7 +193,7 @@ func mapLiteral(value any, name string, mt codegen.MapType) (string, bool) {
 	b.WriteString(name + "{\n")
 
 	for _, key := range sortedKeys(m) {
-		lit, ok := defaultLiteral(m[key], mt.ValueType)
+		lit, ok := defaultLiteral(m[key], mt.ValueType, numbers)
 		if !ok {
 			return "", false
 		}
@@ -205,7 +206,7 @@ func mapLiteral(value any, name string, mt codegen.MapType) (string, bool) {
 	return b.String(), true
 }
 
-func listLiteral(value any, name string, elem codegen.Type) (string, bool) {
+func listLiteral(value any, name string, elem codegen.Type, numbers bool) (string, bool) {
 	l, ok := value.([]any)
 	if !ok {
 		return "", false
@@ -216,7 +217,7 @@ func listLiteral(value any, name string, elem codegen.Type) (string, bool) {
 	b.WriteString(name + "{\n")
 
 	for _, e := range l {
-		lit, ok := defaultLiteral(e, elem)
+		lit, ok := defaultLiteral(e, elem, numbers)
 		if !ok {
 			return "", false
 		}
@@ -227,6 +228,48 @@ func listLiteral(value any, name string, elem codegen.Type) (string, bool) {
 	b.WriteString("}")
 
 	return b.String(), true
+}
+
+// untypedLiteral writes value, a decoded JSON value, for an interface{}. With
+// numbers, a number is a json.Number, as --use-number decodes it, at any
+// depth; otherwise litter writes it as a float64.
+func untypedLiteral(value any, numbers bool) string {
+	if !numbers {
+		return litter.Sdump(value)
+	}
+
+	switch v := value.(type) {
+	case float64:
+		return fmt.Sprintf("json.Number(%q)", strconv.FormatFloat(v, 'g', -1, 64))
+
+	case []any:
+		var b strings.Builder
+
+		b.WriteString("[]interface{}{\n")
+
+		for _, e := range v {
+			b.WriteString(untypedLiteral(e, numbers) + ",\n")
+		}
+
+		b.WriteString("}")
+
+		return b.String()
+
+	case map[string]any:
+		var b strings.Builder
+
+		b.WriteString("map[string]interface{}{\n")
+
+		for _, key := range sortedKeys(v) {
+			fmt.Fprintf(&b, "%s: %s,\n", strconv.Quote(key), untypedLiteral(v[key], numbers))
+		}
+
+		b.WriteString("}")
+
+		return b.String()
+	}
+
+	return litter.Sdump(value)
 }
 
 // primitiveLiteral writes value for a predeclared Go type. An integer type

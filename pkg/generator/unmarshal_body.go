@@ -46,6 +46,9 @@ type unmarshalContext struct {
 	// "value" into the named target. The result is wrapped in the standard
 	// `if err := <expr>; err != nil { return err }` line.
 	decodeCall func(targetVar string) string
+	// typedDecodeCall, when set, is decodeCall for the typed Plain decode,
+	// which may differ from the raw map's.
+	typedDecodeCall func(targetVar string) string
 }
 
 // generateUnmarshalBody produces the body of an Unmarshal{JSON,YAML} method.
@@ -152,7 +155,13 @@ func generateUnmarshalBody(
 
 		out.Printlnf("type %s %s", tp, declType.Name)
 		out.Printlnf("var %s %s", varNamePlainStruct, tp)
-		out.Printlnf("if err := %s; err != nil {", ctx.decodeCall(varNamePlainStruct))
+
+		typedDecode := ctx.decodeCall
+		if ctx.typedDecodeCall != nil {
+			typedDecode = ctx.typedDecodeCall
+		}
+
+		out.Printlnf("if err := %s; err != nil {", typedDecode(varNamePlainStruct))
 		out.Indent(1)
 
 		if integralHelper != "" {

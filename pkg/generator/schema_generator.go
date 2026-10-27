@@ -142,7 +142,7 @@ func constRootAsEnum(root *schemas.Type) (*schemas.Type, error) {
 
 	enumRoot := *root
 	enumRoot.Enum = []any{root.Const}
-	enumRoot.Const = nil
+	enumRoot.Const, enumRoot.ConstExact = nil, nil
 	enumRoot.ConstIsSet = false
 
 	return &enumRoot, nil
@@ -160,7 +160,7 @@ func narrowEnumToConst(root *schemas.Type) (*schemas.Type, error) {
 
 	narrowed := *root
 	narrowed.Enum = []any{root.Const}
-	narrowed.Const = nil
+	narrowed.Const, narrowed.ConstExact = nil, nil
 	narrowed.ConstIsSet = false
 
 	if len(root.XEnumVarnames) == len(root.Enum) {
@@ -624,6 +624,12 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	g.output.file.Package.AddDecl(&decl)
 
+	// A struct merged from an anyOf takes a property's const from the first
+	// branch that declares one, which need not hold.
+	if st, ok := theType.(*codegen.StructType); ok && t.GetSubSchemaType() != schemas.SubSchemaTypeAnyOf {
+		g.output.recordConstProperties(decl.Name, st)
+	}
+
 	if g.config.OnlyModels {
 		return &codegen.NamedType{Decl: &decl}, nil
 	}
@@ -632,6 +638,8 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	switch tt := theType.(type) {
 	case *codegen.StructType:
+		g.generateEmptyWhenNilMarshaler(&decl, g.emptyWhenNilFields(tt))
+
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
 			validators = append(validators, g.anyOfParentValidators(t, tt, decl.Name, scope)...)
 			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
@@ -1147,7 +1155,7 @@ func (g *schemaGenerator) structFieldValidators(
 					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
 					minimum:          f.SchemaType.Minimum,
 					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
-					constVal:         f.SchemaType.Const,
+					constVal:         preciseConst(f.SchemaType),
 					roundToInt:       strings.Contains(v.Type, "int"),
 				})
 			}
@@ -1336,14 +1344,29 @@ func (g *schemaGenerator) untypedConstValidatorFor(owner string, s *schemas.Type
 		return nil
 	}
 
-	encoded, err := json.Marshal(s.Const)
-	if err != nil {
-		g.warner(fmt.Sprintf("schema fidelity: const of %q is not checked: %v", owner, err))
+	exact := exactConst(s)
+	encoded, err := json.Marshal(exact)
+	canonical, ok := canonicalKey(exact)
+
+	if err != nil || !ok {
+		g.warner(fmt.Sprintf("schema fidelity: const of %q is not checked: it has no JSON encoding", owner))
 
 		return nil
 	}
 
-	return &untypedConstValidator{jsonName: owner, encoded: string(encoded)}
+	v := &untypedConstValidator{
+		jsonName:  owner,
+		encoded:   string(encoded),
+		canonical: canonical,
+		hasNumber: holdsNumber(exact),
+	}
+
+	if rounded, ok := canonicalKey(s.Const); ok && rounded != canonical {
+		_, v.isNumber = exact.(json.Number)
+		v.rounded = rounded
+	}
+
+	return v
 }
 
 // containerElement steps from an inline array or map to the element it holds,
@@ -1449,6 +1472,7 @@ func (g *schemaGenerator) defaultValidatorFor(
 	}
 
 	return &defaultValidator{
+		useNumber:        g.config.UseNumber,
 		jsonName:         f.JSONName,
 		fieldName:        f.Name,
 		defaultValueType: dvType,

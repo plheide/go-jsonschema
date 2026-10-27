@@ -36,6 +36,11 @@ type Config struct {
 	// JSON Schema defines no integer formats, so it is off by default, and an integer is an int, as upstream
 	// generates it. MinSizedInts still wins where it applies.
 	OpenAPIIntFormats bool
+	// UseNumber decodes the numbers that untyped values hold, interface{} fields and the
+	// values in them, from JSON as json.Number, which keeps them exact, where encoding/json
+	// gives a float64, which loses integers beyond 2^53. Typed fields are decoded as before.
+	// YAML is unaffected: yaml.v3 decodes integers exactly.
+	UseNumber bool
 	// MinimalNames configures the generator to use the shortest identifier names possible.
 	MinimalNames bool
 	// Loader provides a schema loader for the generator.

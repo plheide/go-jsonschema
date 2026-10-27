@@ -23,6 +23,11 @@ type Const struct {
 	MyString *string `json:"myString,omitempty,omitzero" yaml:"myString,omitempty" mapstructure:"myString,omitempty"`
 }
 
+const ConstMyBoolean = true
+const ConstMyInteger = 42
+const ConstMyNumber = 4.2
+const ConstMyString = "foo"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Const) UnmarshalJSON(value []byte) error {
 	type Plain Const
@@ -86,6 +91,11 @@ type Required struct {
 	// MyString corresponds to the JSON schema field "myString".
 	MyString string `json:"myString" yaml:"myString" mapstructure:"myString"`
 }
+
+const RequiredMyBoolean = true
+const RequiredMyInteger = 42
+const RequiredMyNumber = 4.2
+const RequiredMyString = "foo"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Required) UnmarshalJSON(value []byte) error {

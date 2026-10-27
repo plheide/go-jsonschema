@@ -240,6 +240,10 @@ type Type struct {
 	// Const == nil) from an absent `const` field (which also decodes to nil).
 	// Set by Type's custom UnmarshalJSON via a separate raw-key probe.
 	ConstIsSet bool `json:"-"`
+	// ConstExact is Const with its numbers as written, as json.Number. Const
+	// holds them as float64, which rounds an integer beyond 2^53. Set by the
+	// same probe.
+	ConstExact any `json:"-"`
 	// RFC draft-bhutton-json-schema-01, section 10.
 	AllOf []*Type `json:"allOf,omitempty"` // Section 10.2.1.1.
 	AnyOf []*Type `json:"anyOf,omitempty"` // Section 10.2.1.2.
@@ -608,17 +612,36 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 
 	*value = Type(obj)
 
-	// Probe the raw bytes for an explicit "const" key so callers can
-	// distinguish absent (Const == nil, ConstIsSet == false) from explicit
-	// null (Const == nil, ConstIsSet == true). Failure to parse here is
-	// non-fatal — the standard unmarshal above already succeeded, so a
-	// probe error just means we leave ConstIsSet at its zero value.
-	var probe map[string]json.RawMessage
-	if json.Unmarshal(raw, &probe) == nil {
-		_, value.ConstIsSet = probe["const"]
-	}
+	value.ConstIsSet, value.ConstExact = probeConst(raw)
 
 	return nil
+}
+
+// probeConst probes raw, a schema object, for an explicit "const" key so
+// callers can distinguish absent (Const == nil, ConstIsSet == false) from
+// explicit null (Const == nil, ConstIsSet == true), and returns its value with
+// its numbers exact. Failure to parse here is non-fatal — the standard
+// unmarshal has already succeeded, so a probe error just leaves both at their
+// zero values.
+func probeConst(raw []byte) (bool, any) {
+	var probe map[string]json.RawMessage
+	if json.Unmarshal(raw, &probe) != nil {
+		return false, nil
+	}
+
+	constRaw, ok := probe["const"]
+	if !ok {
+		return false, nil
+	}
+
+	var exact any
+
+	dec := json.NewDecoder(bytes.NewReader(constRaw))
+	dec.UseNumber()
+
+	_ = dec.Decode(&exact)
+
+	return true, exact
 }
 
 // extractExtensions collects the `x-`-prefixed keywords declared on a schema

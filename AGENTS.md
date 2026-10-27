@@ -104,6 +104,8 @@ These are `Config` fields, each with its own test data under `tests/data/`:
   file instead of fetching it.
 - `AliasSingleAllOfAnyOfRefs`: collapses single-ref `allOf`/`anyOf` into a Go type alias.
 - `MinSizedInts` (`--min-sized-ints`): sizes int/uint from the schema's min/max.
+- `UseNumber` (`--use-number`): the JSON decoders keep the numbers of untyped values (`interface{}` fields and what
+  they hold) as `json.Number`, which keeps them exact. Off by default; typed fields and YAML are unaffected.
 - `OpenAPIIntFormats` (`--openapi-int-formats`): an integer's OpenAPI `format`, `int32` or `int64`, gives a Go
   `int32` or `int64`. Off by default, as upstream generates it; `MinSizedInts` still wins where it applies.
 - `MinimalNames` (`--minimal-names`): the shortest unique identifier, walking up the `nameScope`.

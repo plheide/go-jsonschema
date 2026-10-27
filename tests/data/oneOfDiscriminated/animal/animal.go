@@ -25,6 +25,8 @@ type AnimalCreatureCat struct {
 	Purr bool `json:"purr" yaml:"purr" mapstructure:"purr"`
 }
 
+const AnimalCreatureCatKind = "cat"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnimalCreatureCat) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -80,6 +82,8 @@ type AnimalCreatureDog struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind string `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
+
+const AnimalCreatureDogKind = "dog"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnimalCreatureDog) UnmarshalJSON(value []byte) error {

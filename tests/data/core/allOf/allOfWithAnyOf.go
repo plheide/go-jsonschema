@@ -17,6 +17,8 @@ type Agreement struct {
 	Prohibition *float64 `json:"prohibition,omitempty,omitzero" yaml:"prohibition,omitempty" mapstructure:"prohibition,omitempty"`
 }
 
+const AgreementType = "Agreement"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Agreement) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}

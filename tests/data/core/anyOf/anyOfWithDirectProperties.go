@@ -218,6 +218,8 @@ func uniqueItemKey_ComposedWithAllOfAndProperties(v interface{}) (string, bool) 
 			return uniqueItemKey_ComposedWithAllOfAndProperties_number(strconv.FormatFloat(n, 'g', -1, 64))
 		case int:
 			return uniqueItemKey_ComposedWithAllOfAndProperties_number(strconv.Itoa(n))
+		case int64:
+			return uniqueItemKey_ComposedWithAllOfAndProperties_number(strconv.FormatInt(n, 10))
 		case uint64:
 			return uniqueItemKey_ComposedWithAllOfAndProperties_number(strconv.FormatUint(n, 10))
 		case map[string]interface{}:

@@ -17,6 +17,18 @@ type AnyOf7 struct {
 	Foo *Item `json:"foo" yaml:"foo" mapstructure:"foo"`
 }
 
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j AnyOf7) MarshalJSON() ([]byte, error) {
+	type Plain AnyOf7
+	plain := Plain(j)
+	if plain.Bar == nil {
+		plain.Bar = []*Item{}
+	}
+	return json.Marshal(plain)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf7) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}

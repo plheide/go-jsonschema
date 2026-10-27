@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/emptyWhenNil/required",
+  "title": "Required",
+  "description": "Required arrays and objects left nil are written as [] and {}, which the schema accepts, not as null.",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "items": { "type": "array", "items": { "type": "string" } },
+    "ids": { "$ref": "#/definitions/ids" },
+    "labels": { "type": "object", "additionalProperties": { "type": "string" } },
+    "nullable": { "type": ["array", "null"], "items": { "type": "string" } },
+    "optional": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["name", "items", "ids", "labels", "nullable"],
+  "definitions": {
+    "ids": { "type": "array", "items": { "type": "integer" } }
+  }
+}

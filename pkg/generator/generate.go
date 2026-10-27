@@ -107,7 +107,7 @@ func New(config Config) (*Generator, error) {
 	}
 
 	formatters := []formatter{
-		&jsonFormatter{},
+		&jsonFormatter{useNumber: config.UseNumber},
 	}
 	if config.ExtraImports {
 		formatters = append(formatters, &yamlFormatter{})
@@ -179,7 +179,8 @@ func (g *Generator) Sources() (map[string][]byte, error) {
 			continue
 		}
 
-		g.addIntegralDecoders(output)
+		g.addJSONDecoders(output)
+		g.declareConstConstants(output)
 		g.renameConstantsShadowingImports(output)
 
 		if a, b, name, clash := importNameCollision(output.file.Package.Imports); clash {
@@ -321,6 +322,7 @@ func (g *Generator) beginOutput(
 			FileName: outputName,
 			Package:  pkg,
 		},
+		useNumber:               g.config.UseNumber,
 		declsBySchema:           map[*schemas.Type]*codegen.TypeDecl{},
 		anyOfVariants:           map[*schemas.Type][]string{},
 		anyOfParents:            map[*schemas.Type]anyOfParent{},

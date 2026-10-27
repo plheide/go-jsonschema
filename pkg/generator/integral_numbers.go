@@ -14,8 +14,10 @@ import (
 // decodes exactly as before. yaml.v3 accepts these numbers already.
 //
 // A type that holds an integer and has no decoder gets a JSON one that only
-// retries. It is added once every schema is generated, since a decoder may be
-// added to a type after its declaration, with a YAML one beside it.
+// retries, and under --use-number so does one that holds an untyped value,
+// whose numbers only a generated decoder keeps exact. It is added once every
+// schema is generated, since a decoder may be added to a type after its
+// declaration, with a YAML one beside it.
 
 // integralHelperBase names the helper that retries such a decode. It is
 // declared once in each generated file that needs it, suffixed with the name
@@ -29,47 +31,76 @@ const integralHelperBase = "unmarshalIntegral_"
 // struct field. A named type decodes its own integers. The AdditionalProperties
 // field is filled from the raw map, not by encoding/json.
 func holdsInteger(t codegen.Type) bool {
-	switch tt := t.(type) {
-	case codegen.PrimitiveType:
-		return isGoInteger(tt.Type)
-	case *codegen.PrimitiveType:
-		return isGoInteger(tt.Type)
-	case codegen.PointerType:
-		return holdsInteger(tt.Type)
-	case *codegen.PointerType:
-		return holdsInteger(tt.Type)
-	case codegen.ArrayType:
-		return holdsInteger(tt.Type)
-	case *codegen.ArrayType:
-		return holdsInteger(tt.Type)
-	case codegen.MapType:
-		return holdsInteger(tt.ValueType)
-	case *codegen.MapType:
-		return holdsInteger(tt.ValueType)
-	case *codegen.StructType:
-		return structHoldsInteger(tt)
-	}
-
-	return false
-}
-
-func structHoldsInteger(st *codegen.StructType) bool {
-	for _, f := range st.Fields {
-		if f.Name != additionalProperties && holdsInteger(f.Type) {
-			return true
+	return holds(t, func(leaf codegen.Type) bool {
+		switch lt := leaf.(type) {
+		case codegen.PrimitiveType:
+			return isGoInteger(lt.Type)
+		case *codegen.PrimitiveType:
+			return isGoInteger(lt.Type)
 		}
-	}
 
-	return false
+		return false
+	})
 }
 
-func isPointerType(t codegen.Type) bool {
-	switch t.(type) {
-	case codegen.PointerType, *codegen.PointerType:
-		return true
+// holdsUntyped reports whether a value of t holds an interface{} that t's own
+// decoder decodes, as holdsInteger does for an integer. A type declared as an
+// interface{} counts: it can have no decoder of its own.
+func holdsUntyped(t codegen.Type) bool {
+	return holds(t, func(leaf codegen.Type) bool {
+		switch lt := leaf.(type) {
+		case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
+			return true
+		case *codegen.NamedType:
+			return lt.Decl != nil && isEmptyInterfaceDecl(lt)
+		case codegen.NamedType:
+			return lt.Decl != nil && isEmptyInterfaceDecl(&lt)
+		}
+
+		return false
+	})
+}
+
+// holds reports whether t, the element of a slice, a map or a pointer, or a
+// struct field, is a leaf type for which leaf holds. A named type is a leaf,
+// which decodes its own values unless leaf says otherwise, and the
+// AdditionalProperties field is left to the raw map.
+func holds(t codegen.Type, leaf func(codegen.Type) bool) bool {
+	switch tt := t.(type) {
+	case codegen.PointerType:
+		return holds(tt.Type, leaf)
+	case *codegen.PointerType:
+		return holds(tt.Type, leaf)
+	case codegen.ArrayType:
+		return holds(tt.Type, leaf)
+	case *codegen.ArrayType:
+		return holds(tt.Type, leaf)
+	case codegen.MapType:
+		return holds(tt.ValueType, leaf)
+	case *codegen.MapType:
+		return holds(tt.ValueType, leaf)
+	case *codegen.StructType:
+		for _, f := range tt.Fields {
+			if f.Name != additionalProperties && holds(f.Type, leaf) {
+				return true
+			}
+		}
+
+		return false
 	}
 
-	return false
+	return leaf(t)
+}
+
+// canHaveMethods reports whether a type declared as t can have methods: Go
+// gives none to a pointer type or an interface type.
+func canHaveMethods(t codegen.Type) bool {
+	switch t.(type) {
+	case codegen.PointerType, *codegen.PointerType, codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
+		return false
+	}
+
+	return true
 }
 
 // isGoInteger reports whether name is one of the Go integer types the
@@ -83,18 +114,20 @@ func isGoInteger(name string) bool {
 	return false
 }
 
-// addIntegralDecoders gives each type of o that holds an integer, and has no
-// decoder, a JSON one. A type declared as a pointer can have no methods.
-func (g *Generator) addIntegralDecoders(o *output) {
+// addJSONDecoders gives each type of o that holds an integer, or under
+// --use-number an untyped value, and has no decoder, a JSON one. A type
+// declared as a pointer or an interface can have no methods.
+func (g *Generator) addJSONDecoders(o *output) {
 	if g.config.OnlyModels {
 		return
 	}
 
-	jf := &jsonFormatter{}
+	jf := &jsonFormatter{useNumber: g.config.UseNumber}
 
 	for _, d := range o.file.Package.Decls {
 		decl, ok := d.(*codegen.TypeDecl)
-		if !ok || isPointerType(decl.Type) || !holdsInteger(decl.Type) {
+		if !ok || !canHaveMethods(decl.Type) ||
+			(!holdsInteger(decl.Type) && (!g.config.UseNumber || !holdsUntyped(decl.Type))) {
 			continue
 		}
 
@@ -127,11 +160,11 @@ func (o *output) integralHelper(typeName string) string {
 
 	o.integralHelperName = name
 
-	for _, pkg := range []string{"bytes", jsonPackage, "strconv", "strings"} {
+	for _, pkg := range []string{bytesPackage, jsonPackage, "strconv", "strings"} {
 		o.file.Package.AddImport(pkg, "")
 	}
 
-	o.file.Package.AddDecl(&codegen.Method{Name: name, Impl: emitIntegralHelper(name)})
+	o.file.Package.AddDecl(&codegen.Method{Name: name, Impl: emitIntegralHelper(name, o.useNumber)})
 
 	return name
 }
@@ -140,7 +173,7 @@ func (o *output) integralHelper(typeName string) string {
 // to rewrite one number. The rewrite works on the number's digits, so a huge
 // exponent costs nothing: a number whose integer has more than 20 digits fits
 // no Go integer and is left as it is.
-func emitIntegralHelper(name string) func(*codegen.Emitter) error {
+func emitIntegralHelper(name string, useNumber bool) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		number := name + "_number"
 
@@ -200,7 +233,17 @@ func emitIntegralHelper(name string) func(*codegen.Emitter) error {
 		out.Printlnf("if merr != nil {")
 		out.Printlnf("return err")
 		out.Printlnf("}")
-		out.Printlnf("return json.Unmarshal(normalized, v)")
+
+		// As the decode it retries, which keeps the numbers of untyped values
+		// exact under --use-number.
+		if useNumber {
+			out.Printlnf("redec := json.NewDecoder(bytes.NewReader(normalized))")
+			out.Printlnf("redec.UseNumber()")
+			out.Printlnf("return redec.Decode(v)")
+		} else {
+			out.Printlnf("return json.Unmarshal(normalized, v)")
+		}
+
 		out.Indent(-1)
 		out.Printlnf("}")
 		out.Newline()

@@ -19,6 +19,15 @@ type Elements struct {
 	// Anything corresponds to the JSON schema field "anything".
 	Anything []interface{} `json:"anything,omitempty,omitzero" yaml:"anything,omitempty" mapstructure:"anything,omitempty"`
 
+	// BigPairs corresponds to the JSON schema field "bigPairs".
+	BigPairs []interface{} `json:"bigPairs,omitempty,omitzero" yaml:"bigPairs,omitempty" mapstructure:"bigPairs,omitempty"`
+
+	// BigTag corresponds to the JSON schema field "bigTag".
+	BigTag interface{} `json:"bigTag,omitempty,omitzero" yaml:"bigTag,omitempty" mapstructure:"bigTag,omitempty"`
+
+	// BigTags corresponds to the JSON schema field "bigTags".
+	BigTags []interface{} `json:"bigTags,omitempty,omitzero" yaml:"bigTags,omitempty" mapstructure:"bigTags,omitempty"`
+
 	// Codes corresponds to the JSON schema field "codes".
 	Codes []string `json:"codes,omitempty,omitzero" yaml:"codes,omitempty" mapstructure:"codes,omitempty"`
 
@@ -61,6 +70,8 @@ type Elements struct {
 	AdditionalProperties map[string]string `mapstructure:",remain"`
 }
 
+const ElementsBigTag = 9007199254740993
+
 type ElementsLabels map[string]string
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -95,17 +106,33 @@ func (j *ElementsLabels) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+const ElementsTag = "v1"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Elements) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Elements: %w", err)
 	}
+	var numbers map[string]interface{}
+	{
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		_ = dec.Decode(&numbers)
+	}
+	for fieldName, fieldValue := range numbers {
+		if !strings.EqualFold(fieldName, "bigTag") {
+			continue
+		}
+		if key, ok := uniqueItemKey_Elements(fieldValue); !ok || key != "9.007199254740993e15" {
+			return fmt.Errorf("field %s: must be equal to %s", "bigTag", "9007199254740993")
+		}
+	}
 	for fieldName, fieldValue := range raw {
 		if !strings.EqualFold(fieldName, "tag") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"v1\"" {
+		if key, ok := uniqueItemKey_Elements(fieldValue); !ok || key != "\"v1\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "tag", "\"v1\"")
 		}
 	}
@@ -119,8 +146,22 @@ func (j *Elements) UnmarshalJSON(value []byte) error {
 		plain = retry
 	}
 	for i1 := range plain.Anything {
-		if b, err := json.Marshal(plain.Anything[i1]); err != nil || string(b) != "{\"a\":[1,\"b\"]}" {
+		if key, ok := uniqueItemKey_Elements(plain.Anything[i1]); !ok || key != "{\"a\":[1e0,\"b\"]}" {
 			return fmt.Errorf("field %s: must be equal to %s", fmt.Sprintf("%s[%d]", "anything", i1), "{\"a\":[1,\"b\"]}")
+		}
+	}
+	for i1 := range plain.BigPairs {
+		if key, ok := uniqueItemKey_Elements(plain.BigPairs[i1]); !ok || key != "[9.007199254740993e15]" {
+			if !ok || key != "[9.007199254740992e15]" {
+				return fmt.Errorf("field %s: must be equal to %s", fmt.Sprintf("%s[%d]", "bigPairs", i1), "[9007199254740993]")
+			}
+		}
+	}
+	for i1 := range plain.BigTags {
+		if key, ok := uniqueItemKey_Elements(plain.BigTags[i1]); !ok || key != "9.007199254740993e15" {
+			if _, isFloat := plain.BigTags[i1].(float64); !ok || !isFloat || key != "9.007199254740992e15" {
+				return fmt.Errorf("field %s: must be equal to %s", fmt.Sprintf("%s[%d]", "bigTags", i1), "9007199254740993")
+			}
 		}
 	}
 	for i1 := range plain.Codes {
@@ -234,8 +275,15 @@ func (j *Elements) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Elements: %w", err)
 	}
+	if fieldValue, ok := raw["bigTag"]; ok {
+		if key, ok := uniqueItemKey_Elements(fieldValue); !ok || key != "9.007199254740993e15" {
+			if _, isFloat := fieldValue.(float64); !ok || !isFloat || key != "9.007199254740992e15" {
+				return fmt.Errorf("field %s: must be equal to %s", "bigTag", "9007199254740993")
+			}
+		}
+	}
 	if fieldValue, ok := raw["tag"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"v1\"" {
+		if key, ok := uniqueItemKey_Elements(fieldValue); !ok || key != "\"v1\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "tag", "\"v1\"")
 		}
 	}
@@ -245,8 +293,22 @@ func (j *Elements) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal Elements: %w", err)
 	}
 	for i1 := range plain.Anything {
-		if b, err := json.Marshal(plain.Anything[i1]); err != nil || string(b) != "{\"a\":[1,\"b\"]}" {
+		if key, ok := uniqueItemKey_Elements(plain.Anything[i1]); !ok || key != "{\"a\":[1e0,\"b\"]}" {
 			return fmt.Errorf("field %s: must be equal to %s", fmt.Sprintf("%s[%d]", "anything", i1), "{\"a\":[1,\"b\"]}")
+		}
+	}
+	for i1 := range plain.BigPairs {
+		if key, ok := uniqueItemKey_Elements(plain.BigPairs[i1]); !ok || key != "[9.007199254740993e15]" {
+			if !ok || key != "[9.007199254740992e15]" {
+				return fmt.Errorf("field %s: must be equal to %s", fmt.Sprintf("%s[%d]", "bigPairs", i1), "[9007199254740993]")
+			}
+		}
+	}
+	for i1 := range plain.BigTags {
+		if key, ok := uniqueItemKey_Elements(plain.BigTags[i1]); !ok || key != "9.007199254740993e15" {
+			if _, isFloat := plain.BigTags[i1].(float64); !ok || !isFloat || key != "9.007199254740992e15" {
+				return fmt.Errorf("field %s: must be equal to %s", fmt.Sprintf("%s[%d]", "bigTags", i1), "9007199254740993")
+			}
 		}
 	}
 	for i1 := range plain.Codes {
@@ -386,6 +448,81 @@ func (j *Ids) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = Ids(plain)
 	return nil
+}
+
+// uniqueItemKey_Elements returns the JSON encoding of v with each number written
+// in one form, so that items JSON Schema counts as equal, such as 1 and 1.0, get
+// the same key, and integers a float64 cannot tell apart do not. It reports false
+// for a value with no JSON encoding. Every uniqueItems check in this file calls
+// it; it is named after the first, so that no other file of the package declares
+// it.
+func uniqueItemKey_Elements(v interface{}) (string, bool) {
+	var canon func(interface{}) interface{}
+	canon = func(n interface{}) interface{} {
+		switch n := n.(type) {
+		case json.Number:
+			return uniqueItemKey_Elements_number(string(n))
+		case float64:
+			return uniqueItemKey_Elements_number(strconv.FormatFloat(n, 'g', -1, 64))
+		case int:
+			return uniqueItemKey_Elements_number(strconv.Itoa(n))
+		case int64:
+			return uniqueItemKey_Elements_number(strconv.FormatInt(n, 10))
+		case uint64:
+			return uniqueItemKey_Elements_number(strconv.FormatUint(n, 10))
+		case map[string]interface{}:
+			m := make(map[string]interface{}, len(n))
+			for k, e := range n {
+				m[k] = canon(e)
+			}
+			return m
+		case []interface{}:
+			a := make([]interface{}, len(n))
+			for i, e := range n {
+				a[i] = canon(e)
+			}
+			return a
+		}
+		return n
+	}
+	b, err := json.Marshal(canon(v))
+	if err != nil {
+		return "", false
+	}
+	return string(b), true
+}
+
+// uniqueItemKey_Elements_number writes the number s in one form: its significant
+// digits as d.ddd, and the exponent, such as 9.007199254740993e15. A number with
+// an exponent beyond a billion is left as it is.
+func uniqueItemKey_Elements_number(s string) json.Number {
+	neg := strings.HasPrefix(s, "-")
+	mantissa, exp := strings.TrimPrefix(s, "-"), 0
+	if i := strings.IndexAny(mantissa, "eE"); i >= 0 {
+		e, err := strconv.Atoi(mantissa[i+1:])
+		if err != nil || e > 1e9 || e < -1e9 {
+			return json.Number(s)
+		}
+		mantissa, exp = mantissa[:i], e
+	}
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	all := intPart + frac
+	trimmed := strings.TrimLeft(all, "0")
+	digits := strings.TrimRight(trimmed, "0")
+	if digits == "" {
+		return "0"
+	}
+	// The value is 0.digits times 10 to the power of point.
+	point := exp + len(intPart) - (len(all) - len(trimmed))
+	canonical := digits[:1]
+	if len(digits) > 1 {
+		canonical += "." + digits[1:]
+	}
+	canonical += "e" + strconv.Itoa(point-1)
+	if neg {
+		canonical = "-" + canonical
+	}
+	return json.Number(canonical)
 }
 
 // unmarshalIntegral_Elements decodes data into v again, as json.Unmarshal does,

@@ -1,7 +1,10 @@
 package generator
 
 import (
+	"encoding/json"
 	"fmt"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/plheide/go-jsonschema/pkg/codegen"
@@ -100,6 +103,19 @@ func (v *elementsValidator) generate(out *codegen.Emitter, format string) error 
 	w.close()
 
 	return nil
+}
+
+var _ fileHelperValidator = new(elementsValidator)
+
+// useFileHelpers gives the checks of every level the file's helpers they call.
+func (v *elementsValidator) useFileHelpers(o *output, typeName string) {
+	for _, level := range v.levels {
+		for _, c := range level.checks {
+			if hv, ok := c.(fileHelperValidator); ok {
+				hv.useFileHelpers(o, typeName)
+			}
+		}
+	}
 }
 
 func (v *elementsValidator) desc() *validatorDesc {
@@ -209,43 +225,101 @@ func (n elementName) expr() string {
 
 // untypedConstValidator checks the `const` of a schema that declares no type,
 // whose value decodes into an interface{}. JSON Schema compares the value as
-// JSON, so the check compares its JSON encoding with the const's, which
-// encoding/json writes with sorted keys. A property is read from the raw map,
+// JSON, so the check compares the value's key from the file's key helper,
+// which writes each number in one form, with the const's: 1.0 equals 1, also
+// as a json.Number under --use-number. A property is read from the raw map,
 // where an absent one is told apart from a null one, under each key the
-// decoder assigns to it; an element is read where the element walk reaches
-// it.
+// decoder assigns to it; in JSON, for a const that holds a number, from the
+// input decoded once more with its numbers exact, as for uniqueItems. An
+// element is read where the element walk reaches it.
+//
+// Where a float64 rounds a number of the const, as it rounds an integer beyond
+// 2^53, a value whose numbers are float64s also matches the const's key with
+// its numbers so rounded, which the const itself has once decoded so. Elements
+// decoded from JSON without --use-number hold float64s, and in YAML a number
+// written with a fraction or an exponent is one; a JSON property is read
+// exactly. A const that is a number is matched so only by a float64, and one
+// that holds numbers by any value, which may hold float64s.
 type untypedConstValidator struct {
 	checkTarget
 	rawKeyMatch
 
 	jsonName string
-	// encoded is the const's JSON encoding.
+	// encoded is the const's JSON encoding, for the error.
 	encoded string
+	// canonical is the const's key, as canonicalKey writes it.
+	canonical string
+	// rounded is the const's key with its numbers as float64s, where a
+	// float64 does not hold one of them exactly, and "" otherwise.
+	rounded string
+	// isNumber marks a const that is a number, and hasNumber one that is or
+	// holds one.
+	isNumber, hasNumber bool
 	// property marks the check on a property, read from the raw map.
 	property bool
+	// keyHelper is the file's key helper, given with the struct's fields.
+	keyHelper string
+	// exactElements marks the elements' numbers as json.Number in JSON, as
+	// --use-number decodes them.
+	exactElements bool
 }
 
-var _ rawKeyedValidator = new(untypedConstValidator)
+var (
+	_ rawKeyedValidator   = new(untypedConstValidator)
+	_ fileHelperValidator = new(untypedConstValidator)
+)
 
 func (v *untypedConstValidator) matchStructKeys(fields []codegen.StructField) {
 	v.matchKeysOf(fields, v.jsonName)
 }
 
+func (v *untypedConstValidator) useFileHelpers(o *output, typeName string) {
+	v.keyHelper = o.uniqueKeyHelper(typeName)
+	v.exactElements = o.useNumber
+}
+
 func (v *untypedConstValidator) generate(out *codegen.Emitter, format string) error {
+	if v.keyHelper == "" {
+		return errUniqueKeyHelperUnbound
+	}
+
 	value := v.valueExpr
 
 	if v.property {
-		emitRawKeyMatch(out, format, v.jsonName, v.caseVariants, v.exactOnly, false)
+		source := varNameRawMap
+		if format == formatJSON && v.hasNumber {
+			source = varNameNumbers
+		}
+
+		emitMapKeyMatch(out, source, format, v.jsonName, v.caseVariants, v.exactOnly, false)
 
 		value = "fieldValue"
 	}
 
-	out.Printlnf("if b, err := json.Marshal(%s); err != nil || string(b) != %q {", value, v.encoded)
+	out.Printlnf("if key, ok := %s(%s); !ok || key != %q {", v.keyHelper, value, v.canonical)
 	out.Indent(1)
+
+	blocks := 1
+
+	if exact := format == formatJSON && (v.property || v.exactElements); v.rounded != "" && !exact {
+		if v.isNumber {
+			out.Printlnf("if _, isFloat := %s.(float64); !ok || !isFloat || key != %q {", value, v.rounded)
+		} else {
+			out.Printlnf("if !ok || key != %q {", v.rounded)
+		}
+
+		out.Indent(1)
+
+		blocks++
+	}
+
 	out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%s", %s, %q)`,
 		v.name(fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))), v.encoded)
-	out.Indent(-1)
-	out.Printlnf("}")
+
+	for range blocks {
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
 
 	if v.property {
 		out.Indent(-1)
@@ -259,6 +333,7 @@ func (v *untypedConstValidator) desc() *validatorDesc {
 	d := &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: v.property,
+		requiresNumbers:     v.property && v.hasNumber,
 		imports:             []packageImport{{qualifiedName: jsonPackage}},
 	}
 
@@ -266,7 +341,56 @@ func (v *untypedConstValidator) desc() *validatorDesc {
 		d.imports = append(d.imports, v.imports()...)
 	}
 
+	if d.requiresNumbers {
+		d.imports = append(d.imports, packageImport{qualifiedName: bytesPackage})
+	}
+
 	return d
+}
+
+// exactConst returns s's const with its numbers as json.Number, as written,
+// or its const as it is, for a schema the generator built.
+func exactConst(s *schemas.Type) any {
+	if s.ConstExact != nil {
+		return s.ConstExact
+	}
+
+	return s.Const
+}
+
+// holdsNumber reports whether v, a decoded JSON value, is or holds a number.
+func holdsNumber(v any) bool {
+	switch v := v.(type) {
+	case json.Number, float64, int, int64, uint64:
+		return true
+
+	case map[string]any:
+		for _, e := range v {
+			if holdsNumber(e) {
+				return true
+			}
+		}
+
+	case []any:
+		return slices.ContainsFunc(v, holdsNumber)
+	}
+
+	return false
+}
+
+// preciseConst returns s's const as the check of a typed value and the
+// constant write it: Const, unless it is a float64 that rounds the number the
+// schema writes, as a float64 rounds an integer beyond 2^53; then that number,
+// as a json.Number.
+func preciseConst(s *schemas.Type) any {
+	if v, ok := s.Const.(float64); ok {
+		if n, ok := s.ConstExact.(json.Number); ok &&
+			canonicalNumber(string(n)) != canonicalNumber(strconv.FormatFloat(v, 'g', -1, 64)) {
+			return n
+		}
+	}
+
+	return s.Const
 }
 
 // isUntypedConst reports whether s declares a const and no type, so that its

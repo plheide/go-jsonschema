@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strconv"
 import "strings"
 
 // A variant refers back to the oneOf that holds it. The holder is registered
@@ -21,6 +22,8 @@ type PetCat struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
+const PetCatKind = "cat"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *PetCat) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -34,7 +37,7 @@ func (j *PetCat) UnmarshalJSON(value []byte) error {
 		if !strings.EqualFold(fieldName, "kind") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"cat\"" {
+		if key, ok := uniqueItemKey_PetDog(fieldValue); !ok || key != "\"cat\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"cat\"")
 		}
 	}
@@ -57,7 +60,7 @@ func (j *PetCat) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field kind in PetCat: required")
 	}
 	if fieldValue, ok := raw["kind"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"cat\"" {
+		if key, ok := uniqueItemKey_PetDog(fieldValue); !ok || key != "\"cat\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"cat\"")
 		}
 	}
@@ -78,6 +81,8 @@ type PetDog struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
+const PetDogKind = "dog"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *PetDog) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -91,7 +96,7 @@ func (j *PetDog) UnmarshalJSON(value []byte) error {
 		if !strings.EqualFold(fieldName, "kind") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+		if key, ok := uniqueItemKey_PetDog(fieldValue); !ok || key != "\"dog\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
 		}
 	}
@@ -114,7 +119,7 @@ func (j *PetDog) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field kind in PetDog: required")
 	}
 	if fieldValue, ok := raw["kind"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+		if key, ok := uniqueItemKey_PetDog(fieldValue); !ok || key != "\"dog\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
 		}
 	}
@@ -248,4 +253,78 @@ func (j *Pet) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("Pet: unknown kind value %q", peek.Discriminator.Value)
 	}
 	return nil
+}
+
+// uniqueItemKey_PetDog returns the JSON encoding of v with each number written in
+// one form, so that items JSON Schema counts as equal, such as 1 and 1.0, get the
+// same key, and integers a float64 cannot tell apart do not. It reports false for
+// a value with no JSON encoding. Every uniqueItems check in this file calls it; it
+// is named after the first, so that no other file of the package declares it.
+func uniqueItemKey_PetDog(v interface{}) (string, bool) {
+	var canon func(interface{}) interface{}
+	canon = func(n interface{}) interface{} {
+		switch n := n.(type) {
+		case json.Number:
+			return uniqueItemKey_PetDog_number(string(n))
+		case float64:
+			return uniqueItemKey_PetDog_number(strconv.FormatFloat(n, 'g', -1, 64))
+		case int:
+			return uniqueItemKey_PetDog_number(strconv.Itoa(n))
+		case int64:
+			return uniqueItemKey_PetDog_number(strconv.FormatInt(n, 10))
+		case uint64:
+			return uniqueItemKey_PetDog_number(strconv.FormatUint(n, 10))
+		case map[string]interface{}:
+			m := make(map[string]interface{}, len(n))
+			for k, e := range n {
+				m[k] = canon(e)
+			}
+			return m
+		case []interface{}:
+			a := make([]interface{}, len(n))
+			for i, e := range n {
+				a[i] = canon(e)
+			}
+			return a
+		}
+		return n
+	}
+	b, err := json.Marshal(canon(v))
+	if err != nil {
+		return "", false
+	}
+	return string(b), true
+}
+
+// uniqueItemKey_PetDog_number writes the number s in one form: its significant
+// digits as d.ddd, and the exponent, such as 9.007199254740993e15. A number with
+// an exponent beyond a billion is left as it is.
+func uniqueItemKey_PetDog_number(s string) json.Number {
+	neg := strings.HasPrefix(s, "-")
+	mantissa, exp := strings.TrimPrefix(s, "-"), 0
+	if i := strings.IndexAny(mantissa, "eE"); i >= 0 {
+		e, err := strconv.Atoi(mantissa[i+1:])
+		if err != nil || e > 1e9 || e < -1e9 {
+			return json.Number(s)
+		}
+		mantissa, exp = mantissa[:i], e
+	}
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	all := intPart + frac
+	trimmed := strings.TrimLeft(all, "0")
+	digits := strings.TrimRight(trimmed, "0")
+	if digits == "" {
+		return "0"
+	}
+	// The value is 0.digits times 10 to the power of point.
+	point := exp + len(intPart) - (len(all) - len(trimmed))
+	canonical := digits[:1]
+	if len(digits) > 1 {
+		canonical += "." + digits[1:]
+	}
+	canonical += "e" + strconv.Itoa(point-1)
+	if neg {
+		canonical = "-" + canonical
+	}
+	return json.Number(canonical)
 }

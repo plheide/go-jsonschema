@@ -68,6 +68,21 @@
     "tag": {
       "const": "v1"
     },
+    "bigTag": {
+      "const": 9007199254740993
+    },
+    "bigTags": {
+      "type": "array",
+      "items": {
+        "const": 9007199254740993
+      }
+    },
+    "bigPairs": {
+      "type": "array",
+      "items": {
+        "const": [9007199254740993]
+      }
+    },
     "grid": {
       "type": "array",
       "minItems": 2,

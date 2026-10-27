@@ -58,6 +58,7 @@ var (
 	structNameFromTitle           bool
 	minSizedInts                  bool
 	openAPIIntFormats             bool
+	useNumber                     bool
 	minimalNames                  bool
 	disableReadOnlyValidation     bool
 	validateNullTypes             bool
@@ -154,6 +155,7 @@ var (
 				OnlyModels:                 onlyModels,
 				MinSizedInts:               minSizedInts,
 				OpenAPIIntFormats:          openAPIIntFormats,
+				UseNumber:                  useNumber,
 				MinimalNames:               minimalNames,
 				DisableReadOnlyValidation:  disableReadOnlyValidation,
 				ValidateNullTypes:          validateNullTypes,
@@ -301,6 +303,8 @@ widget.schema.json gives Widget with --resolve-extension .schema.json.`)
 		"Uses sized int and uint values based on the min and max values for the field")
 	rootCmd.PersistentFlags().BoolVar(&openAPIIntFormats, "openapi-int-formats", false,
 		"Map an integer's OpenAPI format, int32 or int64, to the Go integer type of that width")
+	rootCmd.PersistentFlags().BoolVar(&useNumber, "use-number", false,
+		"Decode the numbers that untyped values hold from JSON as json.Number, which keeps them exact")
 	rootCmd.PersistentFlags().BoolVar(&disableReadOnlyValidation, "disable-readonly-validation", false,
 		"Do not include validation of readonly fields")
 	rootCmd.PersistentFlags().BoolVar(&minimalNames, "minimal-names", false,

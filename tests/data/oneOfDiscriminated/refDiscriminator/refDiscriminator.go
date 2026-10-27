@@ -36,6 +36,8 @@ type RefDiscriminatorEventClick struct {
 	Timestamp *string `json:"timestamp,omitempty,omitzero" yaml:"timestamp,omitempty" mapstructure:"timestamp,omitempty"`
 }
 
+const RefDiscriminatorEventClickKind = "click"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RefDiscriminatorEventClick) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -94,6 +96,8 @@ type RefDiscriminatorEventScroll struct {
 	// Timestamp corresponds to the JSON schema field "timestamp".
 	Timestamp *string `json:"timestamp,omitempty,omitzero" yaml:"timestamp,omitempty" mapstructure:"timestamp,omitempty"`
 }
+
+const RefDiscriminatorEventScrollKind = "scroll"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RefDiscriminatorEventScroll) UnmarshalJSON(value []byte) error {

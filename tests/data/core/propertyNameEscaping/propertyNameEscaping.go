@@ -25,6 +25,18 @@ type PropertyNameEscaping struct {
 	Punct string `json:"punct!#$&()*+-./:;<=>?@[]^_{|}~" yaml:"punct!#$&()*+-./:;<=>?@[]^_{|}~" mapstructure:"punct!#$&()*+-./:;<=>?@[]^_{|}~"`
 }
 
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j PropertyNameEscaping) MarshalJSON() ([]byte, error) {
+	type Plain PropertyNameEscaping
+	plain := Plain(j)
+	if plain.ArrPctS == nil {
+		plain.ArrPctS = [][]string{}
+	}
+	return json.Marshal(plain)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}

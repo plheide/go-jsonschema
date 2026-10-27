@@ -24,6 +24,21 @@ type Applications struct {
 	Names []string `json:"names" yaml:"names" mapstructure:"names"`
 }
 
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j Applications) MarshalJSON() ([]byte, error) {
+	type Plain Applications
+	plain := Plain(j)
+	if plain.Actions == nil {
+		plain.Actions = []string{}
+	}
+	if plain.Names == nil {
+		plain.Names = []string{}
+	}
+	return json.Marshal(plain)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Applications) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -83,6 +98,18 @@ type ApplyAcrossServiceResources struct {
 
 	// The list of service resource instance names.
 	Names []string `json:"names" yaml:"names" mapstructure:"names"`
+}
+
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j ApplyAcrossServiceResources) MarshalJSON() ([]byte, error) {
+	type Plain ApplyAcrossServiceResources
+	plain := Plain(j)
+	if plain.Names == nil {
+		plain.Names = []string{}
+	}
+	return json.Marshal(plain)
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -795,6 +822,18 @@ type RolloutSpecification struct {
 	RolloutMetadata RolloutMetadata `json:"rolloutMetadata" yaml:"rolloutMetadata" mapstructure:"rolloutMetadata"`
 }
 
+// MarshalJSON implements json.Marshaler. It writes a required array or object left
+// nil as an empty one, where encoding/json would write null, which the schema
+// rejects.
+func (j RolloutSpecification) MarshalJSON() ([]byte, error) {
+	type Plain RolloutSpecification
+	plain := Plain(j)
+	if plain.OrchestratedSteps == nil {
+		plain.OrchestratedSteps = []OrchestratedStep{}
+	}
+	return json.Marshal(plain)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RolloutSpecification) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -872,6 +911,8 @@ func uniqueItemKey_OrchestratedStep(v interface{}) (string, bool) {
 			return uniqueItemKey_OrchestratedStep_number(strconv.FormatFloat(n, 'g', -1, 64))
 		case int:
 			return uniqueItemKey_OrchestratedStep_number(strconv.Itoa(n))
+		case int64:
+			return uniqueItemKey_OrchestratedStep_number(strconv.FormatInt(n, 10))
 		case uint64:
 			return uniqueItemKey_OrchestratedStep_number(strconv.FormatUint(n, 10))
 		case map[string]interface{}:

@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/useNumber/numbers",
+  "title": "Numbers",
+  "description": "Under --use-number, untyped values hold their numbers as json.Number, which keeps them exact.",
+  "type": "object",
+  "properties": {
+    "value": {},
+    "values": { "type": "array" },
+    "count": { "type": "integer" },
+    "ratio": { "type": "number" },
+    "extra": { "default": 1.5 },
+    "nested": { "default": { "a": [1, 2.5] } },
+    "pinned": { "const": 1 },
+    "pinnedItems": { "type": "array", "items": { "const": 1 } },
+    "big": { "const": 9007199254740993 },
+    "near": { "const": 9007199254740992 },
+    "bigItems": { "type": "array", "items": { "const": 9007199254740993 } },
+    "holder": {
+      "type": "object",
+      "properties": { "x": { "$ref": "#/definitions/anything" } }
+    }
+  },
+  "definitions": {
+    "anything": {}
+  }
+}

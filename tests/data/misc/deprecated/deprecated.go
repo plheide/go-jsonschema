@@ -512,6 +512,8 @@ type DeprecatedShapeCircle struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
+const DeprecatedShapeCircleKind = "circle"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DeprecatedShapeCircle) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -525,7 +527,7 @@ func (j *DeprecatedShapeCircle) UnmarshalJSON(value []byte) error {
 		if !strings.EqualFold(fieldName, "kind") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"circle\"" {
+		if key, ok := uniqueItemKey_DeprecatedShapeCircle(fieldValue); !ok || key != "\"circle\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"circle\"")
 		}
 	}
@@ -548,7 +550,7 @@ func (j *DeprecatedShapeCircle) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field kind in DeprecatedShapeCircle: required")
 	}
 	if fieldValue, ok := raw["kind"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"circle\"" {
+		if key, ok := uniqueItemKey_DeprecatedShapeCircle(fieldValue); !ok || key != "\"circle\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"circle\"")
 		}
 	}
@@ -566,6 +568,8 @@ type DeprecatedShapeSquare struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
+const DeprecatedShapeSquareKind = "square"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DeprecatedShapeSquare) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -579,7 +583,7 @@ func (j *DeprecatedShapeSquare) UnmarshalJSON(value []byte) error {
 		if !strings.EqualFold(fieldName, "kind") {
 			continue
 		}
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"square\"" {
+		if key, ok := uniqueItemKey_DeprecatedShapeCircle(fieldValue); !ok || key != "\"square\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"square\"")
 		}
 	}
@@ -602,7 +606,7 @@ func (j *DeprecatedShapeSquare) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field kind in DeprecatedShapeSquare: required")
 	}
 	if fieldValue, ok := raw["kind"]; ok {
-		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"square\"" {
+		if key, ok := uniqueItemKey_DeprecatedShapeCircle(fieldValue); !ok || key != "\"square\"" {
 			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"square\"")
 		}
 	}
@@ -773,6 +777,81 @@ func NewDeprecatedAmountString(v string) DeprecatedAmount {
 type Point struct {
 	// X corresponds to the JSON schema field "x".
 	X *float64 `json:"x,omitempty,omitzero" yaml:"x,omitempty" mapstructure:"x,omitempty"`
+}
+
+// uniqueItemKey_DeprecatedShapeCircle returns the JSON encoding of v with each
+// number written in one form, so that items JSON Schema counts as equal, such as 1
+// and 1.0, get the same key, and integers a float64 cannot tell apart do not. It
+// reports false for a value with no JSON encoding. Every uniqueItems check in this
+// file calls it; it is named after the first, so that no other file of the package
+// declares it.
+func uniqueItemKey_DeprecatedShapeCircle(v interface{}) (string, bool) {
+	var canon func(interface{}) interface{}
+	canon = func(n interface{}) interface{} {
+		switch n := n.(type) {
+		case json.Number:
+			return uniqueItemKey_DeprecatedShapeCircle_number(string(n))
+		case float64:
+			return uniqueItemKey_DeprecatedShapeCircle_number(strconv.FormatFloat(n, 'g', -1, 64))
+		case int:
+			return uniqueItemKey_DeprecatedShapeCircle_number(strconv.Itoa(n))
+		case int64:
+			return uniqueItemKey_DeprecatedShapeCircle_number(strconv.FormatInt(n, 10))
+		case uint64:
+			return uniqueItemKey_DeprecatedShapeCircle_number(strconv.FormatUint(n, 10))
+		case map[string]interface{}:
+			m := make(map[string]interface{}, len(n))
+			for k, e := range n {
+				m[k] = canon(e)
+			}
+			return m
+		case []interface{}:
+			a := make([]interface{}, len(n))
+			for i, e := range n {
+				a[i] = canon(e)
+			}
+			return a
+		}
+		return n
+	}
+	b, err := json.Marshal(canon(v))
+	if err != nil {
+		return "", false
+	}
+	return string(b), true
+}
+
+// uniqueItemKey_DeprecatedShapeCircle_number writes the number s in one form: its
+// significant digits as d.ddd, and the exponent, such as 9.007199254740993e15. A
+// number with an exponent beyond a billion is left as it is.
+func uniqueItemKey_DeprecatedShapeCircle_number(s string) json.Number {
+	neg := strings.HasPrefix(s, "-")
+	mantissa, exp := strings.TrimPrefix(s, "-"), 0
+	if i := strings.IndexAny(mantissa, "eE"); i >= 0 {
+		e, err := strconv.Atoi(mantissa[i+1:])
+		if err != nil || e > 1e9 || e < -1e9 {
+			return json.Number(s)
+		}
+		mantissa, exp = mantissa[:i], e
+	}
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	all := intPart + frac
+	trimmed := strings.TrimLeft(all, "0")
+	digits := strings.TrimRight(trimmed, "0")
+	if digits == "" {
+		return "0"
+	}
+	// The value is 0.digits times 10 to the power of point.
+	point := exp + len(intPart) - (len(all) - len(trimmed))
+	canonical := digits[:1]
+	if len(digits) > 1 {
+		canonical += "." + digits[1:]
+	}
+	canonical += "e" + strconv.Itoa(point-1)
+	if neg {
+		canonical = "-" + canonical
+	}
+	return json.Number(canonical)
 }
 
 // unmarshalIntegral_Deprecated decodes data into v again, as json.Unmarshal does,
