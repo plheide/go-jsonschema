@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/conditionalDiscriminator/vacuousIf",
+  "title": "VacuousIf",
+  "description": "An optional discriminator. When kind is absent, an if that does not require kind holds vacuously, so its then applies, and one that requires kind is false, so its else applies.",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["float", "enum", "boolean"] },
+    "values": { "type": "array", "items": { "type": "string" } },
+    "unit": { "type": "string" },
+    "label": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "enum" } } },
+      "then": { "required": ["values"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "float" } }, "required": ["kind"] },
+      "then": { "required": ["unit"] },
+      "else": { "required": ["label"] }
+    }
+  ]
+}

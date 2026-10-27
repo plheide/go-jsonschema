@@ -149,16 +149,22 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Empty(t, filterFidelityWarnings(warnings))
 	})
 
-	t.Run("a conditional the allOf merge drops is reported", func(t *testing.T) {
+	t.Run("a conditional on an optional discriminator that an if does not require is compiled", func(t *testing.T) {
 		t.Parallel()
 
-		warnings := generateWithWarnerCapture(t,
-			"./data/fidelityWarnings/conditionalVacuousIf/conditionalVacuousIf.json")
+		// When the discriminator is absent, that if holds vacuously and its
+		// then applies (TestConditionalDiscriminatorVacuousIf).
+		warnings := generateWithWarnerCapture(t, "./data/conditionalDiscriminator/vacuousIf/vacuousIf.json")
 
-		assert.Contains(t, strings.Join(filterFidelityWarnings(warnings), "\n"),
-			"does not enforce all it declares: if/then/else not compiled (in allOf branch)")
-		assert.Contains(t, strings.Join(warnings, "\n"),
-			"must be listed in `required`, or in the `required` of every `if`")
+		assert.Empty(t, warnings)
+	})
+
+	t.Run("a conditional keyed on a property a nested object holds is compiled", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t, "./data/conditionalDiscriminator/nestedPath/nestedPath.json")
+
+		assert.Empty(t, warnings)
 	})
 
 	t.Run("a conditional no validator attaches to is reported", func(t *testing.T) {

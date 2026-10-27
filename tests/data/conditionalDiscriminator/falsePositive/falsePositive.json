@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.com/falsePositive",
+  "description": "Detection once declined an optional discriminator. JSON Schema reads an if that does not require mode as true when mode is absent, so its then applies, which is compiled now.",
   "type": "object",
   "properties": {
     "mode": {
