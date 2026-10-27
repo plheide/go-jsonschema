@@ -13,6 +13,9 @@
     "nested": { "default": { "a": [1, 2.5] } },
     "pinned": { "const": 1 },
     "pinnedItems": { "type": "array", "items": { "const": 1 } },
+    "big": { "const": 9007199254740993 },
+    "near": { "const": 9007199254740992 },
+    "bigItems": { "type": "array", "items": { "const": 9007199254740993 } },
     "holder": {
       "type": "object",
       "properties": { "x": { "$ref": "#/definitions/anything" } }

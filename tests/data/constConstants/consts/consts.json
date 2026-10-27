@@ -10,6 +10,8 @@
     "ratio": { "type": "number", "const": 0.5 },
     "enabled": { "type": "boolean", "const": true },
     "untyped": { "const": "fixed" },
+    "build": { "type": "integer", "const": 9007199254740993 },
+    "precise": { "type": "number", "const": 0.1000000000000000000001 },
     "label": { "type": "string", "const": "x" },
     "other": { "$ref": "#/definitions/ConstsLabel" }
   },

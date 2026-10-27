@@ -15,6 +15,9 @@ type Consts struct {
 	// Schema corresponds to the JSON schema field "$schema".
 	Schema *string `json:"$schema,omitempty,omitzero" yaml:"$schema,omitempty" mapstructure:"$schema,omitempty"`
 
+	// Build corresponds to the JSON schema field "build".
+	Build *int `json:"build,omitempty,omitzero" yaml:"build,omitempty" mapstructure:"build,omitempty"`
+
 	// Enabled corresponds to the JSON schema field "enabled".
 	Enabled *bool `json:"enabled,omitempty,omitzero" yaml:"enabled,omitempty" mapstructure:"enabled,omitempty"`
 
@@ -23,6 +26,9 @@ type Consts struct {
 
 	// Other corresponds to the JSON schema field "other".
 	Other *ConstsLabel `json:"other,omitempty,omitzero" yaml:"other,omitempty" mapstructure:"other,omitempty"`
+
+	// Precise corresponds to the JSON schema field "precise".
+	Precise *float64 `json:"precise,omitempty,omitzero" yaml:"precise,omitempty" mapstructure:"precise,omitempty"`
 
 	// Ratio corresponds to the JSON schema field "ratio".
 	Ratio *float64 `json:"ratio,omitempty,omitzero" yaml:"ratio,omitempty" mapstructure:"ratio,omitempty"`
@@ -34,6 +40,7 @@ type Consts struct {
 	Version *int `json:"version,omitempty,omitzero" yaml:"version,omitempty" mapstructure:"version,omitempty"`
 }
 
+const ConstsBuild = 9007199254740993
 const ConstsEnabled = true
 
 type ConstsLabel struct {
@@ -73,11 +80,17 @@ func (j *Consts) UnmarshalJSON(value []byte) error {
 	if plain.Schema != nil && *plain.Schema != "https://example.com/consts/v1" {
 		return fmt.Errorf("field %s: must be equal to %s", "$schema", "https://example.com/consts/v1")
 	}
+	if plain.Build != nil && *plain.Build != 9007199254740993 {
+		return fmt.Errorf("field %s: must be equal to %v", "build", 9007199254740993)
+	}
 	if plain.Enabled != nil && *plain.Enabled != true {
 		return fmt.Errorf("field %s: must be equal to %t", "enabled", true)
 	}
 	if plain.Label != nil && *plain.Label != "x" {
 		return fmt.Errorf("field %s: must be equal to %s", "label", "x")
+	}
+	if plain.Precise != nil && *plain.Precise != 0.1000000000000000000001 {
+		return fmt.Errorf("field %s: must be equal to %v", "precise", 0.1000000000000000000001)
 	}
 	if plain.Ratio != nil && *plain.Ratio != 0.5 {
 		return fmt.Errorf("field %s: must be equal to %v", "ratio", 0.5)
@@ -108,11 +121,17 @@ func (j *Consts) UnmarshalYAML(value *yaml.Node) error {
 	if plain.Schema != nil && *plain.Schema != "https://example.com/consts/v1" {
 		return fmt.Errorf("field %s: must be equal to %s", "$schema", "https://example.com/consts/v1")
 	}
+	if plain.Build != nil && *plain.Build != 9007199254740993 {
+		return fmt.Errorf("field %s: must be equal to %v", "build", 9007199254740993)
+	}
 	if plain.Enabled != nil && *plain.Enabled != true {
 		return fmt.Errorf("field %s: must be equal to %t", "enabled", true)
 	}
 	if plain.Label != nil && *plain.Label != "x" {
 		return fmt.Errorf("field %s: must be equal to %s", "label", "x")
+	}
+	if plain.Precise != nil && *plain.Precise != 0.1000000000000000000001 {
+		return fmt.Errorf("field %s: must be equal to %v", "precise", 0.1000000000000000000001)
 	}
 	if plain.Ratio != nil && *plain.Ratio != 0.5 {
 		return fmt.Errorf("field %s: must be equal to %v", "ratio", 0.5)

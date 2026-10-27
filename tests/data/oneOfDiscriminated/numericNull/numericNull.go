@@ -2,6 +2,7 @@
 
 package test
 
+import "bytes"
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
@@ -45,10 +46,16 @@ func (j *NumericNullWithNullConst1) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw NumericNullWithNullConst1: %w", err)
 	}
+	var numbers map[string]interface{}
+	{
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		_ = dec.Decode(&numbers)
+	}
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithNullConst1: required")
 	}
-	for fieldName, fieldValue := range raw {
+	for fieldName, fieldValue := range numbers {
 		if !strings.EqualFold(fieldName, "version") {
 			continue
 		}
@@ -104,10 +111,16 @@ func (j *NumericNullWithNullConst2) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw NumericNullWithNullConst2: %w", err)
 	}
+	var numbers map[string]interface{}
+	{
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		_ = dec.Decode(&numbers)
+	}
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithNullConst2: required")
 	}
-	for fieldName, fieldValue := range raw {
+	for fieldName, fieldValue := range numbers {
 		if !strings.EqualFold(fieldName, "version") {
 			continue
 		}
@@ -426,10 +439,16 @@ func (j *NumericNullWithZeroConst0) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw NumericNullWithZeroConst0: %w", err)
 	}
+	var numbers map[string]interface{}
+	{
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		_ = dec.Decode(&numbers)
+	}
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithZeroConst0: required")
 	}
-	for fieldName, fieldValue := range raw {
+	for fieldName, fieldValue := range numbers {
 		if !strings.EqualFold(fieldName, "version") {
 			continue
 		}
@@ -485,10 +504,16 @@ func (j *NumericNullWithZeroConst1) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw NumericNullWithZeroConst1: %w", err)
 	}
+	var numbers map[string]interface{}
+	{
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		_ = dec.Decode(&numbers)
+	}
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithZeroConst1: required")
 	}
-	for fieldName, fieldValue := range raw {
+	for fieldName, fieldValue := range numbers {
 		if !strings.EqualFold(fieldName, "version") {
 			continue
 		}

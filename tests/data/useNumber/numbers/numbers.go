@@ -14,6 +14,12 @@ type Anything interface{}
 // Under --use-number, untyped values hold their numbers as json.Number, which
 // keeps them exact.
 type Numbers struct {
+	// Big corresponds to the JSON schema field "big".
+	Big interface{} `json:"big,omitempty,omitzero" yaml:"big,omitempty" mapstructure:"big,omitempty"`
+
+	// BigItems corresponds to the JSON schema field "bigItems".
+	BigItems []interface{} `json:"bigItems,omitempty,omitzero" yaml:"bigItems,omitempty" mapstructure:"bigItems,omitempty"`
+
 	// Count corresponds to the JSON schema field "count".
 	Count *int `json:"count,omitempty,omitzero" yaml:"count,omitempty" mapstructure:"count,omitempty"`
 
@@ -22,6 +28,9 @@ type Numbers struct {
 
 	// Holder corresponds to the JSON schema field "holder".
 	Holder *NumbersHolder `json:"holder,omitempty,omitzero" yaml:"holder,omitempty" mapstructure:"holder,omitempty"`
+
+	// Near corresponds to the JSON schema field "near".
+	Near interface{} `json:"near,omitempty,omitzero" yaml:"near,omitempty" mapstructure:"near,omitempty"`
 
 	// Nested corresponds to the JSON schema field "nested".
 	Nested interface{} `json:"nested,omitempty,omitzero" yaml:"nested,omitempty" mapstructure:"nested,omitempty"`
@@ -42,6 +51,8 @@ type Numbers struct {
 	Values []interface{} `json:"values,omitempty,omitzero" yaml:"values,omitempty" mapstructure:"values,omitempty"`
 }
 
+const NumbersBig = 9007199254740993
+
 type NumbersHolder struct {
 	// X corresponds to the JSON schema field "x".
 	X Anything `json:"x,omitempty,omitzero" yaml:"x,omitempty" mapstructure:"x,omitempty"`
@@ -58,6 +69,7 @@ func (j *NumbersHolder) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+const NumbersNear = 9007199254740992.0
 const NumbersPinned = 1.0
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -66,7 +78,29 @@ func (j *Numbers) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Numbers: %w", err)
 	}
-	for fieldName, fieldValue := range raw {
+	var numbers map[string]interface{}
+	{
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		_ = dec.Decode(&numbers)
+	}
+	for fieldName, fieldValue := range numbers {
+		if !strings.EqualFold(fieldName, "big") {
+			continue
+		}
+		if key, ok := uniqueItemKey_Numbers(fieldValue); !ok || key != "9.007199254740993e15" {
+			return fmt.Errorf("field %s: must be equal to %s", "big", "9007199254740993")
+		}
+	}
+	for fieldName, fieldValue := range numbers {
+		if !strings.EqualFold(fieldName, "near") {
+			continue
+		}
+		if key, ok := uniqueItemKey_Numbers(fieldValue); !ok || key != "9.007199254740992e15" {
+			return fmt.Errorf("field %s: must be equal to %s", "near", "9007199254740992")
+		}
+	}
+	for fieldName, fieldValue := range numbers {
 		if !strings.EqualFold(fieldName, "pinned") {
 			continue
 		}
@@ -82,6 +116,11 @@ func (j *Numbers) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("unmarshal Numbers: %w", err)
 		}
 		plain = retry
+	}
+	for i1 := range plain.BigItems {
+		if key, ok := uniqueItemKey_Numbers(plain.BigItems[i1]); !ok || key != "9.007199254740993e15" {
+			return fmt.Errorf("field %s: must be equal to %s", fmt.Sprintf("%s[%d]", "bigItems", i1), "9007199254740993")
+		}
 	}
 	if v, ok := raw["extra"]; !ok || v == nil {
 		plain.Extra = json.Number("1.5")
@@ -109,6 +148,18 @@ func (j *Numbers) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Numbers: %w", err)
 	}
+	if fieldValue, ok := raw["big"]; ok {
+		if key, ok := uniqueItemKey_Numbers(fieldValue); !ok || key != "9.007199254740993e15" {
+			if _, isFloat := fieldValue.(float64); !ok || !isFloat || key != "9.007199254740992e15" {
+				return fmt.Errorf("field %s: must be equal to %s", "big", "9007199254740993")
+			}
+		}
+	}
+	if fieldValue, ok := raw["near"]; ok {
+		if key, ok := uniqueItemKey_Numbers(fieldValue); !ok || key != "9.007199254740992e15" {
+			return fmt.Errorf("field %s: must be equal to %s", "near", "9007199254740992")
+		}
+	}
 	if fieldValue, ok := raw["pinned"]; ok {
 		if key, ok := uniqueItemKey_Numbers(fieldValue); !ok || key != "1e0" {
 			return fmt.Errorf("field %s: must be equal to %s", "pinned", "1")
@@ -118,6 +169,13 @@ func (j *Numbers) UnmarshalYAML(value *yaml.Node) error {
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal Numbers: %w", err)
+	}
+	for i1 := range plain.BigItems {
+		if key, ok := uniqueItemKey_Numbers(plain.BigItems[i1]); !ok || key != "9.007199254740993e15" {
+			if _, isFloat := plain.BigItems[i1].(float64); !ok || !isFloat || key != "9.007199254740992e15" {
+				return fmt.Errorf("field %s: must be equal to %s", fmt.Sprintf("%s[%d]", "bigItems", i1), "9007199254740993")
+			}
+		}
 	}
 	if v, ok := raw["extra"]; !ok || v == nil {
 		plain.Extra = 1.5

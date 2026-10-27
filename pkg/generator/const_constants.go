@@ -1,8 +1,10 @@
 package generator
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"slices"
 
 	"github.com/plheide/go-jsonschema/pkg/codegen"
@@ -15,7 +17,7 @@ type constProperty struct {
 	typeName  string
 	fieldName string
 	jsonName  string
-	value     any
+	schema    *schemas.Type
 }
 
 // recordConstProperties records each property of struct tt, declared as
@@ -28,20 +30,23 @@ func (o *output) recordConstProperties(typeName string, tt *codegen.StructType) 
 			continue
 		}
 
-		if value, ok := constConstantValue(f.SchemaType); ok {
+		switch f.SchemaType.Const.(type) {
+		case string, bool, int, float64:
 			o.constProperties = append(o.constProperties, constProperty{
 				typeName:  typeName,
 				fieldName: f.Name,
 				jsonName:  f.JSONName,
-				value:     value,
+				schema:    f.SchemaType,
 			})
 		}
 	}
 }
 
-// constConstantValue returns the value of s's const as the constant writes
-// it, or false when it is not a string, a number, an integer or a boolean. An
-// integer is written without a fraction.
+// constConstantValue returns the value of s's const, a string, a number, an
+// integer or a boolean, as the constant writes it. An integer is written
+// without a fraction. A number that a float64 rounds, such as an integer
+// beyond 2^53, is written as the schema writes it, which an int64 or a uint64
+// holds if it is an integer; it returns false for one that is not.
 func constConstantValue(s *schemas.Type) (any, bool) {
 	switch v := s.Const.(type) {
 	case string, bool:
@@ -51,6 +56,10 @@ func constConstantValue(s *schemas.Type) (any, bool) {
 		return int64(v), true
 
 	case float64:
+		if n, ok := preciseConst(s).(json.Number); ok {
+			return exactInteger(n)
+		}
+
 		if slices.Contains(s.Type, schemas.TypeNameInteger) && v == math.Trunc(v) &&
 			v >= math.MinInt64 && v < math.MaxInt64 {
 			return int64(v), true
@@ -62,12 +71,41 @@ func constConstantValue(s *schemas.Type) (any, bool) {
 	return nil, false
 }
 
+// exactInteger returns the integer n writes as an int64, or as a uint64 if an
+// int64 cannot hold it, or false if n is not an integer either holds.
+func exactInteger(n json.Number) (any, bool) {
+	r, ok := new(big.Rat).SetString(string(n))
+	if !ok || !r.IsInt() {
+		return nil, false
+	}
+
+	switch i := r.Num(); {
+	case i.IsInt64():
+		return i.Int64(), true
+
+	case i.IsUint64():
+		return i.Uint64(), true
+	}
+
+	return nil, false
+}
+
 // declareConstConstants declares an exported, untyped constant for each
 // recorded property, named after its struct and field, such as ShapeKind. A
 // name another declaration has taken is suffixed, as an enum constant's is, and
-// reported.
+// reported, as is a number that no Go value holds exactly, which has none.
 func (g *Generator) declareConstConstants(o *output) {
 	for _, p := range o.constProperties {
+		value, ok := constConstantValue(p.schema)
+		if !ok {
+			g.warner(fmt.Sprintf(
+				"Const of %s property %q: no Go value holds %v exactly, so no constant is declared for it",
+				p.typeName, p.jsonName, p.schema.ConstExact,
+			))
+
+			continue
+		}
+
 		name := p.typeName + p.fieldName
 
 		candidate := name
@@ -82,7 +120,7 @@ func (g *Generator) declareConstConstants(o *output) {
 			))
 		}
 
-		o.file.Package.AddDecl(&codegen.Constant{Name: candidate, Value: p.value})
+		o.file.Package.AddDecl(&codegen.Constant{Name: candidate, Value: value})
 	}
 
 	o.constProperties = nil

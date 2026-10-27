@@ -142,7 +142,7 @@ func constRootAsEnum(root *schemas.Type) (*schemas.Type, error) {
 
 	enumRoot := *root
 	enumRoot.Enum = []any{root.Const}
-	enumRoot.Const = nil
+	enumRoot.Const, enumRoot.ConstExact = nil, nil
 	enumRoot.ConstIsSet = false
 
 	return &enumRoot, nil
@@ -160,7 +160,7 @@ func narrowEnumToConst(root *schemas.Type) (*schemas.Type, error) {
 
 	narrowed := *root
 	narrowed.Enum = []any{root.Const}
-	narrowed.Const = nil
+	narrowed.Const, narrowed.ConstExact = nil, nil
 	narrowed.ConstIsSet = false
 
 	if len(root.XEnumVarnames) == len(root.Enum) {
@@ -1155,7 +1155,7 @@ func (g *schemaGenerator) structFieldValidators(
 					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
 					minimum:          f.SchemaType.Minimum,
 					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
-					constVal:         f.SchemaType.Const,
+					constVal:         preciseConst(f.SchemaType),
 					roundToInt:       strings.Contains(v.Type, "int"),
 				})
 			}
@@ -1344,8 +1344,9 @@ func (g *schemaGenerator) untypedConstValidatorFor(owner string, s *schemas.Type
 		return nil
 	}
 
-	encoded, err := json.Marshal(s.Const)
-	canonical, ok := canonicalKey(s.Const)
+	exact := exactConst(s)
+	encoded, err := json.Marshal(exact)
+	canonical, ok := canonicalKey(exact)
 
 	if err != nil || !ok {
 		g.warner(fmt.Sprintf("schema fidelity: const of %q is not checked: it has no JSON encoding", owner))
@@ -1353,7 +1354,19 @@ func (g *schemaGenerator) untypedConstValidatorFor(owner string, s *schemas.Type
 		return nil
 	}
 
-	return &untypedConstValidator{jsonName: owner, encoded: string(encoded), canonical: canonical}
+	v := &untypedConstValidator{
+		jsonName:  owner,
+		encoded:   string(encoded),
+		canonical: canonical,
+		hasNumber: holdsNumber(exact),
+	}
+
+	if rounded, ok := canonicalKey(s.Const); ok && rounded != canonical {
+		_, v.isNumber = exact.(json.Number)
+		v.rounded = rounded
+	}
+
+	return v
 }
 
 // containerElement steps from an inline array or map to the element it holds,

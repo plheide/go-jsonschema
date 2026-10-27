@@ -44,6 +44,15 @@ func TestElementConstraints(t *testing.T) {
 		{`{"tag": "v2"}`, `field tag: must be equal to "v1"`},
 		{`{"tag": null}`, `field tag: must be equal to "v1"`},
 
+		// A number beyond 2^53 is compared as the schema writes it, not as a
+		// float64 rounds it: in JSON a property is read exactly, and yaml.v3
+		// decodes an integer exactly. A value written with a fraction is
+		// one in YAML too, which yaml.v3 decodes as a float64, and a float64
+		// holds the const as it holds that value.
+		{`{"bigTag": 9007199254740993, "bigTags": [9007199254740993], "bigPairs": [[9007199254740993]]}`, ""},
+		{`{"bigTag": 9007199254740993.0, "bigTags": [9007199254740993.0]}`, ""},
+		{`{"bigTag": 9007199254740992}`, "field bigTag: must be equal to 9007199254740993"},
+
 		// A nested array has its own bounds, and only the field has the
 		// field's: an inner array of one item passes the outer minItems.
 		{`{"grid": [["a"]]}`, "field grid length: must be >= 2"},
@@ -73,5 +82,20 @@ func TestElementConstraints(t *testing.T) {
 		require.ErrorContains(t, json.Unmarshal([]byte(`{"TAG": "v2"}`), &fromJSON), `field tag: must be equal to "v1"`)
 		require.NoError(t, yamlv3.Unmarshal([]byte(`{"TAG": "v2"}`), &fromYAML))
 		assert.Equal(t, map[string]string{"TAG": "v2"}, fromYAML.AdditionalProperties)
+	})
+
+	// In JSON without --use-number, an element's numbers are float64s, which
+	// hold 9007199254740992 for both 9007199254740992 and 9007199254740993.
+	// yaml.v3 decodes an integer exactly.
+	t.Run("an element beyond 2^53 is compared as its decoder holds it", func(t *testing.T) {
+		t.Parallel()
+
+		const input = `{"bigTags": [9007199254740992]}`
+
+		var fromJSON, fromYAML testElements.Elements
+
+		require.NoError(t, json.Unmarshal([]byte(input), &fromJSON))
+		require.ErrorContains(t, yamlv3.Unmarshal([]byte(input), &fromYAML),
+			"field bigTags[0]: must be equal to 9007199254740993")
 	})
 }

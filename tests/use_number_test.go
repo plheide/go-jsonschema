@@ -78,6 +78,23 @@ func TestUseNumber(t *testing.T) {
 			"field pinnedItems[1]: must be equal to 1")
 	})
 
+	// A float64 holds 9007199254740992 for both 9007199254740992 and
+	// 9007199254740993, but json.Number tells them apart, as the schema does.
+	t.Run("a const beyond 2^53 is compared exactly", func(t *testing.T) {
+		t.Parallel()
+
+		decode(t, `{"big": 9007199254740993, "near": 9007199254740992, "bigItems": [9007199254740993]}`)
+
+		for input, want := range map[string]string{
+			`{"big": 9007199254740992}`:        "field big: must be equal to 9007199254740993",
+			`{"near": 9007199254740993}`:       "field near: must be equal to 9007199254740992",
+			`{"bigItems": [9007199254740992]}`: "field bigItems[0]: must be equal to 9007199254740993",
+		} {
+			var v testUseNumber.Numbers
+			require.ErrorContains(t, json.Unmarshal([]byte(input), &v), want, input)
+		}
+	})
+
 	t.Run("input that is not JSON gets json.Unmarshal's error", func(t *testing.T) {
 		t.Parallel()
 
