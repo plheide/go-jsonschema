@@ -325,6 +325,52 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Empty(t, warnings, "an if alone, a vacuous then and else, and a compiled discriminator lose nothing")
 	})
 
+	t.Run("keywords no generated code checks are reported once for each type", func(t *testing.T) {
+		t.Parallel()
+
+		const schema = "./data/fidelityWarnings/unenforcedKeywords/unenforcedKeywords.json"
+
+		notEnforced := func(typeName, what string) string {
+			return "schema fidelity: type " + typeName + " does not enforce all it declares: " + what
+		}
+
+		// The allOf merge carries the maxProperties of the definition it refers
+		// to, besides its own minProperties, and a struct whose allOf the
+		// conditional discriminator compiles, which is not merged, reports its
+		// own. Subschemas of annotations alone admit every value, so they are
+		// not reported. A then that declares only unchecked keywords is not
+		// vacuous, so its conditional is reported. A type that falls back to
+		// interface{} lists them with what else it drops: those of its own,
+		// which a primitive allOf merge drops, and those of its branches,
+		// which an anyOf of an object and a string leaves ungenerated.
+		assert.ElementsMatch(t, []string{
+			"schema fidelity: type UnenforcedKeywordsEither falls back to interface{} due to anyOf with both " +
+				"object and non-object branches; declared but not enforced: 1 declared property(ies), minProperties",
+			"schema fidelity: type UnenforcedKeywordsLoose falls back to interface{} due to allOf merge " +
+				"produced empty result; declared but not enforced: patternProperties",
+			notEnforced("Base", "maxProperties not checked"),
+			notEnforced("UnenforcedKeywords", "minProperties, propertyNames not checked"),
+			notEnforced("UnenforcedKeywordsLabels", "patternProperties not checked"),
+			notEnforced("UnenforcedKeywordsMerged", "maxProperties, minProperties not checked"),
+			notEnforced("UnenforcedKeywordsMode", "if/then/else not compiled"),
+			notEnforced("UnenforcedKeywordsRows", "unevaluatedItems not checked"),
+			notEnforced("UnenforcedKeywordsShape", "minProperties not checked"),
+			notEnforced("UnenforcedKeywordsShipping", "dependentRequired, dependentSchemas not checked"),
+			notEnforced("UnenforcedKeywordsStrict", "unevaluatedProperties not checked"),
+			notEnforced("UnenforcedKeywordsTags", "contains, maxContains, minContains not checked"),
+		}, filterFidelityWarnings(generateWithWarnerCapture(t, schema)))
+
+		// A type that falls back to interface{} is still reported: its shape
+		// is lost whether or not anything is enforced.
+		cfg := basicConfig
+		cfg.OnlyModels = true
+
+		for _, w := range filterFidelityWarnings(generateWithConfigAndWarnerCapture(t, cfg, schema)) {
+			assert.NotContains(t, w, "does not enforce all it declares",
+				"only models enforce nothing, so nothing is reported as not checked")
+		}
+	})
+
 	t.Run("schema with no enforcement-implying keywords stays silent", func(t *testing.T) {
 		t.Parallel()
 

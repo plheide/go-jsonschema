@@ -15,7 +15,6 @@
     "extra": { "$ref": "#/definitions/raw" },
     "tags": {
       "type": "object",
-      "patternProperties": { "^[a-z]+$": { "type": "string" } },
       "additionalProperties": false
     }
   },

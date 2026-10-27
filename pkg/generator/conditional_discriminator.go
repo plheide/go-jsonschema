@@ -755,7 +755,10 @@ func ifClauseHasExtraStructure(ifc *schemas.Type) bool {
 		ifc.Items != nil ||
 		ifc.AdditionalItems != nil ||
 		len(ifc.DependentRequired) > 0 ||
-		len(ifc.DependentSchemas) > 0
+		len(ifc.DependentSchemas) > 0 ||
+		ifc.PropertyNames != nil ||
+		ifc.Contains != nil || ifc.MinContains != nil || ifc.MaxContains != nil ||
+		ifc.UnevaluatedProperties != nil || ifc.UnevaluatedItems != nil
 }
 
 // discriminatorInvalidReason returns "" when the parent schema validly

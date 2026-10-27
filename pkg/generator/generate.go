@@ -50,6 +50,9 @@ type Generator struct {
 	// reportedConditionals holds the schemas whose uncompiled conditional or
 	// not has been reported, so it is not reported a second time.
 	reportedConditionals map[*schemas.Type]struct{}
+	// reportedKeywords holds the schemas whose unchecked keywords have been
+	// reported, so they are not reported a second time.
+	reportedKeywords map[*schemas.Type]struct{}
 	// reportedDiscriminators holds the conditional-discriminator declines
 	// reported for a schema, which detection, run from more than one place,
 	// would otherwise repeat.
@@ -120,6 +123,7 @@ func New(config Config) (*Generator, error) {
 		mergingAllOf:           map[*schemas.Type]*schemas.Type{},
 		resolvingRefs:          map[*schemas.Type]struct{}{},
 		reportedConditionals:   map[*schemas.Type]struct{}{},
+		reportedKeywords:       map[*schemas.Type]struct{}{},
 		reportedDiscriminators: map[discriminatorDecline]struct{}{},
 		declaring:              map[*schemas.Type]struct{}{},
 		outputs:                map[string]*output{},

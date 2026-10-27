@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Keywords that no generated code checks, each reported once for the type that declares them: by the root, a definition, an allOf merge, a struct whose allOf the conditional discriminator compiles, and properties. A type that falls back to interface{} lists them, its own and those of its branches, with what else it drops. A $ref leaves them to its definition, and the goJSONSchema extension to the user's type. minContains without contains, and subschemas that admit every value, true or one of annotations alone, check nothing and are not reported.",
+  "minProperties": 1,
+  "propertyNames": { "pattern": "^[a-z]+$" },
+  "definitions": {
+    "base": {
+      "type": "object",
+      "maxProperties": 4,
+      "properties": {
+        "id": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "labels": {
+      "type": "object",
+      "patternProperties": { "^x-": { "type": "string" } },
+      "additionalProperties": { "type": "string" }
+    },
+    "shipping": {
+      "type": "object",
+      "properties": {
+        "address": { "type": "string" },
+        "zip": { "type": "string" }
+      },
+      "dependencies": {
+        "address": ["zip"],
+        "zip": { "required": ["address"] }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "contains": { "const": "main" },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "codes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minContains": 2.0
+    },
+    "rows": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "unevaluatedItems": false
+    },
+    "strict": {
+      "type": "object",
+      "properties": {
+        "a": { "type": "string" }
+      },
+      "unevaluatedProperties": false
+    },
+    "open": {
+      "type": "object",
+      "properties": {
+        "a": { "type": "string" }
+      },
+      "unevaluatedProperties": true,
+      "propertyNames": { "description": "Any name." }
+    },
+    "annotated": {
+      "type": "object",
+      "properties": {
+        "a": { "type": "string" }
+      },
+      "patternProperties": { "^x-": {} },
+      "propertyNames": { "default": "a" },
+      "unevaluatedProperties": { "readOnly": true, "x-note": "Any value." }
+    },
+    "loose": {
+      "type": "object",
+      "patternProperties": { "^x-": { "type": "string" } },
+      "allOf": [{ "type": "string" }]
+    },
+    "either": {
+      "anyOf": [
+        {
+          "type": "object",
+          "minProperties": 1,
+          "properties": {
+            "a": { "type": "string" }
+          }
+        },
+        { "type": "string" }
+      ]
+    },
+    "merged": {
+      "allOf": [
+        { "$ref": "#/definitions/base" },
+        {
+          "type": "object",
+          "minProperties": 2,
+          "properties": {
+            "name": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "ref": { "$ref": "#/definitions/base" },
+    "custom": {
+      "type": "object",
+      "minProperties": 1,
+      "goJSONSchema": { "type": "map[string]any" }
+    },
+    "mode": {
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string" }
+      },
+      "if": { "properties": { "kind": { "const": "a" } } },
+      "then": { "minProperties": 2 }
+    },
+    "shape": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "kind": { "type": "string", "enum": ["circle", "square"] },
+        "radius": { "type": "number" }
+      },
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "circle" } } }, "then": { "required": ["radius"] } }
+      ]
+    }
+  }
+}
