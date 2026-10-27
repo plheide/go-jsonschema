@@ -36,6 +36,8 @@ Not offered upstream yet:
 * conditionals on the object itself, and on a discriminator declared through a `$ref` (made on `main`);
 * the changes made on `main` for v0.27.0:
   * decoding from JSON an `integer` written with a fraction or an exponent, such as `2.0` or `1e2`;
+  * checking the values arrays and maps hold, at every depth, a `const` of no declared type, and `uniqueItems`;
+  * checking the object's own keywords on a struct merged from an `anyOf`;
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 
