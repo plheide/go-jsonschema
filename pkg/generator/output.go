@@ -18,7 +18,10 @@ type output struct {
 	declsBySchema map[*schemas.Type]*codegen.TypeDecl
 	// anyOfVariants holds, for a type merged from an anyOf, the Go type of
 	// each branch, so its validator can name the types that were declared.
-	anyOfVariants           map[*schemas.Type][]string
+	anyOfVariants map[*schemas.Type][]string
+	// anyOfParents maps a type merged from an anyOf to the schema the anyOf
+	// is declared on.
+	anyOfParents            map[*schemas.Type]anyOfParent
 	unmarshallersByTypeDecl map[*codegen.TypeDecl]bool
 	// primitiveWrapperKinds holds the JSON kinds each primitive union wrapper
 	// accepts.
@@ -28,6 +31,9 @@ type output struct {
 	// integralHelperName is the name of the file's helper that retries a
 	// JSON decode with integral numbers written as integers, once declared.
 	integralHelperName string
+	// uniqueKeyHelperName is the name of the file's helper that keys the
+	// items of a uniqueItems check, once declared.
+	uniqueKeyHelperName string
 }
 
 func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.TypeDecl {

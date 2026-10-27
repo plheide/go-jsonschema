@@ -33,6 +33,9 @@ func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw ComposedWithMultipleRequired: %w", err)
 	}
+	if _, ok := raw["directField"]; raw != nil && !ok {
+		return fmt.Errorf("field directField in ComposedWithMultipleRequired: required")
+	}
 	var composedWithMultipleRequired_0 MultipleRequiredBase
 	var composedWithMultipleRequired_1 MultipleRequiredMiddle
 	var errs []error
@@ -82,6 +85,9 @@ func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw ComposedWithMultipleRequired: %w", err)
+	}
+	if _, ok := raw["directField"]; raw != nil && !ok {
+		return fmt.Errorf("field directField in ComposedWithMultipleRequired: required")
 	}
 	var composedWithMultipleRequired_0 MultipleRequiredBase
 	var composedWithMultipleRequired_1 MultipleRequiredMiddle

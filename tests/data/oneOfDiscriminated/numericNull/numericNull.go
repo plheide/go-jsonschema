@@ -6,6 +6,7 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
+import "strings"
 
 type NumericNull struct {
 	// A numeric discriminator beside a null one. null is routed before the numeric
@@ -44,6 +45,14 @@ func (j *NumericNullWithNullConst1) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithNullConst1: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "version") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "1" {
+			return fmt.Errorf("field %s: must be equal to %s", "version", "1")
+		}
+	}
 	type Plain NumericNullWithNullConst1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -61,6 +70,11 @@ func (j *NumericNullWithNullConst1) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithNullConst1: required")
+	}
+	if fieldValue, ok := raw["version"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "1" {
+			return fmt.Errorf("field %s: must be equal to %s", "version", "1")
+		}
 	}
 	type Plain NumericNullWithNullConst1
 	var plain Plain
@@ -88,6 +102,14 @@ func (j *NumericNullWithNullConst2) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithNullConst2: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "version") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "2" {
+			return fmt.Errorf("field %s: must be equal to %s", "version", "2")
+		}
+	}
 	type Plain NumericNullWithNullConst2
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -105,6 +127,11 @@ func (j *NumericNullWithNullConst2) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithNullConst2: required")
+	}
+	if fieldValue, ok := raw["version"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "2" {
+			return fmt.Errorf("field %s: must be equal to %s", "version", "2")
+		}
 	}
 	type Plain NumericNullWithNullConst2
 	var plain Plain
@@ -395,6 +422,14 @@ func (j *NumericNullWithZeroConst0) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithZeroConst0: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "version") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "0" {
+			return fmt.Errorf("field %s: must be equal to %s", "version", "0")
+		}
+	}
 	type Plain NumericNullWithZeroConst0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -412,6 +447,11 @@ func (j *NumericNullWithZeroConst0) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithZeroConst0: required")
+	}
+	if fieldValue, ok := raw["version"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "0" {
+			return fmt.Errorf("field %s: must be equal to %s", "version", "0")
+		}
 	}
 	type Plain NumericNullWithZeroConst0
 	var plain Plain
@@ -439,6 +479,14 @@ func (j *NumericNullWithZeroConst1) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithZeroConst1: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "version") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "1" {
+			return fmt.Errorf("field %s: must be equal to %s", "version", "1")
+		}
+	}
 	type Plain NumericNullWithZeroConst1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -456,6 +504,11 @@ func (j *NumericNullWithZeroConst1) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["version"]; raw != nil && !ok {
 		return fmt.Errorf("field version in NumericNullWithZeroConst1: required")
+	}
+	if fieldValue, ok := raw["version"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "1" {
+			return fmt.Errorf("field %s: must be equal to %s", "version", "1")
+		}
 	}
 	type Plain NumericNullWithZeroConst1
 	var plain Plain

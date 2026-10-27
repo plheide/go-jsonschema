@@ -190,10 +190,11 @@ When generated code doesn't check something a schema declares, the generator say
 * `schema fidelity: type X falls back to interface{} due to <reason>; declared but not enforced: <keywords>` means
   the type became `interface{}`.
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
-  `oneOf`, an `if`/`then`/`else`, a `not` or a `false` schema.
+  `oneOf`, an `if`/`then`/`else`, a `not` or a `false` schema, or the keywords of a property that an `anyOf` branch
+  declares as well.
 
-The keywords listed as unsupported under [Validation](#validation), such as `uniqueItems` and `patternProperties`,
-are not reported.
+The keywords listed as unsupported under [Validation](#validation), such as `patternProperties` and `contains`, are
+not reported.
 
 ### Options for names, types and tags
 
@@ -238,12 +239,21 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   has: exactly one for a `oneOf`, at least one for an `anyOf`.
 * An array type declared in `$defs` checks its own `minItems` and `maxItems`.
 * A property whose `type` admits `null` but whose `enum` does not list it rejects a `null`.
+* The keywords of the values an array or a map holds are checked, at every depth: `minLength`, `maxLength`,
+  `pattern`, `minimum`, `maximum`, `multipleOf`, `const`, a nested array's own `minItems` and `maxItems`, and the
+  others a property gets. Upstream checked them on a property only.
+* `uniqueItems`, which compares items as JSON, so `1` and `1.0` are equal, as are objects with the same members.
+* A `const` on a schema that declares no type, whose value is an `interface{}`.
+* A struct merged from an `anyOf` checks the keywords of the object the `anyOf` is declared on: the properties it
+  requires, or every branch requires, and those of its own properties. Upstream checked only the branches.
 
 ### Other differences
 
 * A required property named `-` is decoded. Upstream tagged it `json:"-"`, which `encoding/json` skips.
 * An `integer` written with a fraction or an exponent, such as `2.0` or `1e2`, is decoded from JSON, as JSON Schema
   counts it as an integer. Upstream's code rejected it, as `encoding/json` does for a Go integer.
+* A nested array is held to its own `minItems` and `maxItems`. Upstream held each level to the property's, which
+  rejected valid input.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
   Upstream generated a tag that decodes nothing.
 * A `null` where a schema belongs, such as an entry of `allOf`, a property or a definition, stops generation with an
@@ -306,10 +316,11 @@ only specific validations remain to be fully implemented.
     * [X] `minLength`
     * [X] `pattern`
   * [ ] Array validation (§6.4)
-    * [X] `items` (the draft-07 tuple form gives `[]interface{}`)
+    * [X] `items` (its keywords are checked on every item, at every depth, as are those of a map's values; the
+      draft-07 tuple form gives `[]interface{}`)
     * [x] `maxItems`
     * [x] `minItems`
-    * [ ] `uniqueItems`
+    * [x] `uniqueItems`
     * [ ] `additionalItems` (only `false` after tuple-form `items` is checked, as a length limit)
     * [ ] `contains`
   * [ ] Object validation (§6.5)
@@ -328,9 +339,9 @@ only specific validations remain to be fully implemented.
     * [x] `else`
   * [ ] Boolean subschemas (§6.7)
     * [x] `allOf` (merged into one type)
-    * [x] `anyOf` (merged into one type that requires a match with at least one branch; a mix of object and
-      non-object branches is `interface{}`; branches that only list `required` need at least one of their property
-      sets present)
+    * [x] `anyOf` (merged into one type that requires a match with at least one branch, and checks the keywords of
+      the object it is declared on, except on a property a branch declares as well; a mix of object and non-object
+      branches is `interface{}`; branches that only list `required` need at least one of their property sets present)
     * [x] `oneOf` (primitive variants — `string`, `number`, `boolean`, `null` — become a wrapper; object variants
       become a holder that dispatches on a `const` discriminator or tries each variant; branches that only list
       `required` need exactly one of their property sets present; **note**: `integer`-typed variants are not

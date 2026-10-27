@@ -2,12 +2,14 @@
 
 package test
 
+import "bytes"
 import "encoding/json"
 import "errors"
 import "fmt"
 import "github.com/go-viper/mapstructure/v2"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
+import "strconv"
 import "strings"
 
 type BaseObject struct {
@@ -69,6 +71,33 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw ComposedWithAllOfAndProperties: %w", err)
 	}
+	var numbers map[string]interface{}
+	{
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		_ = dec.Decode(&numbers)
+	}
+	if _, ok := raw["BaseField"]; raw != nil && !ok {
+		return fmt.Errorf("field BaseField in ComposedWithAllOfAndProperties: required")
+	}
+	for fieldName, fieldValue := range numbers {
+		if !strings.EqualFold(fieldName, "DirectField") {
+			continue
+		}
+		if a0, ok := fieldValue.([]interface{}); ok {
+			seen := make(map[string]int, len(a0))
+			for i, item := range a0 {
+				key, ok := uniqueItemKey_ComposedWithAllOfAndProperties(item)
+				if !ok {
+					continue
+				}
+				if first, ok := seen[key]; ok {
+					return fmt.Errorf("field %s: items %d and %d are equal; they must be unique", "DirectField", first, i)
+				}
+				seen[key] = i
+			}
+		}
+	}
 	var composedWithAllOfAndProperties_0 BaseObject
 	var errs []error
 	if err := composedWithAllOfAndProperties_0.UnmarshalJSON(value); err != nil {
@@ -115,6 +144,24 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw ComposedWithAllOfAndProperties: %w", err)
 	}
+	if _, ok := raw["BaseField"]; raw != nil && !ok {
+		return fmt.Errorf("field BaseField in ComposedWithAllOfAndProperties: required")
+	}
+	if fieldValue, ok := raw["DirectField"]; ok {
+		if a0, ok := fieldValue.([]interface{}); ok {
+			seen := make(map[string]int, len(a0))
+			for i, item := range a0 {
+				key, ok := uniqueItemKey_ComposedWithAllOfAndProperties(item)
+				if !ok {
+					continue
+				}
+				if first, ok := seen[key]; ok {
+					return fmt.Errorf("field %s: items %d and %d are equal; they must be unique", "DirectField", first, i)
+				}
+				seen[key] = i
+			}
+		}
+	}
 	var composedWithAllOfAndProperties_0 BaseObject
 	var errs []error
 	if err := composedWithAllOfAndProperties_0.UnmarshalYAML(value); err != nil {
@@ -153,4 +200,78 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = ComposedWithAllOfAndProperties(plain)
 	return nil
+}
+
+// uniqueItemKey_ComposedWithAllOfAndProperties returns the JSON encoding of v with
+// each number written in one form, so that items JSON Schema counts as equal, such
+// as 1 and 1.0, get the same key, and integers a float64 cannot tell apart do not.
+// It reports false for a value with no JSON encoding. Every uniqueItems check in
+// this file calls it; it is named after the first, so that no other file of the
+// package declares it.
+func uniqueItemKey_ComposedWithAllOfAndProperties(v interface{}) (string, bool) {
+	var canon func(interface{}) interface{}
+	canon = func(n interface{}) interface{} {
+		switch n := n.(type) {
+		case json.Number:
+			return uniqueItemKey_ComposedWithAllOfAndProperties_number(string(n))
+		case float64:
+			return uniqueItemKey_ComposedWithAllOfAndProperties_number(strconv.FormatFloat(n, 'g', -1, 64))
+		case int:
+			return uniqueItemKey_ComposedWithAllOfAndProperties_number(strconv.Itoa(n))
+		case uint64:
+			return uniqueItemKey_ComposedWithAllOfAndProperties_number(strconv.FormatUint(n, 10))
+		case map[string]interface{}:
+			m := make(map[string]interface{}, len(n))
+			for k, e := range n {
+				m[k] = canon(e)
+			}
+			return m
+		case []interface{}:
+			a := make([]interface{}, len(n))
+			for i, e := range n {
+				a[i] = canon(e)
+			}
+			return a
+		}
+		return n
+	}
+	b, err := json.Marshal(canon(v))
+	if err != nil {
+		return "", false
+	}
+	return string(b), true
+}
+
+// uniqueItemKey_ComposedWithAllOfAndProperties_number writes the number s in one
+// form: its significant digits as d.ddd, and the exponent, such as
+// 9.007199254740993e15. A number with an exponent beyond a billion is left as it
+// is.
+func uniqueItemKey_ComposedWithAllOfAndProperties_number(s string) json.Number {
+	neg := strings.HasPrefix(s, "-")
+	mantissa, exp := strings.TrimPrefix(s, "-"), 0
+	if i := strings.IndexAny(mantissa, "eE"); i >= 0 {
+		e, err := strconv.Atoi(mantissa[i+1:])
+		if err != nil || e > 1e9 || e < -1e9 {
+			return json.Number(s)
+		}
+		mantissa, exp = mantissa[:i], e
+	}
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	all := intPart + frac
+	trimmed := strings.TrimLeft(all, "0")
+	digits := strings.TrimRight(trimmed, "0")
+	if digits == "" {
+		return "0"
+	}
+	// The value is 0.digits times 10 to the power of point.
+	point := exp + len(intPart) - (len(all) - len(trimmed))
+	canonical := digits[:1]
+	if len(digits) > 1 {
+		canonical += "." + digits[1:]
+	}
+	canonical += "e" + strconv.Itoa(point-1)
+	if neg {
+		canonical = "-" + canonical
+	}
+	return json.Number(canonical)
 }

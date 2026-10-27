@@ -12,16 +12,16 @@ import (
 	testOverlapping "github.com/plheide/go-jsonschema/tests/data/presenceCount/overlapping"
 )
 
-// presenceCase is an input, decoded both as JSON and as YAML, and the error it
+// decodeCase is an input, decoded both as JSON and as YAML, and the error it
 // must give: "" when it must be accepted.
-type presenceCase struct {
+type decodeCase struct {
 	input   string
 	wantErr string
 }
 
-// checkPresence decodes each case into a new T, from JSON and from YAML, which
+// checkDecode decodes each case into a new T, from JSON and from YAML, which
 // reads the same text.
-func checkPresence[T any](t *testing.T, cases []presenceCase) {
+func checkDecode[T any](t *testing.T, cases []decodeCase) {
 	t.Helper()
 
 	for _, tc := range cases {
@@ -51,7 +51,7 @@ func TestPresenceCount(t *testing.T) {
 
 		const each = "OneOfRequiredOnly: exactly one of [value], [ref] must be present"
 
-		checkPresence[testOneOfRequiredOnly.OneOfRequiredOnly](t, []presenceCase{
+		checkDecode[testOneOfRequiredOnly.OneOfRequiredOnly](t, []decodeCase{
 			// A null passes, as it passes the required checks.
 			{`null`, ""},
 			{`{"kind": "line", "value": 0}`, ""},
@@ -64,7 +64,7 @@ func TestPresenceCount(t *testing.T) {
 	t.Run("anyOf: at least one branch", func(t *testing.T) {
 		t.Parallel()
 
-		checkPresence[testAnyOfRequiredOnly.AnyOfRequiredOnly](t, []presenceCase{
+		checkDecode[testAnyOfRequiredOnly.AnyOfRequiredOnly](t, []decodeCase{
 			{`null`, ""},
 			{`{"email": "a@example.com"}`, ""},
 			{`{"phone": "1"}`, ""},
@@ -78,7 +78,7 @@ func TestPresenceCount(t *testing.T) {
 
 		const each = "Overlapping: exactly one of [a], [a, b], [50%] must be present"
 
-		checkPresence[testOverlapping.Overlapping](t, []presenceCase{
+		checkDecode[testOverlapping.Overlapping](t, []decodeCase{
 			{`{"a": "x"}`, ""},
 			{`{"50%": "x"}`, ""},
 			{`{"b": "x"}`, each + ", got 0"},

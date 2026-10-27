@@ -551,7 +551,6 @@ func (g *schemaGenerator) generateEnumOrOneOf(t *schemas.Type, scope nameScope) 
 	return nil, false, nil
 }
 
-//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		return g.alreadyDeclaredType(t, decl, scope)
@@ -634,6 +633,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	switch tt := theType.(type) {
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
+			validators = append(validators, g.anyOfParentValidators(t, tt, decl.Name, scope)...)
 			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
 			validators = append(validators, presenceCountValidators(t, decl.Name)...)
 			g.generateUnmarshaler(&decl, validators)
@@ -672,34 +672,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		validators = append(validators, presenceCountValidators(t, decl.Name)...)
 
 		for _, f := range tt.Fields {
-			if f.DefaultValue != nil {
-				if f.Name == additionalProperties {
-					g.output.file.Package.AddImport("reflect", "")
-					g.output.file.Package.AddImport("strings", "")
-					g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
-				}
-
-				dvType := f.Type
-				dvIsPointer := false
-
-				if pt, ok := f.Type.(*codegen.PointerType); ok {
-					dvType = pt.Type
-					dvIsPointer = true
-				}
-
-				if v := g.defaultValidatorFor(f, dvType, dvIsPointer); v != nil {
-					validators = append(validators, v)
-				}
-			}
-
-			if !g.config.DisableReadOnlyValidation && f.SchemaType.ReadOnly {
-				validators = append(validators, &readOnlyValidator{
-					jsonName: f.JSONName,
-					declName: decl.Name,
-				})
-			}
-
-			validators = g.structFieldValidators(validators, f, f.Type, false)
+			validators = g.propertyValidators(validators, f, decl.Name)
 		}
 
 		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
@@ -731,12 +704,49 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	return &codegen.NamedType{Decl: &decl}, nil
 }
 
+// propertyValidators appends the checks of struct field f to validators: its
+// default, its readOnly, and the keywords of its value.
+func (g *schemaGenerator) propertyValidators(
+	validators []validator,
+	f codegen.StructField,
+	declName string,
+) []validator {
+	if f.DefaultValue != nil {
+		if f.Name == additionalProperties {
+			g.output.file.Package.AddImport("reflect", "")
+			g.output.file.Package.AddImport("strings", "")
+			g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+		}
+
+		dvType := f.Type
+		dvIsPointer := false
+
+		if pt, ok := f.Type.(*codegen.PointerType); ok {
+			dvType = pt.Type
+			dvIsPointer = true
+		}
+
+		if v := g.defaultValidatorFor(f, dvType, dvIsPointer); v != nil {
+			validators = append(validators, v)
+		}
+	}
+
+	if !g.config.DisableReadOnlyValidation && f.SchemaType.ReadOnly {
+		validators = append(validators, &readOnlyValidator{
+			jsonName: f.JSONName,
+			declName: declName,
+		})
+	}
+
+	return g.structFieldValidators(validators, f, f.Type, false)
+}
+
 // generateContainerUnmarshaler gives a declared map or array the unmarshaler it
 // needs. A map that is a subschema element always gets one. A declared array
 // gets one to check its own `minItems`/`maxItems`, and either kind gets one to
-// check the `format` of the strings it holds: a field holding it sees only the
-// named type, so a declared array, such as a `$ref`'d definition of
-// `type: array`, is checked nowhere else.
+// check the values it holds: a field holding it sees only the named type, so a
+// declared array, such as a `$ref`'d definition of `type: array`, is checked
+// nowhere else.
 func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t *schemas.Type, tt codegen.Type) {
 	validators := []validator{}
 
@@ -751,7 +761,7 @@ func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t
 	}
 
 	// Only the array's own bounds. A nested array's bounds belong to its own
-	// schema, so this does not walk inner levels.
+	// schema, which the element walk checks.
 	if maxItems, hasMax := effectiveMaxItems(t); isArray && (t.MinItems != 0 || hasMax) {
 		validators = append(validators, &arrayValidator{
 			jsonName:    decl.Name,
@@ -764,12 +774,16 @@ func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t
 
 	// As for a declared primitive, the errors name the type.
 	field := codegen.StructField{Type: tt, SchemaType: t, JSONName: decl.Name}
-	if fv := g.elementFormatValidator(field, tt, false); fv != nil {
-		validators = append(validators, fv)
+	if ev := g.elementValidatorFor(field, tt, false); ev != nil {
+		validators = append(validators, ev)
 	}
 
 	if v := g.nonNullValueValidatorFor(t, decl.Name); v != nil {
 		validators = append(validators, v)
+	}
+
+	if uv := g.uniqueItemsValidatorFor(field, tt, uniqueItemsSelf); uv != nil {
+		validators = append(validators, uv)
 	}
 
 	if (isMap && t.IsSubSchemaTypeElem()) || len(validators) > 0 {
@@ -801,15 +815,7 @@ func (g *schemaGenerator) enumNullValidators(tt *codegen.StructType, declName st
 
 		// The key is matched as nullTypeValidators matches it.
 		v := &nonNullValidator{jsonName: f.JSONName, declName: declName}
-
-		for j, other := range tt.Fields {
-			if j == i || !strings.EqualFold(other.JSONName, f.JSONName) {
-				continue
-			}
-
-			v.caseVariants = append(v.caseVariants, other.JSONName)
-			v.exactOnly = v.exactOnly || j < i
-		}
+		v.caseVariants, v.exactOnly = fieldCaseVariants(tt.Fields, i)
 
 		out = append(out, v)
 	}
@@ -851,23 +857,9 @@ func (g *schemaGenerator) nullTypeValidators(
 			continue
 		}
 
-		// encoding/json binds a key to the field with exactly that name, and
-		// only otherwise to the first field whose name matches it regardless
-		// of case. Properties differing only in case split the keys between
-		// them that way, so the check has to split them the same way.
-		var (
-			caseVariants []string
-			exactOnly    bool
-		)
-
-		for j, other := range tt.Fields {
-			if j == i || !strings.EqualFold(other.JSONName, f.JSONName) {
-				continue
-			}
-
-			caseVariants = append(caseVariants, other.JSONName)
-			exactOnly = exactOnly || j < i
-		}
+		// Properties differing only in case split the keys between them as
+		// encoding/json does, so the check has to split them the same way.
+		caseVariants, exactOnly := fieldCaseVariants(tt.Fields, i)
 
 		if excludesNull {
 			out = append(out, &nonNullValidator{
@@ -1186,6 +1178,19 @@ func (g *schemaGenerator) structFieldValidators(
 		}
 
 	case *codegen.ArrayType:
+		// Only the field's own bounds: those of a nested array are its own,
+		// which the element walk checks.
+		if maxItems, hasMax := effectiveMaxItems(f.SchemaType); f.SchemaType.MinItems != 0 || hasMax {
+			validators = append(validators, &arrayValidator{
+				fieldName:   f.Name,
+				jsonName:    f.JSONName,
+				arrayDepth:  1,
+				minItems:    f.SchemaType.MinItems,
+				maxItems:    maxItems,
+				maxItemsSet: hasMax,
+			})
+		}
+
 		arrayDepth := 0
 		for v, ok := t.(*codegen.ArrayType); ok; v, ok = t.(*codegen.ArrayType) {
 			arrayDepth++
@@ -1197,87 +1202,148 @@ func (g *schemaGenerator) structFieldValidators(
 				})
 
 				break
-			} else if maxItems, hasMax := effectiveMaxItems(f.SchemaType); f.SchemaType.MinItems != 0 || hasMax {
-				validators = append(validators, &arrayValidator{
-					fieldName:   f.Name,
-					jsonName:    f.JSONName,
-					arrayDepth:  arrayDepth,
-					minItems:    f.SchemaType.MinItems,
-					maxItems:    maxItems,
-					maxItemsSet: hasMax,
-				})
 			}
 
 			t = v.Type
 		}
 
-		if fv := g.elementFormatValidator(f, v, isNillable); fv != nil {
-			validators = append(validators, fv)
+		if ev := g.elementValidatorFor(f, v, isNillable); ev != nil {
+			validators = append(validators, ev)
+		}
+
+		if uv := g.uniqueItemsValidatorFor(f, v, uniqueItemsSourceOf(f)); uv != nil {
+			validators = append(validators, uv)
 		}
 
 	case codegen.ArrayType, *codegen.MapType, codegen.MapType:
-		if fv := g.elementFormatValidator(f, t, isNillable); fv != nil {
-			validators = append(validators, fv)
+		if ev := g.elementValidatorFor(f, t, isNillable); ev != nil {
+			validators = append(validators, ev)
+		}
+
+		if uv := g.uniqueItemsValidatorFor(f, t, uniqueItemsSourceOf(f)); uv != nil {
+			validators = append(validators, uv)
+		}
+
+	case codegen.EmptyInterfaceType:
+		if c := g.untypedConstValidatorFor(f.JSONName, f.SchemaType); c != nil {
+			c.property = true
+			validators = append(validators, c)
 		}
 	}
 
 	return validators
 }
 
-// elementFormatValidator returns the `format` check for the string held in an
-// inline array or map, nested ones included, or nil when there is nothing to
-// check. Without it the check only ever reached a string-typed field, so
-// `items: {format: uuid}` let any string through.
+// elementValidatorFor returns the checks on the values an inline array or map
+// holds, nested ones included, or nil when there are none. Each value is
+// checked against its own schema, so a nested array has its own bounds, not
+// the field's. Before, only `format` reached an element, and `items:
+// {minLength: 1}` let an empty string through.
 //
 // The walk stops at a named element type: that type is declared separately and
 // checks its own value in its own unmarshaler.
-func (g *schemaGenerator) elementFormatValidator(
+func (g *schemaGenerator) elementValidatorFor(
 	f codegen.StructField,
 	t codegen.Type,
 	isNillable bool,
 ) validator {
 	schema := f.SchemaType
 
-	var levels []containerLevel
+	var levels []elementLevel
+
+	checked := 0
 
 	for schema != nil {
-		elem, elemSchema, level, ok := containerElement(t, schema)
+		elem, elemSchema, container, ok := containerElement(t, schema)
 		if !ok {
 			break
 		}
 
+		level := elementLevel{container: container}
+		if pt, ok := elem.(*codegen.PointerType); ok {
+			elem, level.isElemNillable = pt.Type, true
+		}
+
+		if elemSchema != nil {
+			level.checks = g.elementChecks(f.JSONName, elem, elemSchema)
+		}
+
 		levels = append(levels, level)
+
+		if len(level.checks) > 0 {
+			checked = len(levels)
+		}
+
 		t, schema = elem, elemSchema
 	}
 
-	if len(levels) == 0 || schema == nil {
+	if checked == 0 {
 		return nil
 	}
 
-	isElemNillable := false
-	if pt, ok := t.(*codegen.PointerType); ok {
-		t, isElemNillable = pt.Type, true
-	}
-
-	if !isStringType(t) {
-		return nil
-	}
-
-	format := schema.Format
-	if format == "" || !isKnownFormatKeyword(format) || !g.config.FormatValidation.shouldValidate(format) {
-		return nil
-	}
-
-	return &formatValidator{
-		jsonName:       f.JSONName,
-		fieldName:      f.Name,
-		format:         format,
-		isNillable:     isNillable,
-		elements:       levels,
-		isElemNillable: isElemNillable,
+	return &elementsValidator{
+		jsonName:   f.JSONName,
+		fieldName:  f.Name,
+		isNillable: isNillable,
+		levels:     levels[:checked],
 		// The struct's catch-all map is filled after the other checks run.
 		afterAdditionalProperties: f.Name == additionalProperties,
 	}
+}
+
+// elementChecks returns the checks on a value of Go type t and schema s that
+// an array or map holds: a nested array's own bounds, the checks a property of
+// t's primitive type gets, or a const of no declared type. owner names the
+// property in warnings.
+func (g *schemaGenerator) elementChecks(owner string, t codegen.Type, s *schemas.Type) []elementCheck {
+	var checks []elementCheck
+
+	switch tt := t.(type) {
+	case *codegen.ArrayType, codegen.ArrayType:
+		if maxItems, hasMax := effectiveMaxItems(s); s.MinItems != 0 || hasMax {
+			checks = append(checks, &arrayValidator{
+				jsonName:    owner,
+				arrayDepth:  1,
+				minItems:    s.MinItems,
+				maxItems:    maxItems,
+				maxItemsSet: hasMax,
+			})
+		}
+
+	case codegen.PrimitiveType:
+		field := codegen.StructField{Type: tt, SchemaType: s, JSONName: owner}
+
+		for _, v := range g.structFieldValidators(nil, field, tt, false) {
+			if c, ok := v.(elementCheck); ok {
+				checks = append(checks, c)
+			}
+		}
+
+	case codegen.EmptyInterfaceType:
+		if c := g.untypedConstValidatorFor(owner, s); c != nil {
+			checks = append(checks, c)
+		}
+	}
+
+	return checks
+}
+
+// untypedConstValidatorFor returns the check of s's const where s declares no
+// type, or nil. A const that cannot be written as JSON is left out with a
+// warning.
+func (g *schemaGenerator) untypedConstValidatorFor(owner string, s *schemas.Type) *untypedConstValidator {
+	if !isUntypedConst(s) {
+		return nil
+	}
+
+	encoded, err := json.Marshal(s.Const)
+	if err != nil {
+		g.warner(fmt.Sprintf("schema fidelity: const of %q is not checked: %v", owner, err))
+
+		return nil
+	}
+
+	return &untypedConstValidator{jsonName: owner, encoded: string(encoded)}
 }
 
 // containerElement steps from an inline array or map to the element it holds,
@@ -1405,13 +1471,25 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 		g.output.unmarshallersByTypeDecl[decl] = true
 	}()
 
+	// A check of a property's raw-map entry matches the keys the decoder
+	// assigns to the property, which depend on the struct's other fields.
+	if st, ok := decl.Type.(*codegen.StructType); ok {
+		for _, v := range validators {
+			if rv, ok := v.(rawKeyedValidator); ok {
+				rv.matchStructKeys(st.Fields)
+			}
+		}
+	}
+
+	for _, v := range validators {
+		if hv, ok := v.(fileHelperValidator); ok {
+			hv.useFileHelpers(g.output, decl.Name)
+		}
+	}
+
 	for _, v := range validators {
 		if _, ok := v.(*anyOfValidator); ok {
 			g.output.file.Package.AddImport("errors", "")
-		}
-
-		if sv, ok := v.(*stringValidator); ok && (sv.minLength != 0 || sv.maxLength != 0) {
-			g.output.file.Package.AddImport("unicode/utf8", "")
 		}
 
 		for _, pkg := range v.desc().imports {
@@ -2247,6 +2325,8 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return emptyInterfaceTypeVal, nil
 	}
 
+	shared := g.sharedAnyOfProperties(t, rAnyOf)
+
 	anyOfType, err := schemas.AnyOf(rAnyOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge anyOf types: %w", err)
@@ -2254,6 +2334,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 
 	anyOfType.AnyOf = nil
 	g.output.anyOfVariants[anyOfType] = variantNames
+	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t, shared: shared}
 
 	// The merge carries the conditionals of t, reported with t, and of its
 	// branches, reported with each branch's type above.

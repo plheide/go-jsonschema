@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strings"
 import "unicode/utf8"
 
 type ParentProperties struct {
@@ -324,6 +325,14 @@ func (j *ParentPropertiesKeyedCat) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in ParentPropertiesKeyedCat: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"cat\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"cat\"")
+		}
+	}
 	type Plain ParentPropertiesKeyedCat
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -344,6 +353,11 @@ func (j *ParentPropertiesKeyedCat) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in ParentPropertiesKeyedCat: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"cat\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"cat\"")
+		}
 	}
 	type Plain ParentPropertiesKeyedCat
 	var plain Plain
@@ -374,6 +388,14 @@ func (j *ParentPropertiesKeyedDog) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in ParentPropertiesKeyedDog: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
+		}
+	}
 	type Plain ParentPropertiesKeyedDog
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -394,6 +416,11 @@ func (j *ParentPropertiesKeyedDog) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in ParentPropertiesKeyedDog: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
+		}
 	}
 	type Plain ParentPropertiesKeyedDog
 	var plain Plain
@@ -564,6 +591,14 @@ func (j *ParentPropertiesPetCat) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in ParentPropertiesPetCat: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"cat\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"cat\"")
+		}
+	}
 	type Plain ParentPropertiesPetCat
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -584,6 +619,11 @@ func (j *ParentPropertiesPetCat) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in ParentPropertiesPetCat: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"cat\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"cat\"")
+		}
 	}
 	type Plain ParentPropertiesPetCat
 	var plain Plain
@@ -617,6 +657,14 @@ func (j *ParentPropertiesPetDog) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in ParentPropertiesPetDog: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
+		}
+	}
 	type Plain ParentPropertiesPetDog
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -637,6 +685,11 @@ func (j *ParentPropertiesPetDog) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in ParentPropertiesPetDog: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"dog\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"dog\"")
+		}
 	}
 	type Plain ParentPropertiesPetDog
 	var plain Plain

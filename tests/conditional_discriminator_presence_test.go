@@ -27,7 +27,7 @@ func TestConditionalDiscriminatorOptionalAndNot(t *testing.T) {
 	t.Run("an absent optional discriminator applies the else", func(t *testing.T) {
 		t.Parallel()
 
-		checkPresence[testCondDiscOptional.OptionalDiscriminator](t, []presenceCase{
+		checkDecode[testCondDiscOptional.OptionalDiscriminator](t, []decodeCase{
 			// A null passes, as it passes the required checks.
 			{`null`, ""},
 			{`{"unit": "m"}`, ""},
@@ -42,7 +42,7 @@ func TestConditionalDiscriminatorOptionalAndNot(t *testing.T) {
 	t.Run("a not of required forbids one property, two together, or any of several", func(t *testing.T) {
 		t.Parallel()
 
-		checkPresence[testCondDiscNot.NotRequired](t, []presenceCase{
+		checkDecode[testCondDiscNot.NotRequired](t, []decodeCase{
 			{`{"kind": "fixed", "value": 1}`, ""},
 			{
 				`{"kind": "fixed", "value": 1, "ref": "x"}`,
@@ -62,7 +62,7 @@ func TestConditionalDiscriminatorOptionalAndNot(t *testing.T) {
 	t.Run("an else may forbid what the then requires", func(t *testing.T) {
 		t.Parallel()
 
-		checkPresence[testCondDiscElseNot.ElseNotRequired](t, []presenceCase{
+		checkDecode[testCondDiscElseNot.ElseNotRequired](t, []decodeCase{
 			{`{}`, ""},
 			{`{"transform": {}}`, "field transform in ElseNotRequired (when space is absent): must not be present"},
 			{`{"space": "physical"}`, ""},
@@ -84,7 +84,7 @@ func TestConditionalDiscriminatorOwn(t *testing.T) {
 	t.Run("at the root, in a definition and in an inline object", func(t *testing.T) {
 		t.Parallel()
 
-		checkPresence[testCondDiscOwn.OwnConditional](t, []presenceCase{
+		checkDecode[testCondDiscOwn.OwnConditional](t, []decodeCase{
 			{`{}`, ""},
 			{`{"state": "done"}`, ""},
 			{`{"state": "skipped", "skip": "x"}`, ""},
@@ -92,7 +92,7 @@ func TestConditionalDiscriminatorOwn(t *testing.T) {
 			{`{"last": {"state": "skipped"}}`, "field skip in OwnConditionalLast (when state='skipped'): required"},
 		})
 
-		checkPresence[testCondDiscOwn.Event](t, []presenceCase{
+		checkDecode[testCondDiscOwn.Event](t, []decodeCase{
 			{`{"kind": "start"}`, ""},
 			{`{"kind": "stop", "reason": "x"}`, ""},
 			{`{"kind": "stop"}`, "field reason in Event (when kind='stop'): required"},
@@ -103,7 +103,7 @@ func TestConditionalDiscriminatorOwn(t *testing.T) {
 	t.Run("beside an allOf on the same discriminator", func(t *testing.T) {
 		t.Parallel()
 
-		checkPresence[testCondDiscOwnAndAllOf.OwnAndAllOf](t, []presenceCase{
+		checkDecode[testCondDiscOwnAndAllOf.OwnAndAllOf](t, []decodeCase{
 			{`{"kind": "a", "x": "1"}`, ""},
 			{`{"kind": "a"}`, "field x in OwnAndAllOf (when kind='a'): required"},
 			{`{"kind": "b"}`, "field y in OwnAndAllOf (when kind='b'): required"},
@@ -114,7 +114,7 @@ func TestConditionalDiscriminatorOwn(t *testing.T) {
 	t.Run("on another property than the allOf's, it is left to its warning", func(t *testing.T) {
 		t.Parallel()
 
-		checkPresence[testCondDiscOwnOtherKey.OwnOtherKey](t, []presenceCase{
+		checkDecode[testCondDiscOwnOtherKey.OwnOtherKey](t, []decodeCase{
 			{`{"kind": "a", "mode": "fast"}`, "field x in OwnOtherKey (when kind='a'): required"},
 			// The own conditional on mode is not compiled.
 			{`{"kind": "b", "mode": "slow"}`, ""},
@@ -124,7 +124,7 @@ func TestConditionalDiscriminatorOwn(t *testing.T) {
 	t.Run("on a discriminator declared through a $ref", func(t *testing.T) {
 		t.Parallel()
 
-		checkPresence[testCondDiscRefEnum.RefEnum](t, []presenceCase{
+		checkDecode[testCondDiscRefEnum.RefEnum](t, []decodeCase{
 			{`{"state": "done"}`, ""},
 			{`{"state": "skipped"}`, "field reason in RefEnum (when state='skipped'): required"},
 			{
@@ -134,7 +134,7 @@ func TestConditionalDiscriminatorOwn(t *testing.T) {
 		})
 
 		// However long the chain of $refs is.
-		checkPresence[testCondDiscRefEnumChain.RefEnumChain](t, []presenceCase{
+		checkDecode[testCondDiscRefEnumChain.RefEnumChain](t, []decodeCase{
 			{`{"state": "done"}`, ""},
 			{`{"state": "skipped"}`, "field reason in RefEnumChain (when state='skipped'): required"},
 		})

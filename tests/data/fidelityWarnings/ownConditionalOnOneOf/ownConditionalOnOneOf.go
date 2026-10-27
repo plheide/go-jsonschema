@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strings"
 
 // An if/then of an object's own, which also holds a oneOf of objects told apart by
 // a const property. The oneOf compiles into a holder, which checks no conditional
@@ -32,6 +33,14 @@ func (j *OwnConditionalOnOneOfA) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in OwnConditionalOnOneOfA: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"a\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"a\"")
+		}
+	}
 	type Plain OwnConditionalOnOneOfA
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -49,6 +58,11 @@ func (j *OwnConditionalOnOneOfA) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in OwnConditionalOnOneOfA: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"a\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"a\"")
+		}
 	}
 	type Plain OwnConditionalOnOneOfA
 	var plain Plain
@@ -76,6 +90,14 @@ func (j *OwnConditionalOnOneOfB) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in OwnConditionalOnOneOfB: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"b\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"b\"")
+		}
+	}
 	type Plain OwnConditionalOnOneOfB
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -93,6 +115,11 @@ func (j *OwnConditionalOnOneOfB) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in OwnConditionalOnOneOfB: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"b\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"b\"")
+		}
 	}
 	type Plain OwnConditionalOnOneOfB
 	var plain Plain

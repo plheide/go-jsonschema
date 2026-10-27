@@ -2,10 +2,13 @@
 
 package test
 
+import "bytes"
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "regexp"
+import "strconv"
+import "strings"
 import "unicode/utf8"
 
 // The details of applications to be deployed.
@@ -241,6 +244,38 @@ type IncidentOptions struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
+func (j *IncidentOptions) UnmarshalJSON(value []byte) error {
+	type Plain IncidentOptions
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal IncidentOptions: %w", err)
+	}
+	for i1 := range plain.When {
+		if matched, _ := regexp.MatchString(`(?i)(^onLastAutoRestart$|^onValidationRollout$)`, string(plain.When[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "when", i1), `(?i)(^onLastAutoRestart$|^onValidationRollout$)`)
+		}
+	}
+	*j = IncidentOptions(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *IncidentOptions) UnmarshalYAML(value *yaml.Node) error {
+	type Plain IncidentOptions
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal IncidentOptions: %w", err)
+	}
+	for i1 := range plain.When {
+		if matched, _ := regexp.MatchString(`(?i)(^onLastAutoRestart$|^onValidationRollout$)`, string(plain.When[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "when", i1), `(?i)(^onLastAutoRestart$|^onValidationRollout$)`)
+		}
+	}
+	*j = IncidentOptions(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
 func (j *Incident) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
@@ -315,6 +350,11 @@ func (j *Options) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("field %s pattern match: must match %s", "Verbosity", `(?i)(^All$|^SummaryOnly$|^Compact$)`)
 		}
 	}
+	for i1 := range plain.When {
+		if matched, _ := regexp.MatchString(`(onStart|onError|onComplete)`, string(plain.When[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "when", i1), `(onStart|onError|onComplete)`)
+		}
+	}
 	*j = Options(plain)
 	return nil
 }
@@ -329,6 +369,11 @@ func (j *Options) UnmarshalYAML(value *yaml.Node) error {
 	if plain.Verbosity != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^All$|^SummaryOnly$|^Compact$)`, string(*plain.Verbosity)); !matched {
 			return fmt.Errorf("field %s pattern match: must match %s", "Verbosity", `(?i)(^All$|^SummaryOnly$|^Compact$)`)
+		}
+	}
+	for i1 := range plain.When {
+		if matched, _ := regexp.MatchString(`(onStart|onError|onComplete)`, string(plain.When[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "when", i1), `(onStart|onError|onComplete)`)
 		}
 	}
 	*j = Options(plain)
@@ -366,16 +411,45 @@ func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw OrchestratedStep: %w", err)
 	}
+	var numbers map[string]interface{}
+	{
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		_ = dec.Decode(&numbers)
+	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in OrchestratedStep: required")
 	}
 	if _, ok := raw["targetType"]; raw != nil && !ok {
 		return fmt.Errorf("field targetType in OrchestratedStep: required")
 	}
+	for fieldName, fieldValue := range numbers {
+		if !strings.EqualFold(fieldName, "actions") {
+			continue
+		}
+		if a0, ok := fieldValue.([]interface{}); ok {
+			seen := make(map[string]int, len(a0))
+			for i, item := range a0 {
+				key, ok := uniqueItemKey_OrchestratedStep(item)
+				if !ok {
+					continue
+				}
+				if first, ok := seen[key]; ok {
+					return fmt.Errorf("field %s: items %d and %d are equal; they must be unique", "actions", first, i)
+				}
+				seen[key] = i
+			}
+		}
+	}
 	type Plain OrchestratedStep
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal OrchestratedStep: %w", err)
+	}
+	for i1 := range plain.Actions {
+		if matched, _ := regexp.MatchString(`(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)/+[\w\W]+)`, string(plain.Actions[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "actions", i1), `(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)/+[\w\W]+)`)
+		}
 	}
 	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
@@ -402,10 +476,30 @@ func (j *OrchestratedStep) UnmarshalYAML(value *yaml.Node) error {
 	if _, ok := raw["targetType"]; raw != nil && !ok {
 		return fmt.Errorf("field targetType in OrchestratedStep: required")
 	}
+	if fieldValue, ok := raw["actions"]; ok {
+		if a0, ok := fieldValue.([]interface{}); ok {
+			seen := make(map[string]int, len(a0))
+			for i, item := range a0 {
+				key, ok := uniqueItemKey_OrchestratedStep(item)
+				if !ok {
+					continue
+				}
+				if first, ok := seen[key]; ok {
+					return fmt.Errorf("field %s: items %d and %d are equal; they must be unique", "actions", first, i)
+				}
+				seen[key] = i
+			}
+		}
+	}
 	type Plain OrchestratedStep
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal OrchestratedStep: %w", err)
+	}
+	for i1 := range plain.Actions {
+		if matched, _ := regexp.MatchString(`(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)/+[\w\W]+)`, string(plain.Actions[i1])); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", fmt.Sprintf("%s[%d]", "actions", i1), `(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)/+[\w\W]+)`)
+		}
 	}
 	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
@@ -760,4 +854,77 @@ type ServiceScope struct {
 	// The path relative to the Service Group Root that points to the service scope
 	// configuration specification.
 	SpecPath *string `json:"specPath,omitempty,omitzero" yaml:"specPath,omitempty" mapstructure:"specPath,omitempty"`
+}
+
+// uniqueItemKey_OrchestratedStep returns the JSON encoding of v with each number
+// written in one form, so that items JSON Schema counts as equal, such as 1 and
+// 1.0, get the same key, and integers a float64 cannot tell apart do not. It
+// reports false for a value with no JSON encoding. Every uniqueItems check in this
+// file calls it; it is named after the first, so that no other file of the package
+// declares it.
+func uniqueItemKey_OrchestratedStep(v interface{}) (string, bool) {
+	var canon func(interface{}) interface{}
+	canon = func(n interface{}) interface{} {
+		switch n := n.(type) {
+		case json.Number:
+			return uniqueItemKey_OrchestratedStep_number(string(n))
+		case float64:
+			return uniqueItemKey_OrchestratedStep_number(strconv.FormatFloat(n, 'g', -1, 64))
+		case int:
+			return uniqueItemKey_OrchestratedStep_number(strconv.Itoa(n))
+		case uint64:
+			return uniqueItemKey_OrchestratedStep_number(strconv.FormatUint(n, 10))
+		case map[string]interface{}:
+			m := make(map[string]interface{}, len(n))
+			for k, e := range n {
+				m[k] = canon(e)
+			}
+			return m
+		case []interface{}:
+			a := make([]interface{}, len(n))
+			for i, e := range n {
+				a[i] = canon(e)
+			}
+			return a
+		}
+		return n
+	}
+	b, err := json.Marshal(canon(v))
+	if err != nil {
+		return "", false
+	}
+	return string(b), true
+}
+
+// uniqueItemKey_OrchestratedStep_number writes the number s in one form: its
+// significant digits as d.ddd, and the exponent, such as 9.007199254740993e15. A
+// number with an exponent beyond a billion is left as it is.
+func uniqueItemKey_OrchestratedStep_number(s string) json.Number {
+	neg := strings.HasPrefix(s, "-")
+	mantissa, exp := strings.TrimPrefix(s, "-"), 0
+	if i := strings.IndexAny(mantissa, "eE"); i >= 0 {
+		e, err := strconv.Atoi(mantissa[i+1:])
+		if err != nil || e > 1e9 || e < -1e9 {
+			return json.Number(s)
+		}
+		mantissa, exp = mantissa[:i], e
+	}
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	all := intPart + frac
+	trimmed := strings.TrimLeft(all, "0")
+	digits := strings.TrimRight(trimmed, "0")
+	if digits == "" {
+		return "0"
+	}
+	// The value is 0.digits times 10 to the power of point.
+	point := exp + len(intPart) - (len(all) - len(trimmed))
+	canonical := digits[:1]
+	if len(digits) > 1 {
+		canonical += "." + digits[1:]
+	}
+	canonical += "e" + strconv.Itoa(point-1)
+	if neg {
+		canonical = "-" + canonical
+	}
+	return json.Number(canonical)
 }

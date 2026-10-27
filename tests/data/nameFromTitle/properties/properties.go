@@ -375,6 +375,18 @@ func (j *Beta) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Beta: %w", err)
 	}
+	if _, ok := raw["commType"]; raw != nil && !ok {
+		return fmt.Errorf("field commType in Beta: required")
+	}
+	if _, ok := raw["epsilon"]; raw != nil && !ok {
+		return fmt.Errorf("field epsilon in Beta: required")
+	}
+	if _, ok := raw["theta"]; raw != nil && !ok {
+		return fmt.Errorf("field theta in Beta: required")
+	}
+	if _, ok := raw["zeta"]; raw != nil && !ok {
+		return fmt.Errorf("field zeta in Beta: required")
+	}
 	var beta_0 BetaGamma
 	var beta_1 BetaDelta
 	var errs []error
@@ -424,6 +436,18 @@ func (j *Beta) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Beta: %w", err)
+	}
+	if _, ok := raw["commType"]; raw != nil && !ok {
+		return fmt.Errorf("field commType in Beta: required")
+	}
+	if _, ok := raw["epsilon"]; raw != nil && !ok {
+		return fmt.Errorf("field epsilon in Beta: required")
+	}
+	if _, ok := raw["theta"]; raw != nil && !ok {
+		return fmt.Errorf("field theta in Beta: required")
+	}
+	if _, ok := raw["zeta"]; raw != nil && !ok {
+		return fmt.Errorf("field zeta in Beta: required")
 	}
 	var beta_0 BetaGamma
 	var beta_1 BetaDelta

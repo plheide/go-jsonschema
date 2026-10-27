@@ -52,6 +52,11 @@ type validatorDesc struct {
 	// decodes what it needs itself, so it also suits a type that is not an
 	// object, which the raw map cannot hold.
 	beforeRawDecode bool
+
+	// requiresNumbers has the JSON body decode the input once more, into
+	// `numbers`, with its numbers kept exact, which the raw map holds as
+	// float64. The YAML body reads the raw map, whose integers are exact.
+	requiresNumbers bool
 }
 
 var (
@@ -72,6 +77,9 @@ var (
 	_ validator = new(strictFieldsValidator)
 	_ validator = new(conditionalDiscriminatorValidator)
 	_ validator = new(presenceCountValidator)
+	_ validator = new(elementsValidator)
+	_ validator = new(untypedConstValidator)
+	_ validator = new(uniqueItemsValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
@@ -159,6 +167,65 @@ func (v *nonNullValidator) desc() *validatorDesc {
 	return d
 }
 
+// fieldCaseVariants returns, for field i of fields, the JSON names of the other
+// fields that equal its own regardless of case, and whether only its exact
+// name binds to it: encoding/json binds a key to the field with exactly that
+// name, and only otherwise to the first field whose name matches it regardless
+// of case. They are emitRawKeyMatch's caseVariants and exactOnly.
+func fieldCaseVariants(fields []codegen.StructField, i int) ([]string, bool) {
+	var (
+		caseVariants []string
+		exactOnly    bool
+	)
+
+	for j, other := range fields {
+		if j == i || !strings.EqualFold(other.JSONName, fields[i].JSONName) {
+			continue
+		}
+
+		caseVariants = append(caseVariants, other.JSONName)
+		exactOnly = exactOnly || j < i
+	}
+
+	return caseVariants, exactOnly
+}
+
+// rawKeyMatch is how a check of a property's raw-map entry finds the entries
+// the decoder assigns to the property, as for emitRawKeyMatch. A check that
+// reads the raw map takes it from the struct's fields once they are known.
+type rawKeyMatch struct {
+	caseVariants []string
+	exactOnly    bool
+}
+
+// matchKeysOf sets the key matching of the property jsonName of a struct with
+// fields.
+func (m *rawKeyMatch) matchKeysOf(fields []codegen.StructField, jsonName string) {
+	for i, f := range fields {
+		if f.JSONName == jsonName {
+			m.caseVariants, m.exactOnly = fieldCaseVariants(fields, i)
+
+			return
+		}
+	}
+}
+
+// imports returns the imports emitRawKeyMatch needs: strings, unless only the
+// exact name is matched.
+func (m *rawKeyMatch) imports() []packageImport {
+	if m.exactOnly {
+		return nil
+	}
+
+	return []packageImport{{qualifiedName: "strings"}}
+}
+
+// rawKeyedValidator is a check of a property's raw-map entry.
+type rawKeyedValidator interface {
+	validator
+	matchStructKeys(fields []codegen.StructField)
+}
+
 // emitRawKeyMatch opens a block that runs for the raw-map entry the decoder
 // assigns to the property jsonName, with the entry's value in fieldValue; with
 // nullOnly, only when that value is null. The caller emits the body, then
@@ -181,13 +248,24 @@ func emitRawKeyMatch(
 	caseVariants []string,
 	exactOnly, nullOnly bool,
 ) {
+	emitMapKeyMatch(out, varNameRawMap, format, jsonName, caseVariants, exactOnly, nullOnly)
+}
+
+// emitMapKeyMatch is emitRawKeyMatch for the entries of the map that mapExpr
+// holds, decoded as the raw map is.
+func emitMapKeyMatch(
+	out *codegen.Emitter,
+	mapExpr, format, jsonName string,
+	caseVariants []string,
+	exactOnly, nullOnly bool,
+) {
 	if format != formatJSON || exactOnly {
 		cond := "ok"
 		if nullOnly {
 			cond = "ok && fieldValue == nil"
 		}
 
-		out.Printlnf(`if fieldValue, ok := %s[%q]; %s {`, varNameRawMap, jsonName, cond)
+		out.Printlnf(`if fieldValue, ok := %s[%q]; %s {`, mapExpr, jsonName, cond)
 		out.Indent(1)
 
 		return
@@ -195,7 +273,7 @@ func emitRawKeyMatch(
 
 	// `fieldValue` is deliberately not named `value`: that is the
 	// UnmarshalJSON parameter, and shadowing it reads as a bug.
-	out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
+	out.Printlnf(`for fieldName, fieldValue := range %s {`, mapExpr)
 	out.Indent(1)
 
 	if nullOnly {
@@ -688,6 +766,8 @@ func (v *defaultValidator) desc() *validatorDesc {
 }
 
 type arrayValidator struct {
+	checkTarget
+
 	jsonName   string
 	fieldName  string
 	arrayDepth int
@@ -704,13 +784,13 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 		return nil
 	}
 
-	value := getPlainName(v.fieldName)
+	value := v.value(v.fieldName)
 
 	// The name is schema data. Keeping it an ARGUMENT rather than splicing it
 	// into the format string means a `%` in it is never read as a verb, so
 	// only Go-literal escaping is needed — and that is needed, since an
 	// unescaped quote in `a"b` would not compile.
-	quotedName := fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))
+	quotedName := v.name(fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName)))
 
 	var indexes []string
 
@@ -763,6 +843,8 @@ func (v *arrayValidator) desc() *validatorDesc {
 }
 
 type stringValidator struct {
+	checkTarget
+
 	jsonName   string
 	fieldName  string
 	minLength  int
@@ -773,8 +855,8 @@ type stringValidator struct {
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
-	value := getPlainName(v.fieldName)
-	fieldName := v.jsonName
+	value := v.value(v.fieldName)
+	fieldName := v.name(`"` + v.jsonName + `"`)
 	checkPointer := ""
 	pointerPrefix := ""
 
@@ -803,8 +885,8 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 
 		out.Indent(1)
 		out.Printlnf(
-			`return fmt.Errorf("field %%s pattern match: must match %%s", "%s", `+"`%s`"+`)`,
-			patternName, v.pattern,
+			`return fmt.Errorf("field %%s pattern match: must match %%s", %s, `+"`%s`"+`)`,
+			v.name(`"`+patternName+`"`), v.pattern,
 		)
 		out.Indent(-1)
 		out.Printlnf("}")
@@ -818,7 +900,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 	if v.constVal != nil {
 		out.Printlnf(`if %s%s%s != "%s" {`, checkPointer, pointerPrefix, value, *v.constVal)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%s", "%s", "%s")`, fieldName, *v.constVal)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%s", %s, "%s")`, fieldName, *v.constVal)
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
@@ -830,7 +912,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 	if v.minLength != 0 {
 		out.Printlnf(`if %sutf8.RuneCountInString(string(%s%s)) < %d {`, checkPointer, pointerPrefix, value, v.minLength)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s length: must be >= %%d", "%s", %d)`, fieldName, v.minLength)
+		out.Printlnf(`return fmt.Errorf("field %%s length: must be >= %%d", %s, %d)`, fieldName, v.minLength)
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
@@ -838,7 +920,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 	if v.maxLength != 0 {
 		out.Printlnf(`if %sutf8.RuneCountInString(string(%s%s)) > %d {`, checkPointer, pointerPrefix, value, v.maxLength)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", "%s", %d)`, fieldName, v.maxLength)
+		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", %s, %d)`, fieldName, v.maxLength)
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
@@ -847,13 +929,21 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 }
 
 func (v *stringValidator) desc() *validatorDesc {
-	return &validatorDesc{
+	d := &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
+
+	if v.minLength != 0 || v.maxLength != 0 {
+		d.imports = append(d.imports, packageImport{qualifiedName: "unicode/utf8"})
+	}
+
+	return d
 }
 
 type numericValidator struct {
+	checkTarget
+
 	jsonName         string
 	fieldName        string
 	isNillable       bool
@@ -867,7 +957,8 @@ type numericValidator struct {
 }
 
 func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
-	value := getPlainName(v.fieldName)
+	value := v.value(v.fieldName)
+	name := v.name(`"` + v.jsonName + `"`)
 	checkPointer := ""
 	pointerPrefix := ""
 
@@ -879,7 +970,7 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 	if v.constVal != nil {
 		out.Printlnf(`if %s%s%s != %v {`, checkPointer, pointerPrefix, value, v.constVal)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%v", "%s", %v)`, v.jsonName, v.constVal)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%v", %s, %v)`, name, v.constVal)
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
@@ -888,7 +979,7 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 		if v.roundToInt {
 			out.Printlnf(`if %s %s%s %% %v != 0 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
 			out.Indent(1)
-			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
+			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", %s, %f)`, name, *v.multipleOf)
 			out.Indent(-1)
 			out.Printlnf("}")
 		} else {
@@ -904,7 +995,7 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 				`if !(math.Abs(remainder) < 1e-10 || math.Abs(remainder - %v) < 1e-10) {`, v.valueOf(*v.multipleOf),
 			)
 			out.Indent(1)
-			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
+			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", %s, %f)`, name, *v.multipleOf)
 			out.Indent(-1)
 			out.Printlnf("}")
 
@@ -917,8 +1008,8 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 		v.minimum, v.maximum, v.exclusiveMinimum, v.exclusiveMaximum,
 	)
 
-	v.genBoundary(out, checkPointer, pointerPrefix, value, nMax, nMaxExclusive, "<")
-	v.genBoundary(out, checkPointer, pointerPrefix, value, nMin, nMinExclusive, ">")
+	v.genBoundary(out, checkPointer, pointerPrefix, value, name, nMax, nMaxExclusive, "<")
+	v.genBoundary(out, checkPointer, pointerPrefix, value, name, nMin, nMinExclusive, ">")
 
 	return nil
 }
@@ -927,7 +1018,8 @@ func (v *numericValidator) genBoundary(
 	out *codegen.Emitter,
 	checkPointer,
 	pointerPrefix,
-	value string,
+	value,
+	name string,
 	boundary *float64,
 	exclusive bool,
 	sign string,
@@ -947,7 +1039,7 @@ func (v *numericValidator) genBoundary(
 
 	out.Printlnf(`if %s%v %s%s %s {`, checkPointer, v.valueOf(*boundary), comp, pointerPrefix, value)
 	out.Indent(1)
-	out.Printlnf(`return fmt.Errorf("field %%s: must be %s %%v", "%s", %v)`, sign, v.jsonName, v.valueOf(*boundary))
+	out.Printlnf(`return fmt.Errorf("field %%s: must be %s %%v", %s, %v)`, sign, name, v.valueOf(*boundary))
 	out.Indent(-1)
 	out.Printlnf("}")
 }
@@ -968,6 +1060,8 @@ func (v *numericValidator) valueOf(val float64) any {
 }
 
 type booleanValidator struct {
+	checkTarget
+
 	jsonName   string
 	fieldName  string
 	isNillable bool
@@ -975,8 +1069,8 @@ type booleanValidator struct {
 }
 
 func (v *booleanValidator) generate(out *codegen.Emitter, unmarshalTemplate string) error {
-	value := getPlainName(v.fieldName)
-	fieldName := v.jsonName
+	value := v.value(v.fieldName)
+	fieldName := v.name(`"` + v.jsonName + `"`)
 	checkPointer := ""
 	pointerPrefix := ""
 
@@ -988,7 +1082,7 @@ func (v *booleanValidator) generate(out *codegen.Emitter, unmarshalTemplate stri
 	if v.constVal != nil {
 		out.Printlnf(`if %s%s%s != %t {`, checkPointer, pointerPrefix, value, *v.constVal)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%t", "%s", %t)`, fieldName, *v.constVal)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%t", %s, %t)`, fieldName, *v.constVal)
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
@@ -1208,28 +1302,20 @@ func formatValidatorImports(format string) []packageImport {
 // inside one loop per container, and the error names the element, as in
 // `ids[1]` or `byName["a"]`.
 type formatValidator struct {
+	// checkTarget's valueExpr is also set by the primitive-oneOf wrapper,
+	// whose decoded value lives in a local inside the generated
+	// UnmarshalJSON, not on a Plain struct. Everything else about the check,
+	// including the message, stays identical to the struct-field path.
+	checkTarget
+
 	jsonName   string
 	fieldName  string
 	format     string
 	isNillable bool
-	elements   []containerLevel
-	// isElemNillable marks a pointer element, such as []*string, which is
-	// checked only when set.
-	isElemNillable bool
-	// afterAdditionalProperties marks a check on AdditionalProperties' values,
-	// which can only run once that map is decoded.
-	afterAdditionalProperties bool
-
-	// valueExpr overrides the expression the check runs against. Empty means
-	// the default `plain.<Field>`. The primitive-oneOf wrapper sets it
-	// because its decoded value lives in a local inside the generated
-	// UnmarshalJSON, not on a Plain struct — everything else about the check,
-	// including the message, stays identical to the struct-field path.
-	valueExpr string
 }
 
-// containerLevel is one inline array or map between a field and the string a
-// formatValidator checks.
+// containerLevel is one inline array or map between a field and the value an
+// elementsValidator checks.
 type containerLevel int
 
 const (
@@ -1238,57 +1324,14 @@ const (
 )
 
 func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
-	value := v.valueExpr
-	if value == "" {
-		value = getPlainName(v.fieldName)
-	}
+	value := v.value(v.fieldName)
 
 	// Quoted like arrayValidator's name: the property name is schema data,
 	// so it is escaped as a Go literal rather than spliced in as is.
-	name := fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))
+	name := v.name(fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName)))
 	open := 0
 
 	if v.isNillable {
-		out.Printlnf("if %s != nil {", value)
-		out.Indent(1)
-
-		open++
-
-		value = "*" + value
-		if len(v.elements) > 0 {
-			value = "(" + value + ")"
-		}
-	}
-
-	var nameFormat strings.Builder
-
-	nameFormat.WriteString("%s")
-
-	nameArgs := make([]string, 0, len(v.elements))
-
-	for i, level := range v.elements {
-		iter, verb := fmt.Sprintf("i%d", i+1), "[%d]"
-		if level == containerMap {
-			iter, verb = fmt.Sprintf("k%d", i+1), "[%q]"
-		}
-
-		out.Printlnf("for %s := range %s {", iter, value)
-		out.Indent(1)
-
-		open++
-
-		value = fmt.Sprintf("%s[%s]", value, iter)
-
-		nameFormat.WriteString(verb)
-
-		nameArgs = append(nameArgs, iter)
-	}
-
-	if len(nameArgs) > 0 {
-		name = fmt.Sprintf("fmt.Sprintf(%q, %s, %s)", nameFormat.String(), name, strings.Join(nameArgs, ", "))
-	}
-
-	if v.isElemNillable {
 		out.Printlnf("if %s != nil {", value)
 		out.Indent(1)
 
@@ -1384,9 +1427,8 @@ func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
 
 func (v *formatValidator) desc() *validatorDesc {
 	d := &validatorDesc{
-		hasError:                  true,
-		imports:                   formatValidatorImports(v.format),
-		afterAdditionalProperties: v.afterAdditionalProperties,
+		hasError: true,
+		imports:  formatValidatorImports(v.format),
 	}
 
 	if regexpDecl := formatRegexpDecl(v.format); regexpDecl != nil {
@@ -1509,7 +1551,7 @@ func (v *wrapperDefaultValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:         true,
 		requiresRawAfter: true,
-		imports:          []packageImport{{qualifiedName: "encoding/json"}},
+		imports:          []packageImport{{qualifiedName: jsonPackage}},
 	}
 }
 

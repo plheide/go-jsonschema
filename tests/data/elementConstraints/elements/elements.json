@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/elementConstraints/elements",
+  "title": "Elements",
+  "description": "Constraints on the values arrays and maps hold, at every depth.",
+  "type": "object",
+  "properties": {
+    "names": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 3
+      }
+    },
+    "codes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]+$"
+      }
+    },
+    "fixed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "const": "x"
+      }
+    },
+    "ratios": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "exclusiveMaximum": 1
+      }
+    },
+    "halves": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "multipleOf": 0.5
+      }
+    },
+    "counts": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "maximum": 10,
+        "multipleOf": 2
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "boolean",
+        "const": true
+      }
+    },
+    "anything": {
+      "type": "array",
+      "items": {
+        "const": {
+          "a": [1, "b"]
+        }
+      }
+    },
+    "tag": {
+      "const": "v1"
+    },
+    "grid": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "array",
+        "maxItems": 2,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "loose": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      }
+    },
+    "optional": {
+      "type": "array",
+      "items": {
+        "type": ["string", "null"],
+        "minLength": 2
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "ids": {
+      "$ref": "#/definitions/ids"
+    }
+  },
+  "additionalProperties": {
+    "type": "string",
+    "maxLength": 4
+  },
+  "definitions": {
+    "ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2
+      }
+    }
+  }
+}

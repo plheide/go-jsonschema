@@ -521,6 +521,14 @@ func (j *DeprecatedShapeCircle) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in DeprecatedShapeCircle: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"circle\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"circle\"")
+		}
+	}
 	type Plain DeprecatedShapeCircle
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -538,6 +546,11 @@ func (j *DeprecatedShapeCircle) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in DeprecatedShapeCircle: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"circle\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"circle\"")
+		}
 	}
 	type Plain DeprecatedShapeCircle
 	var plain Plain
@@ -562,6 +575,14 @@ func (j *DeprecatedShapeSquare) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in DeprecatedShapeSquare: required")
 	}
+	for fieldName, fieldValue := range raw {
+		if !strings.EqualFold(fieldName, "kind") {
+			continue
+		}
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"square\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"square\"")
+		}
+	}
 	type Plain DeprecatedShapeSquare
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -579,6 +600,11 @@ func (j *DeprecatedShapeSquare) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in DeprecatedShapeSquare: required")
+	}
+	if fieldValue, ok := raw["kind"]; ok {
+		if b, err := json.Marshal(fieldValue); err != nil || string(b) != "\"square\"" {
+			return fmt.Errorf("field %s: must be equal to %s", "kind", "\"square\"")
+		}
 	}
 	type Plain DeprecatedShapeSquare
 	var plain Plain
