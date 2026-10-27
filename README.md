@@ -242,6 +242,8 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 ### Other differences
 
 * A required property named `-` is decoded. Upstream tagged it `json:"-"`, which `encoding/json` skips.
+* An `integer` written with a fraction or an exponent, such as `2.0` or `1e2`, is decoded from JSON, as JSON Schema
+  counts it as an integer. Upstream's code rejected it, as `encoding/json` does for a Go integer.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
   Upstream generated a tag that decodes nothing.
 * A `null` where a schema belongs, such as an entry of `allOf`, a property or a definition, stops generation with an
