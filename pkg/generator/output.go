@@ -28,6 +28,9 @@ type output struct {
 	primitiveWrapperKinds map[*codegen.TypeDecl]primitiveKind
 	processedSchemas      map[string]bool
 	warner                func(string)
+	// constProperties holds the properties with a primitive const, whose
+	// constants Sources declares.
+	constProperties []constProperty
 	// integralHelperName is the name of the file's helper that retries a
 	// JSON decode with integral numbers written as integers, once declared.
 	integralHelperName string

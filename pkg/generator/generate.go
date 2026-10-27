@@ -180,6 +180,7 @@ func (g *Generator) Sources() (map[string][]byte, error) {
 		}
 
 		g.addIntegralDecoders(output)
+		g.declareConstConstants(output)
 		g.renameConstantsShadowingImports(output)
 
 		if a, b, name, clash := importNameCollision(output.file.Package.Imports); clash {

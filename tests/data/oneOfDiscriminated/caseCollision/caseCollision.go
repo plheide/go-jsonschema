@@ -31,6 +31,8 @@ type CaseCollisionPetDog struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
+const CaseCollisionPetDogKind = "dog"
+
 type CaseCollisionPetDog_2 struct {
 	// Howl corresponds to the JSON schema field "howl".
 	Howl *string `json:"howl,omitempty,omitzero" yaml:"howl,omitempty" mapstructure:"howl,omitempty"`
@@ -38,6 +40,8 @@ type CaseCollisionPetDog_2 struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
+
+const CaseCollisionPetDog_2Kind = "Dog"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *CaseCollisionPetDog_2) UnmarshalJSON(value []byte) error {

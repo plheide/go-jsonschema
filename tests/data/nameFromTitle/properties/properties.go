@@ -58,6 +58,8 @@ type BetaDelta struct {
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
 
+const BetaDeltaCommType = "GRPC"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *BetaDelta) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -212,6 +214,8 @@ type BetaGamma struct {
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
+
+const BetaGammaCommType = "HTTP"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *BetaGamma) UnmarshalJSON(value []byte) error {

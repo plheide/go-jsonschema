@@ -48,6 +48,8 @@ type NodeEveryFilterEvery struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
+const NodeEveryFilterEveryKind = "every"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeEveryFilterEvery) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -111,6 +113,8 @@ type NodeEveryFilterLeaf struct {
 	Value string `json:"value" yaml:"value" mapstructure:"value"`
 }
 
+const NodeEveryFilterLeafKind = "leaf"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeEveryFilterLeaf) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -173,6 +177,8 @@ type NodeEveryFilterSome struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
+
+const NodeEveryFilterSomeKind = "some"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeEveryFilterSome) UnmarshalJSON(value []byte) error {
@@ -376,6 +382,8 @@ func (j *NodeEveryFilter) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+const NodeEveryKind = "every"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeEvery) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -438,6 +446,8 @@ type NodeLeaf struct {
 	// Value corresponds to the JSON schema field "value".
 	Value string `json:"value" yaml:"value" mapstructure:"value"`
 }
+
+const NodeLeafKind = "leaf"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeLeaf) UnmarshalJSON(value []byte) error {
@@ -518,6 +528,8 @@ type NodeSomeFilterEvery struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
+const NodeSomeFilterEveryKind = "every"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeSomeFilterEvery) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -581,6 +593,8 @@ type NodeSomeFilterLeaf struct {
 	Value string `json:"value" yaml:"value" mapstructure:"value"`
 }
 
+const NodeSomeFilterLeafKind = "leaf"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeSomeFilterLeaf) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -643,6 +657,8 @@ type NodeSomeFilterSome struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
+
+const NodeSomeFilterSomeKind = "some"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeSomeFilterSome) UnmarshalJSON(value []byte) error {
@@ -845,6 +861,8 @@ func (j *NodeSomeFilter) UnmarshalYAML(value *yaml.Node) error {
 	}
 	return nil
 }
+
+const NodeSomeKind = "some"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeSome) UnmarshalJSON(value []byte) error {

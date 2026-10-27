@@ -512,6 +512,8 @@ type DeprecatedShapeCircle struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
+const DeprecatedShapeCircleKind = "circle"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DeprecatedShapeCircle) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -565,6 +567,8 @@ type DeprecatedShapeSquare struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
+
+const DeprecatedShapeSquareKind = "square"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DeprecatedShapeSquare) UnmarshalJSON(value []byte) error {

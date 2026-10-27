@@ -36,6 +36,8 @@ type NumericNullWithNullConst1 struct {
 	Version interface{} `json:"version" yaml:"version" mapstructure:"version"`
 }
 
+const NumericNullWithNullConst1Version = 1.0
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NumericNullWithNullConst1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -92,6 +94,8 @@ type NumericNullWithNullConst2 struct {
 	// Version corresponds to the JSON schema field "version".
 	Version interface{} `json:"version" yaml:"version" mapstructure:"version"`
 }
+
+const NumericNullWithNullConst2Version = 2.0
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NumericNullWithNullConst2) UnmarshalJSON(value []byte) error {
@@ -413,6 +417,8 @@ type NumericNullWithZeroConst0 struct {
 	Version interface{} `json:"version" yaml:"version" mapstructure:"version"`
 }
 
+const NumericNullWithZeroConst0Version = 0.0
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NumericNullWithZeroConst0) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -469,6 +475,8 @@ type NumericNullWithZeroConst1 struct {
 	// Version corresponds to the JSON schema field "version".
 	Version interface{} `json:"version" yaml:"version" mapstructure:"version"`
 }
+
+const NumericNullWithZeroConst1Version = 1.0
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NumericNullWithZeroConst1) UnmarshalJSON(value []byte) error {

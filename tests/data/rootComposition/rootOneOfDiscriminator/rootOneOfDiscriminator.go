@@ -23,6 +23,8 @@ type RootOneOfDiscriminatorPing struct {
 	Ttl int `json:"ttl" yaml:"ttl" mapstructure:"ttl"`
 }
 
+const RootOneOfDiscriminatorPingKind = "ping"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RootOneOfDiscriminatorPing) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -82,6 +84,8 @@ type RootOneOfDiscriminatorPong struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind string `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
+
+const RootOneOfDiscriminatorPongKind = "pong"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RootOneOfDiscriminatorPong) UnmarshalJSON(value []byte) error {

@@ -624,6 +624,12 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	g.output.file.Package.AddDecl(&decl)
 
+	// A struct merged from an anyOf takes a property's const from the first
+	// branch that declares one, which need not hold.
+	if st, ok := theType.(*codegen.StructType); ok && t.GetSubSchemaType() != schemas.SubSchemaTypeAnyOf {
+		g.output.recordConstProperties(decl.Name, st)
+	}
+
 	if g.config.OnlyModels {
 		return &codegen.NamedType{Decl: &decl}, nil
 	}

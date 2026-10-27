@@ -25,6 +25,8 @@ type NumericKindPayloadConst1 struct {
 	Version float64 `json:"version" yaml:"version" mapstructure:"version"`
 }
 
+const NumericKindPayloadConst1Version = 1.0
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NumericKindPayloadConst1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -80,6 +82,8 @@ type NumericKindPayloadConst2 struct {
 	// Version corresponds to the JSON schema field "version".
 	Version float64 `json:"version" yaml:"version" mapstructure:"version"`
 }
+
+const NumericKindPayloadConst2Version = 2.0
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NumericKindPayloadConst2) UnmarshalJSON(value []byte) error {

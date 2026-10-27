@@ -316,6 +316,8 @@ type ParentPropertiesKeyedCat struct {
 	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
+const ParentPropertiesKeyedCatKind = "cat"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ParentPropertiesKeyedCat) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -378,6 +380,8 @@ type ParentPropertiesKeyedDog struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
+
+const ParentPropertiesKeyedDogKind = "dog"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ParentPropertiesKeyedDog) UnmarshalJSON(value []byte) error {
@@ -579,6 +583,8 @@ type ParentPropertiesPetCat struct {
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 }
 
+const ParentPropertiesPetCatKind = "cat"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ParentPropertiesPetCat) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -644,6 +650,8 @@ type ParentPropertiesPetDog struct {
 	// Name corresponds to the JSON schema field "name".
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 }
+
+const ParentPropertiesPetDogKind = "dog"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ParentPropertiesPetDog) UnmarshalJSON(value []byte) error {

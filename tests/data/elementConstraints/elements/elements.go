@@ -95,6 +95,8 @@ func (j *ElementsLabels) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+const ElementsTag = "v1"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Elements) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}

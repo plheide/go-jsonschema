@@ -24,6 +24,8 @@ type OwnConditionalOnOneOfA struct {
 	X *string `json:"x,omitempty,omitzero" yaml:"x,omitempty" mapstructure:"x,omitempty"`
 }
 
+const OwnConditionalOnOneOfAKind = "a"
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *OwnConditionalOnOneOfA) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -80,6 +82,8 @@ type OwnConditionalOnOneOfB struct {
 	// X corresponds to the JSON schema field "x".
 	X *string `json:"x,omitempty,omitzero" yaml:"x,omitempty" mapstructure:"x,omitempty"`
 }
+
+const OwnConditionalOnOneOfBKind = "b"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *OwnConditionalOnOneOfB) UnmarshalJSON(value []byte) error {
