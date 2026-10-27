@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/anyOfParent/parent",
+  "title": "Parent",
+  "description": "An object with properties of its own and an anyOf of object branches, merged into one struct.",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "x"
+    },
+    "n": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "both": {
+      "type": "boolean"
+    },
+    "s": {
+      "type": "string",
+      "minLength": 2
+    },
+    "codes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2
+      }
+    }
+  },
+  "required": ["kind"],
+  "anyOf": [
+    {
+      "properties": {
+        "a": {
+          "type": "string",
+          "minLength": 3
+        },
+        "s": {
+          "maxLength": 3
+        },
+        "codes": {
+          "maxItems": 3
+        }
+      },
+      "required": ["a", "both"]
+    },
+    {
+      "properties": {
+        "b": {
+          "type": "string"
+        }
+      },
+      "required": ["b", "both"]
+    }
+  ]
+}

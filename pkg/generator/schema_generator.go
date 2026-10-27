@@ -551,7 +551,6 @@ func (g *schemaGenerator) generateEnumOrOneOf(t *schemas.Type, scope nameScope) 
 	return nil, false, nil
 }
 
-//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		return g.alreadyDeclaredType(t, decl, scope)
@@ -634,6 +633,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	switch tt := theType.(type) {
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
+			validators = append(validators, g.anyOfParentValidators(t, tt, decl.Name, scope)...)
 			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
 			validators = append(validators, presenceCountValidators(t, decl.Name)...)
 			g.generateUnmarshaler(&decl, validators)
@@ -672,34 +672,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		validators = append(validators, presenceCountValidators(t, decl.Name)...)
 
 		for _, f := range tt.Fields {
-			if f.DefaultValue != nil {
-				if f.Name == additionalProperties {
-					g.output.file.Package.AddImport("reflect", "")
-					g.output.file.Package.AddImport("strings", "")
-					g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
-				}
-
-				dvType := f.Type
-				dvIsPointer := false
-
-				if pt, ok := f.Type.(*codegen.PointerType); ok {
-					dvType = pt.Type
-					dvIsPointer = true
-				}
-
-				if v := g.defaultValidatorFor(f, dvType, dvIsPointer); v != nil {
-					validators = append(validators, v)
-				}
-			}
-
-			if !g.config.DisableReadOnlyValidation && f.SchemaType.ReadOnly {
-				validators = append(validators, &readOnlyValidator{
-					jsonName: f.JSONName,
-					declName: decl.Name,
-				})
-			}
-
-			validators = g.structFieldValidators(validators, f, f.Type, false)
+			validators = g.propertyValidators(validators, f, decl.Name)
 		}
 
 		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
@@ -729,6 +702,43 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+// propertyValidators appends the checks of struct field f to validators: its
+// default, its readOnly, and the keywords of its value.
+func (g *schemaGenerator) propertyValidators(
+	validators []validator,
+	f codegen.StructField,
+	declName string,
+) []validator {
+	if f.DefaultValue != nil {
+		if f.Name == additionalProperties {
+			g.output.file.Package.AddImport("reflect", "")
+			g.output.file.Package.AddImport("strings", "")
+			g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+		}
+
+		dvType := f.Type
+		dvIsPointer := false
+
+		if pt, ok := f.Type.(*codegen.PointerType); ok {
+			dvType = pt.Type
+			dvIsPointer = true
+		}
+
+		if v := g.defaultValidatorFor(f, dvType, dvIsPointer); v != nil {
+			validators = append(validators, v)
+		}
+	}
+
+	if !g.config.DisableReadOnlyValidation && f.SchemaType.ReadOnly {
+		validators = append(validators, &readOnlyValidator{
+			jsonName: f.JSONName,
+			declName: declName,
+		})
+	}
+
+	return g.structFieldValidators(validators, f, f.Type, false)
 }
 
 // generateContainerUnmarshaler gives a declared map or array the unmarshaler it
@@ -2315,6 +2325,8 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return emptyInterfaceTypeVal, nil
 	}
 
+	shared := g.sharedAnyOfProperties(t, rAnyOf)
+
 	anyOfType, err := schemas.AnyOf(rAnyOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge anyOf types: %w", err)
@@ -2322,6 +2334,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 
 	anyOfType.AnyOf = nil
 	g.output.anyOfVariants[anyOfType] = variantNames
+	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t, shared: shared}
 
 	// The merge carries the conditionals of t, reported with t, and of its
 	// branches, reported with each branch's type above.

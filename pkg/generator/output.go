@@ -18,7 +18,10 @@ type output struct {
 	declsBySchema map[*schemas.Type]*codegen.TypeDecl
 	// anyOfVariants holds, for a type merged from an anyOf, the Go type of
 	// each branch, so its validator can name the types that were declared.
-	anyOfVariants           map[*schemas.Type][]string
+	anyOfVariants map[*schemas.Type][]string
+	// anyOfParents maps a type merged from an anyOf to the schema the anyOf
+	// is declared on.
+	anyOfParents            map[*schemas.Type]anyOfParent
 	unmarshallersByTypeDecl map[*codegen.TypeDecl]bool
 	// primitiveWrapperKinds holds the JSON kinds each primitive union wrapper
 	// accepts.

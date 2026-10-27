@@ -41,6 +41,9 @@ func (j *AnyOf4Elem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf4Elem: %w", err)
 	}
+	if _, ok := raw["linkType"]; raw != nil && !ok {
+		return fmt.Errorf("field linkType in AnyOf4Elem: required")
+	}
 	var anyOf4Elem_0 Embeddedlinkend
 	var anyOf4Elem_1 Embeddedlinkpath
 	var anyOf4Elem_2 Embeddedlinkrelation
@@ -71,6 +74,9 @@ func (j *AnyOf4Elem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf4Elem: %w", err)
+	}
+	if _, ok := raw["linkType"]; raw != nil && !ok {
+		return fmt.Errorf("field linkType in AnyOf4Elem: required")
 	}
 	var anyOf4Elem_0 Embeddedlinkend
 	var anyOf4Elem_1 Embeddedlinkpath

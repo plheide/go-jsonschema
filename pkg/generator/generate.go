@@ -323,6 +323,7 @@ func (g *Generator) beginOutput(
 		},
 		declsBySchema:           map[*schemas.Type]*codegen.TypeDecl{},
 		anyOfVariants:           map[*schemas.Type][]string{},
+		anyOfParents:            map[*schemas.Type]anyOfParent{},
 		declsByName:             map[string]*codegen.TypeDecl{},
 		unmarshallersByTypeDecl: map[*codegen.TypeDecl]bool{},
 		primitiveWrapperKinds:   map[*codegen.TypeDecl]primitiveKind{},
