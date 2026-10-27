@@ -44,11 +44,18 @@ func (jf *jsonFormatter) enumMarshal(declType *codegen.TypeDecl) func(*codegen.E
 }
 
 func (jf *jsonFormatter) enumUnmarshal(
+	output *output,
 	declType codegen.TypeDecl,
 	enumType codegen.Type,
 	valueConstant *codegen.Var,
 	wrapInStruct bool,
 ) func(*codegen.Emitter) error {
+	// An integer enum value written 2.0 is retried as in generateUnmarshalBody.
+	var integralHelper string
+	if holdsInteger(enumType) {
+		integralHelper = output.integralHelper(declType.Name)
+	}
+
 	return func(out *codegen.Emitter) error {
 		out.Comment("UnmarshalJSON implements json.Unmarshaler.")
 		out.Printlnf("func (j *%s) UnmarshalJSON(value []byte) error {", declType.Name)
@@ -66,7 +73,14 @@ func (jf *jsonFormatter) enumUnmarshal(
 			varName += ".Value"
 		}
 
-		out.Printlnf("if err := json.Unmarshal(value, &%s); err != nil { return err }", varName)
+		if integralHelper != "" {
+			out.Printlnf("if err := json.Unmarshal(value, &%s); err != nil {", varName)
+			out.Printlnf("if err = %s(value, &%s, err); err != nil { return err }", integralHelper, varName)
+			out.Printlnf("}")
+		} else {
+			out.Printlnf("if err := json.Unmarshal(value, &%s); err != nil { return err }", varName)
+		}
+
 		out.Printlnf("var ok bool")
 		out.Printlnf("for _, expected := range %s {", valueConstant.Name)
 		out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)

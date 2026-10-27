@@ -596,6 +596,12 @@ func TestPresenceCountGolden(t *testing.T) {
 	testExamples(t, basicConfig, "./data/presenceCount")
 }
 
+func TestIntegralNumbersGolden(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/integralNumbers")
+}
+
 // TestConditionalDiscriminator drives generation for the
 // allOf+if[const]/then[/else] tagged-union pattern. Walks every fixture
 // under tests/data/conditionalDiscriminator and diffs against the sibling

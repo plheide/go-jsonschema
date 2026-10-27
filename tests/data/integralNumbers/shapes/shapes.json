@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/integralNumbers/shapes",
+  "title": "Shapes",
+  "description": "JSON Schema counts a number with a zero fractional part as an integer, however it is written.",
+  "type": "object",
+  "required": ["count"],
+  "properties": {
+    "count": {
+      "type": "integer"
+    },
+    "limit": {
+      "type": "integer"
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "ratio": {
+      "type": "number"
+    },
+    "sizes": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "grid": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "inner": {
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "integer"
+        }
+      }
+    },
+    "holder": {
+      "type": "object",
+      "properties": {
+        "port": {
+          "$ref": "#/definitions/port"
+        }
+      }
+    },
+    "port": {
+      "$ref": "#/definitions/port"
+    },
+    "ids": {
+      "$ref": "#/definitions/ids"
+    },
+    "priority": {
+      "type": "integer",
+      "enum": [1, 2, 3]
+    }
+  },
+  "definitions": {
+    "port": {
+      "type": "integer"
+    },
+    "ids": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    }
+  }
+}

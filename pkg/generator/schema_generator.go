@@ -2861,7 +2861,7 @@ func (g *schemaGenerator) generateEnumType(
 			}
 
 			g.output.file.Package.AddDecl(&codegen.Method{
-				Impl: formatter.enumUnmarshal(enumDecl, enumType, valueConstant, wrapInStruct),
+				Impl: formatter.enumUnmarshal(g.output, enumDecl, enumType, valueConstant, wrapInStruct),
 				Name: enumDecl.GetName() + "_enum_unmarshal_" + formatter.getName(),
 			})
 		}

@@ -25,6 +25,9 @@ type output struct {
 	primitiveWrapperKinds map[*codegen.TypeDecl]primitiveKind
 	processedSchemas      map[string]bool
 	warner                func(string)
+	// integralHelperName is the name of the file's helper that retries a
+	// JSON decode with integral numbers written as integers, once declared.
+	integralHelperName string
 }
 
 func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.TypeDecl {

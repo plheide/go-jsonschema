@@ -85,6 +85,13 @@ func generateUnmarshalBody(
 		}
 	}
 
+	// An integer written 2.0 or 1e2 fails the typed decode, which then retries
+	// once with such numbers written as integers. See integral_numbers.go.
+	var integralHelper string
+	if ctx.formatName == formatJSON && holdsInteger(declType.Type) {
+		integralHelper = output.integralHelper(declType.Name)
+	}
+
 	return func(out *codegen.Emitter) error {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", ctx.methodSuffix, ctx.formatName)
 		out.Printlnf("func (j *%s) Unmarshal%s(%s) error {", declType.Name, ctx.methodSuffix, ctx.paramDecl)
@@ -127,7 +134,19 @@ func generateUnmarshalBody(
 		out.Printlnf("var %s %s", varNamePlainStruct, tp)
 		out.Printlnf("if err := %s; err != nil {", ctx.decodeCall(varNamePlainStruct))
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("unmarshal %s: %%w", err)`, declType.Name)
+
+		if integralHelper != "" {
+			out.Printlnf("var retry %s", tp)
+			out.Printlnf("if err = %s(value, &retry, err); err != nil {", integralHelper)
+			out.Indent(1)
+			out.Printlnf(`return fmt.Errorf("unmarshal %s: %%w", err)`, declType.Name)
+			out.Indent(-1)
+			out.Printlnf("}")
+			out.Printlnf("%s = retry", varNamePlainStruct)
+		} else {
+			out.Printlnf(`return fmt.Errorf("unmarshal %s: %%w", err)`, declType.Name)
+		}
+
 		out.Indent(-1)
 		out.Printlnf("}")
 

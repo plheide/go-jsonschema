@@ -43,6 +43,7 @@ func (yf *yamlFormatter) enumMarshal(declType *codegen.TypeDecl) func(*codegen.E
 }
 
 func (yf *yamlFormatter) enumUnmarshal(
+	_ *output,
 	declType codegen.TypeDecl,
 	enumType codegen.Type,
 	valueConstant *codegen.Var,

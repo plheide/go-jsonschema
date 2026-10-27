@@ -2,9 +2,12 @@
 
 package test
 
+import "bytes"
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strconv"
+import "strings"
 
 type RootOneOfDiscriminator struct {
 	Ping *RootOneOfDiscriminatorPing `json:"-" yaml:"-"`
@@ -35,7 +38,11 @@ func (j *RootOneOfDiscriminatorPing) UnmarshalJSON(value []byte) error {
 	type Plain RootOneOfDiscriminatorPing
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal RootOneOfDiscriminatorPing: %w", err)
+		var retry Plain
+		if err = unmarshalIntegral_RootOneOfDiscriminatorPing(value, &retry, err); err != nil {
+			return fmt.Errorf("unmarshal RootOneOfDiscriminatorPing: %w", err)
+		}
+		plain = retry
 	}
 	if plain.Kind != "ping" {
 		return fmt.Errorf("field %s: must be equal to %s", "kind", "ping")
@@ -245,4 +252,98 @@ func (j *RootOneOfDiscriminator) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("RootOneOfDiscriminator: unknown kind value %q", peek.Discriminator.Value)
 	}
 	return nil
+}
+
+// unmarshalIntegral_RootOneOfDiscriminatorPing decodes data into v again, as
+// json.Unmarshal does, after a decode that failed with err. It first writes each
+// number that holds an integer, such as 2.0 or 1e2, as an integer, which JSON
+// Schema counts it as and encoding/json requires for a Go integer. It returns err
+// when no number needs that, and otherwise the error of the second decode, which
+// names a value that is still wrong. Every decoder in this file calls it; it is
+// named after the first, so that no other file of the package declares it.
+func unmarshalIntegral_RootOneOfDiscriminatorPing(data []byte, v interface{}, err error) error {
+	if !json.Valid(data) {
+		return err
+	}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	var doc interface{}
+	if dec.Decode(&doc) != nil {
+		return err
+	}
+	changed := false
+	var walk func(interface{}) interface{}
+	walk = func(n interface{}) interface{} {
+		switch n := n.(type) {
+		case json.Number:
+			if s, ok := unmarshalIntegral_RootOneOfDiscriminatorPing_number(string(n)); ok && s != string(n) {
+				changed = true
+				return json.Number(s)
+			}
+		case map[string]interface{}:
+			for k, e := range n {
+				n[k] = walk(e)
+			}
+		case []interface{}:
+			for i, e := range n {
+				n[i] = walk(e)
+			}
+		}
+		return n
+	}
+	doc = walk(doc)
+	if !changed {
+		return err
+	}
+	normalized, merr := json.Marshal(doc)
+	if merr != nil {
+		return err
+	}
+	return json.Unmarshal(normalized, v)
+}
+
+// unmarshalIntegral_RootOneOfDiscriminatorPing_number returns the integer that the
+// JSON number s holds, written without a fraction or an exponent, or false when s
+// holds no integer, or one of more than 20 digits, which fits no Go integer.
+func unmarshalIntegral_RootOneOfDiscriminatorPing_number(s string) (string, bool) {
+	neg := strings.HasPrefix(s, "-")
+	s = strings.TrimPrefix(s, "-")
+	mantissa, exp := s, 0
+	if i := strings.IndexAny(s, "eE"); i >= 0 {
+		e, err := strconv.Atoi(s[i+1:])
+		if err != nil || e > 40 || e < -40 {
+			return "", false
+		}
+		mantissa, exp = s[:i], e
+	}
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	digits := intPart + frac
+	point := len(intPart) + exp
+	start := point
+	if start < 0 {
+		start = 0
+	}
+	for i := start; i < len(digits); i++ {
+		if digits[i] != '0' {
+			return "", false
+		}
+	}
+	whole := ""
+	switch {
+	case point >= len(digits):
+		whole = digits + strings.Repeat("0", point-len(digits))
+	case point > 0:
+		whole = digits[:point]
+	}
+	whole = strings.TrimLeft(whole, "0")
+	if whole == "" {
+		return "0", true
+	}
+	if len(whole) > 20 {
+		return "", false
+	}
+	if neg {
+		whole = "-" + whole
+	}
+	return whole, true
 }
