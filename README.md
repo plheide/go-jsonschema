@@ -195,10 +195,11 @@ When generated code doesn't check something a schema declares, the generator say
   the type became `interface{}`.
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
   `oneOf`, an `if`/`then`/`else`, a `not` or a `false` schema, or the keywords of a property that an `anyOf` branch
-  declares as well.
-
-The keywords listed as unsupported under [Validation](#validation), such as `patternProperties` and `contains`, are
-not reported.
+  declares as well. A reason such as `minProperties, propertyNames not checked` names keywords that no generated
+  code checks: `contains` (with `minContains` and `maxContains`), `dependentRequired` and `dependentSchemas` (draft
+  07's `dependencies` counts as these), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`,
+  `unevaluatedItems` and `unevaluatedProperties`. A keyword whose subschemas admit every value, such as
+  `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
 
 ### Options for names, types and tags
 
@@ -330,16 +331,18 @@ only specific validations remain to be fully implemented.
     * [x] `minItems`
     * [x] `uniqueItems`
     * [ ] `additionalItems` (only `false` after tuple-form `items` is checked, as a length limit)
-    * [ ] `contains`
+    * [ ] `contains`, `minContains` and `maxContains`
+    * [ ] `unevaluatedItems`
   * [ ] Object validation (§6.5)
     * [x] `required`
     * [x] `properties`
     * [x] `additionalProperties: false` (opt-in via `Config.StrictAdditionalProperties`)
     * [ ] `patternProperties`
-    * [ ] `dependencies` (both forms are parsed, but not enforced)
+    * [ ] `dependencies` (both forms are parsed, but not enforced), `dependentRequired` and `dependentSchemas`
     * [ ] `propertyNames`
     * [ ] `maxProperties`
     * [ ] `minProperties`
+    * [ ] `unevaluatedProperties`
   * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property, which may be declared through a `$ref` and may be held by nested objects, such as `meta.status`; an `if`/`then`/`else` on the object itself counts as one more `allOf` element; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's checks: its `required`, and a `not` of `required` (`not: {required: [a, b]}` forbids both together, `not: {anyOf: [{required: [a]}, {required: [b]}]}` either). Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check, which it may also list in its `required` (other `required`/composition/validation keywords decline detection). Where the discriminator, or an object holding it, is absent, an if that requires it is false, so its `else` applies, and one that does not is true, vacuously, so its `then` applies. Other conditionals
     are not compiled, and a [fidelity warning](#fidelity-warnings) reports them
     * [x] `if`
