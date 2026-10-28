@@ -41,7 +41,7 @@ go install github.com/plheide/go-jsonschema@latest
   Each release is tagged with its version, and only stable releases set `latest`, so name a version:
 
 ```shell
-docker run --rm -v "$PWD:/work" -w /work plheide/go-jsonschema:v0.25.0-rc.5 -p main schema.json
+docker run --rm -v "$PWD:/work" -w /work plheide/go-jsonschema:v0.27.0 -p main schema.json
 ```
 
 * **Homebrew**: the `omissis/go-jsonschema` tap installs upstream's releases, not this fork.
