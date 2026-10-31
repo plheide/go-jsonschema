@@ -263,6 +263,10 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   integer it holds, as JSON Schema counts it. A number that holds no integer, or one that the Go type can't hold, is
   an error in both, and the JSON error names it as written. Upstream's code rejected `2.0` in JSON, as
   `encoding/json` does for a Go integer, and in YAML truncated `2.5` to 2.
+* An `integer`'s `minimum` and `maximum`, and their exclusive forms, are read as the schema writes them, so a bound
+  beyond 2^53 isn't rounded, and one with a fraction bounds the integers it lets through: `maximum: 2.5` lets 2
+  through and refuses 3. Upstream read them through a `float64`, so a bound at the limit of an `int64` overflowed
+  and rejected nearly every value.
 * Each value of an `AdditionalProperties` field is decoded from its own JSON or YAML, as a declared property's is: an
   integer exactly, and in YAML a number for a string as its text. Upstream converted the values from a decoded map,
   which truncated `2.5` to 2 for an integer and wrapped `1e300`.

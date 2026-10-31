@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
+	testBounds "github.com/plheide/go-jsonschema/tests/data/integralNumbers/bounds"
 	testCycle "github.com/plheide/go-jsonschema/tests/data/integralNumbers/cycle"
 	testShapes "github.com/plheide/go-jsonschema/tests/data/integralNumbers/shapes"
 	testWritten "github.com/plheide/go-jsonschema/tests/data/integralNumbers/written"
@@ -296,4 +297,44 @@ func TestIntegralNumbers(t *testing.T) {
 			require.ErrorContains(t, yamlv3.Unmarshal([]byte(tc.input), &fromYAML), tc.wantYAML, "yaml %s", tc.input)
 		}
 	})
+}
+
+// TestIntegerBounds covers an integer's bounds, which are read as the schema
+// writes them: one beyond 2^53 isn't rounded, and one with a fraction bounds
+// the integers that it lets through.
+func TestIntegerBounds(t *testing.T) {
+	t.Parallel()
+
+	for _, input := range []string{
+		`{"atMost64": 9223372036854775807, "atLeast64": -9223372036854775808, "pastAny": 9223372036854775807}`,
+		`{"beyond53": 9007199254740993, "hundred": 100, "below": 9}`,
+		`{"halfMax": 2, "halfMin": 3, "halfBelow": 2, "halfAbove": 3}`,
+		`{"items": [9223372036854775807, -1]}`,
+	} {
+		var fromJSON, fromYAML testBounds.Bounds
+
+		require.NoError(t, json.Unmarshal([]byte(input), &fromJSON), "json %s", input)
+		require.NoError(t, yamlv3.Unmarshal([]byte(input), &fromYAML), "yaml %s", input)
+		assert.Equal(t, fromJSON, fromYAML, input)
+	}
+
+	for _, tc := range []struct {
+		input   string
+		wantErr string
+	}{
+		{`{"beyond53": 9007199254740994}`, "field beyond53: must be <= 9007199254740993"},
+		{`{"hundred": 101}`, "field hundred: must be <= 100"},
+		{`{"below": 10}`, "field below: must be < 10"},
+		{`{"halfMax": 3}`, "field halfMax: must be <= 2.5"},
+		{`{"halfMin": 2}`, "field halfMin: must be >= 2.5"},
+		{`{"halfBelow": 3}`, "field halfBelow: must be < 2.5"},
+		{`{"halfAbove": 2}`, "field halfAbove: must be > 2.5"},
+		// No int is at most -1e30.
+		{`{"none": -9223372036854775808}`, "field none: must be <= -1e30"},
+	} {
+		var fromJSON, fromYAML testBounds.Bounds
+
+		require.ErrorContains(t, json.Unmarshal([]byte(tc.input), &fromJSON), tc.wantErr, "json %s", tc.input)
+		require.ErrorContains(t, yamlv3.Unmarshal([]byte(tc.input), &fromYAML), tc.wantErr, "yaml %s", tc.input)
+	}
 }

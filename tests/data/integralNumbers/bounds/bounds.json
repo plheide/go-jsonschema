@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/integralNumbers/bounds",
+  "title": "Bounds",
+  "description": "An integer's bounds are read as the schema writes them, so that one beyond 2^53 isn't rounded, and one with a fraction bounds the integers it lets through.",
+  "type": "object",
+  "properties": {
+    "atMost64": {
+      "type": "integer",
+      "maximum": 9223372036854775807
+    },
+    "atLeast64": {
+      "type": "integer",
+      "minimum": -9223372036854775808
+    },
+    "beyond53": {
+      "type": "integer",
+      "maximum": 9007199254740993
+    },
+    "hundred": {
+      "type": "integer",
+      "maximum": 1e2
+    },
+    "below": {
+      "type": "integer",
+      "exclusiveMaximum": 10
+    },
+    "halfMax": {
+      "type": "integer",
+      "maximum": 2.5
+    },
+    "halfMin": {
+      "type": "integer",
+      "minimum": 2.5
+    },
+    "halfBelow": {
+      "type": "integer",
+      "exclusiveMaximum": 2.5
+    },
+    "halfAbove": {
+      "type": "integer",
+      "exclusiveMinimum": 2.5
+    },
+    "pastAny": {
+      "type": "integer",
+      "maximum": 1e30
+    },
+    "none": {
+      "type": "integer",
+      "maximum": -1e30
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "maximum": 9223372036854775807
+      }
+    }
+  }
+}

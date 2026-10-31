@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 560 (326 fixtures, 234 definitions), 25 skipped; documents: 14486
-json: 13410 agree, 574 missing checks (120 silent), 502 wrong rejections, 0 panics
-yaml: 12367 agree, 1604 missing checks (874 silent), 515 wrong rejections, 0 panics
+schemas: 561 (327 fixtures, 234 definitions), 25 skipped; documents: 14653
+json: 13599 agree, 574 missing checks (120 silent), 480 wrong rejections, 0 panics
+yaml: 12555 agree, 1605 missing checks (875 silent), 493 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/allOf/allOf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1589,6 +1589,25 @@ yaml missing check (silent) type: wrong type ×1, e.g. /host = 12345
 == formatValidationInlineMaps/inlineMaps.json
 yaml missing check (silent) type: null ×1, e.g. / = null
 
+== integralNumbers/bounds/bounds.json
+json wrong rejection: 0 ×1, e.g. /atLeast64 = 0: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+json wrong rejection: 0e99 ×1, e.g. /atLeast64 = 0e99: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+json wrong rejection: 1e300 ×1, e.g. /atLeast64 = 1e300: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number 1e300 into Go struct field Plain.atLeast64 of type int
+json wrong rejection: 2^53+1 ×1, e.g. /atLeast64 = 9007199254740993: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+json wrong rejection: 2^63 ×1, e.g. /atLeast64 = 9223372036854775808: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.atLeast64 of type int
+json wrong rejection: 2^64 ×1, e.g. /atLeast64 = 18446744073709551616: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.atLeast64 of type int
+json wrong rejection: delete key ×1, e.g. /atLeast64 deleted: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+json wrong rejection: negative ×1, e.g. /atLeast64 = -1: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml wrong rejection: 0 ×1, e.g. /atLeast64 = 0: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: 0e99 ×1, e.g. /atLeast64 = 0e99: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: 1e300 ×1, e.g. /atLeast64 = 1e300: unmarshal Wrap: unmarshal Bounds: field atLeast64: 1e300 is out of range for int
+yaml wrong rejection: 2^53+1 ×1, e.g. /atLeast64 = 9007199254740993: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /atLeast64 = 9223372036854775808: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: 2^64 ×1, e.g. /atLeast64 = 18446744073709551616: unmarshal Wrap: unmarshal Bounds: field atLeast64: 18446744073709551616 is out of range for int
+yaml wrong rejection: delete key ×1, e.g. /atLeast64 deleted: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: negative ×1, e.g. /atLeast64 = -1: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+
 == integralNumbers/cycle/cycle.json
 json missing check type: 0 ×2, e.g. /count = 0
 json missing check type: 0e99 ×2, e.g. /count = 0e99
@@ -1719,28 +1738,10 @@ yaml missing check (silent) type: null ×2, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /labels/a = 12345
 
 == minSizedInts/arrays/exact.json
-json wrong rejection: 0 ×1, e.g. /i64/0 = 0: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64/0 = 0e99: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-json wrong rejection: 2^53+1 ×1, e.g. /i64/0 = 9007199254740993: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-json wrong rejection: empty array ×1, e.g. /i64 = []: unmarshal Wrap: field u64[0]: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64/0 = -1: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64/0 = 0: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64/0 = 0e99: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64/0 = 9007199254740993: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-yaml wrong rejection: empty array ×1, e.g. /i64 = []: unmarshal Wrap: field u64[0]: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64/0 = -1: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
 
 == minSizedInts/exactReferences/exact.json
-json wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-json wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
 
 == minSizedInts/exactReferences/exact.json#/definitions/bound16
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1749,15 +1750,7 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactReferences/exact.json#/definitions/bound64
-json wrong rejection: 0 ×1, e.g. / = 0: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-json wrong rejection: 2^53+1 ×1, e.g. / = 9007199254740993: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. / = -1: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. / = 0: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. / = 9007199254740993: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. / = -1: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
 
 == minSizedInts/exactReferences/exact.json#/definitions/bound8
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1769,47 +1762,21 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactReferences/exact.json#/definitions/uBound64
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-json wrong rejection: 2^53+1 ×1, e.g. / = 9007199254740993: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
 json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal UBound64: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
-json wrong rejection: N.0 ×1, e.g. / = 0.0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-json wrong rejection: Ne0 ×1, e.g. / = 0e0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-json wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. / = 9007199254740993: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
 yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal UBound64: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
-yaml wrong rejection: N.0 ×1, e.g. / = 0.0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-yaml wrong rejection: Ne0 ×1, e.g. / = 0e0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
 
 == minSizedInts/exactReferences/exact.json#/definitions/uBound8
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactSizes/exact.json
-json wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be <= -9223372036854775808
 
 == minSizedInts/exactSizesExclusiveBool/exact.json
 skipped: the reference validator can't compile it: compile data/minSizedInts/exactSizesExclusiveBool/exact.json: "file://data/minSizedInts/exactSizesExclusiveBool/exact.json#" is not valid against metaschema: jsonschema validation failed with 'http://json-schema.org/draft-07/schema#'
 
 == minSizedInts/exactSizesExclusiveNum/exact.json
-json wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be < -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be < -9223372036854775808
-json wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be < -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be < -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be < -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be < -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be < -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be < -9223372036854775808
 
 == minSizedInts/integerFormatPrecedence/integerFormatPrecedence.json
 json wrong rejection: 1e300 ×1, e.g. /unbounded = 1e300: unmarshal Wrap: unmarshal IntegerFormatPrecedence: json: cannot unmarshal number 1e300 into Go struct field Plain.unbounded of type int
@@ -1826,15 +1793,7 @@ yaml missing check (silent) required: delete key ×10, e.g. /i16 deleted
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizes/restricted.json
-json wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be <= -9223372036854775808
 
 == minSizedInts/restrictedSizesReferences/restricted.json
 yaml missing check (silent) type: null ×1, e.g. / = null
