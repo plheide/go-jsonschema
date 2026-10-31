@@ -194,10 +194,15 @@ quietly produces non-deterministic output.
   `tests/testdata/conformance/draft7.txt`, is regenerated with the Go goldens. Review its diff like theirs: each new
   line is a new disagreement with the suite, and each removed line one fewer. `-short` skips the test.
   `scripts/update-test-suite.sh <commit>` updates the vendored suite.
-- `tests/harness` is how the conformance test runs generated code. It generates each schema into a package of its
-  own in a temporary module, builds the module offline, and decodes documents with a driver built from it
-  (`tests/harness/driver`, which runs outside the race detector). Its loader reads files and pre-loaded schemas only,
-  so a test never goes to the network.
+- `TestDifferentialFixtures` (`tests/differential_test.go`) builds documents from each fixture and each top-level
+  definition, then mutates them one node at a time (`tests/mutants_test.go`). It compares the generated code's
+  verdicts with those of santhosh-tekuri/jsonschema, which only the tests module requires. Its golden report is
+  `tests/testdata/differential/fixtures.txt`. A fixture's documents come from its schema, so a changed or added
+  fixture moves the report as well.
+- `tests/harness` is how both tests run generated code. It generates each schema into a package of its own in a
+  temporary module, builds the module offline, and decodes documents with a driver built from it
+  (`tests/harness/driver`, which also runs the reference validator, outside the race detector). Its loader reads
+  files and pre-loaded schemas only, so a test never goes to the network.
 - New options should usually get their own `Test*` and a dedicated `tests/data/<feature>/` tree rather than being
   squeezed into `core` or `misc`.
 
