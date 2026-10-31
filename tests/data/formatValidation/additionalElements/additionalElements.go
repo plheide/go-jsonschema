@@ -4,10 +4,10 @@ package test
 
 import "encoding/json"
 import "fmt"
-import "github.com/go-viper/mapstructure/v2"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "regexp"
+import "sort"
 import "strings"
 
 // Extra properties beside named ones are collected into AdditionalProperties after
@@ -53,8 +53,25 @@ func (j *AdditionalElements) UnmarshalJSON(value []byte) error {
 			}
 		}
 	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for AdditionalElements: %w", err)
+	{
+		var additional map[string]json.RawMessage
+		if err := json.Unmarshal(value, &additional); err != nil {
+			return fmt.Errorf("decode additional properties for AdditionalElements: %w", err)
+		}
+		keys := make([]string, 0, len(raw))
+		for k := range raw {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		values := make(map[string]string, len(keys))
+		for _, k := range keys {
+			var v string
+			if err := json.Unmarshal(additional[k], &v); err != nil {
+				return fmt.Errorf("decode additional property %q for AdditionalElements: %w", k, err)
+			}
+			values[k] = v
+		}
+		plain.AdditionalProperties = values
 	}
 	for k1 := range plain.AdditionalProperties {
 		if !regexpFormatUUID.MatchString(string(plain.AdditionalProperties[k1])) {
@@ -99,8 +116,26 @@ func (j *AdditionalElements) UnmarshalYAML(value *yaml.Node) error {
 			}
 		}
 	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for AdditionalElements: %w", err)
+	{
+		var additional map[string]yaml.Node
+		if err := value.Decode(&additional); err != nil {
+			return fmt.Errorf("decode additional properties for AdditionalElements: %w", err)
+		}
+		keys := make([]string, 0, len(raw))
+		for k := range raw {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		values := make(map[string]string, len(keys))
+		for _, k := range keys {
+			var v string
+			node := additional[k]
+			if err := node.Decode(&v); err != nil {
+				return fmt.Errorf("decode additional property %q for AdditionalElements: %w", k, err)
+			}
+			values[k] = v
+		}
+		plain.AdditionalProperties = values
 	}
 	for k1 := range plain.AdditionalProperties {
 		if !regexpFormatUUID.MatchString(string(plain.AdditionalProperties[k1])) {

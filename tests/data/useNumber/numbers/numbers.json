@@ -21,6 +21,7 @@
       "properties": { "x": { "$ref": "#/definitions/anything" } }
     }
   },
+  "additionalProperties": true,
   "definitions": {
     "anything": {}
   }

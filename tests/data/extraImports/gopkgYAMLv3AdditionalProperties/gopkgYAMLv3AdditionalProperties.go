@@ -4,9 +4,9 @@ package test
 
 import "encoding/json"
 import "fmt"
-import "github.com/go-viper/mapstructure/v2"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
+import "sort"
 import "strings"
 
 type GopkgYAMLv3AdditionalProperties struct {
@@ -53,8 +53,25 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalJSON(value []byte) error {
 			}
 		}
 	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for GopkgYAMLv3AdditionalProperties: %w", err)
+	{
+		var additional map[string]json.RawMessage
+		if err := json.Unmarshal(value, &additional); err != nil {
+			return fmt.Errorf("decode additional properties for GopkgYAMLv3AdditionalProperties: %w", err)
+		}
+		keys := make([]string, 0, len(raw))
+		for k := range raw {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		values := make(map[string]interface{}, len(keys))
+		for _, k := range keys {
+			var v interface{}
+			if err := json.Unmarshal(additional[k], &v); err != nil {
+				return fmt.Errorf("decode additional property %q for GopkgYAMLv3AdditionalProperties: %w", k, err)
+			}
+			values[k] = v
+		}
+		plain.AdditionalProperties = values
 	}
 	*j = GopkgYAMLv3AdditionalProperties(plain)
 	return nil
@@ -94,8 +111,26 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalYAML(value *yaml.Node) error 
 			}
 		}
 	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for GopkgYAMLv3AdditionalProperties: %w", err)
+	{
+		var additional map[string]yaml.Node
+		if err := value.Decode(&additional); err != nil {
+			return fmt.Errorf("decode additional properties for GopkgYAMLv3AdditionalProperties: %w", err)
+		}
+		keys := make([]string, 0, len(raw))
+		for k := range raw {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		values := make(map[string]interface{}, len(keys))
+		for _, k := range keys {
+			var v interface{}
+			node := additional[k]
+			if err := node.Decode(&v); err != nil {
+				return fmt.Errorf("decode additional property %q for GopkgYAMLv3AdditionalProperties: %w", k, err)
+			}
+			values[k] = v
+		}
+		plain.AdditionalProperties = values
 	}
 	*j = GopkgYAMLv3AdditionalProperties(plain)
 	return nil

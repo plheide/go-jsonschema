@@ -720,10 +720,10 @@ func (g *schemaGenerator) propertyValidators(
 	declName string,
 ) []validator {
 	if f.DefaultValue != nil {
-		if f.Name == additionalProperties {
+		if isAdditionalPropertiesField(&f) {
 			g.output.file.Package.AddImport("reflect", "")
+			g.output.file.Package.AddImport("sort", "")
 			g.output.file.Package.AddImport("strings", "")
-			g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
 		}
 
 		dvType := f.Type

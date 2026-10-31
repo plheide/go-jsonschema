@@ -2,9 +2,13 @@
 
 package test
 
+import "bytes"
 import "encoding/json"
+import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strconv"
+import "strings"
 
 // A named nullable integer with a pinned width, which generates a named pointer
 // alias. A default on a property referencing it needs a temp of the POINTEE's type
@@ -25,7 +29,11 @@ func (j *IntegerFormatPointerDefault) UnmarshalJSON(value []byte) error {
 	type Plain IntegerFormatPointerDefault
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal IntegerFormatPointerDefault: %w", err)
+		var retry Plain
+		if err = unmarshalIntegral_IntegerFormatPointerDefault(value, &retry, err, integerPaths_IntegerFormatPointerDefault); err != nil {
+			return fmt.Errorf("unmarshal IntegerFormatPointerDefault: %w", err)
+		}
+		plain = retry
 	}
 	if v, ok := raw["count"]; !ok || v == nil {
 		var defaultCount int64 = 5
@@ -44,7 +52,7 @@ func (j *IntegerFormatPointerDefault) UnmarshalYAML(value *yaml.Node) error {
 	}
 	type Plain IntegerFormatPointerDefault
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := unmarshalIntegral_IntegerFormatPointerDefault_yaml(value, &plain, integerPaths_IntegerFormatPointerDefault); err != nil {
 		return fmt.Errorf("unmarshal IntegerFormatPointerDefault: %w", err)
 	}
 	if v, ok := raw["count"]; !ok || v == nil {
@@ -54,4 +62,280 @@ func (j *IntegerFormatPointerDefault) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = IntegerFormatPointerDefault(plain)
 	return nil
+}
+
+var integerPaths_IntegerFormatPointerDefault = &unmarshalIntegral_IntegerFormatPointerDefault_path{fields: map[string]*unmarshalIntegral_IntegerFormatPointerDefault_path{
+	"count": {kind: "int64"},
+}}
+
+// unmarshalIntegral_IntegerFormatPointerDefault decodes data into v again, as
+// json.Unmarshal does, after a decode that failed with err. It first writes each
+// number at one of p's integer paths that holds an integer, such as 2.0 or 1e2, as
+// that integer, which JSON Schema counts it as and encoding/json requires for a Go
+// integer. Every other byte stays as written, and so does a number that the Go
+// integer type can't hold, so that the error of the second decode names it as
+// written. It returns err when no number needs writing. Every decoder in this file
+// calls it; it is named after the first, so that no other file of the package
+// declares it.
+func unmarshalIntegral_IntegerFormatPointerDefault(data []byte, v interface{}, err error, p *unmarshalIntegral_IntegerFormatPointerDefault_path) error {
+	if !json.Valid(data) {
+		return err
+	}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	var written []byte
+	copied := 0
+	var walk func(p *unmarshalIntegral_IntegerFormatPointerDefault_path) bool
+	walk = func(p *unmarshalIntegral_IntegerFormatPointerDefault_path) bool {
+		if p == nil {
+			var skipped json.RawMessage
+			return dec.Decode(&skipped) == nil
+		}
+		tok, terr := dec.Token()
+		if terr != nil {
+			return false
+		}
+		if delim, ok := tok.(json.Delim); ok {
+			for dec.More() {
+				next := p.items
+				if delim == '{' {
+					key, kerr := dec.Token()
+					if kerr != nil {
+						return false
+					}
+					next = p.at(key.(string), true)
+				}
+				if !walk(next) {
+					return false
+				}
+			}
+			_, terr = dec.Token()
+			return terr == nil
+		}
+		if n, ok := tok.(json.Number); ok && p.kind != "" {
+			s, ok := unmarshalIntegral_IntegerFormatPointerDefault_number(string(n))
+			if ok && s != "" && s != string(n) && unmarshalIntegral_IntegerFormatPointerDefault_fits(s, p.kind) {
+				end := int(dec.InputOffset())
+				written = append(append(written, data[copied:end-len(n)]...), s...)
+				copied = end
+			}
+		}
+		return true
+	}
+	if !walk(p) || written == nil {
+		return err
+	}
+	written = append(written, data[copied:]...)
+	return json.Unmarshal(written, v)
+}
+
+// unmarshalIntegral_IntegerFormatPointerDefault_yaml decodes n into v, as n.Decode
+// does, after writing each float at one of p's integer paths as the integer it
+// holds, which JSON Schema counts it as: yaml.v3 would truncate a float into a Go
+// integer, and round an integer beyond 2^53. A float that holds no integer, or one
+// that the Go integer type can't hold, is an error that names where it is. n
+// itself stays as it is: a node with a float to write is copied, with the nodes
+// above it.
+func unmarshalIntegral_IntegerFormatPointerDefault_yaml(n *yaml.Node, v interface{}, p *unmarshalIntegral_IntegerFormatPointerDefault_path) error {
+	type alias struct {
+		n *yaml.Node
+		p *unmarshalIntegral_IntegerFormatPointerDefault_path
+	}
+	aliases := map[alias]*yaml.Node{}
+	var walk func(n *yaml.Node, p *unmarshalIntegral_IntegerFormatPointerDefault_path, at string) (*yaml.Node, error)
+	walk = func(n *yaml.Node, p *unmarshalIntegral_IntegerFormatPointerDefault_path, at string) (*yaml.Node, error) {
+		if p == nil {
+			return n, nil
+		}
+		switch n.Kind {
+		case yaml.ScalarNode:
+			if p.kind == "" || n.ShortTag() != "!!float" {
+				return n, nil
+			}
+			field := ""
+			if at != "" {
+				field = "field " + at + ": "
+			}
+			s, ok := unmarshalIntegral_IntegerFormatPointerDefault_number(n.Value)
+			if !ok {
+				return nil, fmt.Errorf("%s%s is not an integer", field, n.Value)
+			}
+			if s == "" || !unmarshalIntegral_IntegerFormatPointerDefault_fits(s, p.kind) {
+				return nil, fmt.Errorf("%s%s is out of range for %s", field, n.Value, p.kind)
+			}
+			c := *n
+			c.Tag, c.Value, c.Style = "!!int", s, 0
+			return &c, nil
+		case yaml.AliasNode:
+			// Each anchor is walked once for p. It stands for itself while it is walked,
+			// for an alias inside it, which yaml.v3 refuses.
+			key := alias{n.Alias, p}
+			t, ok := aliases[key]
+			if !ok {
+				aliases[key] = n.Alias
+				var err error
+				if t, err = walk(n.Alias, p, at); err != nil {
+					return nil, err
+				}
+				aliases[key] = t
+			}
+			if t == n.Alias {
+				return n, nil
+			}
+			c := *n
+			c.Alias = t
+			return &c, nil
+		}
+		var content []*yaml.Node
+		for i, e := range n.Content {
+			next, nextAt := p, at
+			switch n.Kind {
+			case yaml.SequenceNode:
+				next, nextAt = p.items, fmt.Sprintf("%s[%d]", at, i)
+			case yaml.MappingNode:
+				if i%2 == 0 {
+					continue
+				}
+				k := n.Content[i-1]
+				// A merge key's mapping, or each of a sequence of them, holds keys of this
+				// one, as yaml.v3 tells it.
+				if k.Kind == yaml.ScalarNode && k.Value == "<<" &&
+					(k.Tag == "" || k.Tag == "!" || k.ShortTag() == "!!merge") {
+					if e.Kind == yaml.SequenceNode {
+						next = &unmarshalIntegral_IntegerFormatPointerDefault_path{items: p}
+					}
+					break
+				}
+				next = p.at(k.Value, false)
+				if p.fields == nil {
+					nextAt = fmt.Sprintf("%s[%q]", at, k.Value)
+				} else if at == "" {
+					nextAt = k.Value
+				} else {
+					nextAt = at + "." + k.Value
+				}
+			}
+			t, err := walk(e, next, nextAt)
+			if err != nil {
+				return nil, err
+			}
+			if t != e {
+				if content == nil {
+					content = append([]*yaml.Node(nil), n.Content...)
+				}
+				content[i] = t
+			}
+		}
+		if content == nil {
+			return n, nil
+		}
+		c := *n
+		c.Content = content
+		return &c, nil
+	}
+	t, err := walk(n, p, "")
+	if err != nil {
+		return err
+	}
+	return t.Decode(v)
+}
+
+// unmarshalIntegral_IntegerFormatPointerDefault_fits reports whether the Go
+// integer type kind holds the integer s.
+func unmarshalIntegral_IntegerFormatPointerDefault_fits(s, kind string) bool {
+	size := strconv.IntSize
+	switch strings.TrimPrefix(kind, "u") {
+	case "int8":
+		size = 8
+	case "int16":
+		size = 16
+	case "int32":
+		size = 32
+	case "int64":
+		size = 64
+	}
+	if strings.HasPrefix(kind, "u") {
+		_, err := strconv.ParseUint(s, 10, size)
+		return err == nil
+	}
+	_, err := strconv.ParseInt(s, 10, size)
+	return err == nil
+}
+
+// unmarshalIntegral_IntegerFormatPointerDefault_number returns the integer that
+// the number s holds, written without a fraction, an exponent or a plus sign, or
+// false when s holds none. An integer of more than 20 digits, which no Go integer
+// holds, is returned as "".
+func unmarshalIntegral_IntegerFormatPointerDefault_number(s string) (string, bool) {
+	neg := strings.HasPrefix(s, "-")
+	if neg || strings.HasPrefix(s, "+") {
+		s = s[1:]
+	}
+	mantissa, exp := s, "0"
+	if i := strings.IndexAny(s, "eE"); i >= 0 {
+		mantissa, exp = s[:i], s[i+1:]
+	}
+	intPart, frac, _ := strings.Cut(mantissa, ".")
+	digits := intPart + frac
+	if digits == "" || strings.Trim(digits, "0123456789") != "" {
+		return "", false
+	}
+	significant := strings.TrimLeft(digits, "0")
+	if significant == "" {
+		return "0", true
+	}
+	e, err := strconv.Atoi(exp)
+	if err != nil && !errors.Is(err, strconv.ErrRange) {
+		return "", false
+	}
+	// An exponent out of an int's range is read as the largest int; a billion is
+	// still past any Go integer, and keeps point from overflowing.
+	if e > 1e9 {
+		e = 1e9
+	} else if e < -1e9 {
+		e = -1e9
+	}
+	point := len(intPart) - (len(digits) - len(significant)) + e
+	significant = strings.TrimRight(significant, "0")
+	if point < len(significant) {
+		return "", false
+	}
+	if point > 20 {
+		return "", true
+	}
+	whole := significant + strings.Repeat("0", point-len(significant))
+	if neg {
+		whole = "-" + whole
+	}
+	return whole, true
+}
+
+// unmarshalIntegral_IntegerFormatPointerDefault_path is where a value holds Go
+// integers that its own decoder decodes: the value itself, whose Go integer type
+// kind names, or the values below it, in its items, its values or its fields. A
+// nil field holds none, but has a name that a JSON key can match.
+type unmarshalIntegral_IntegerFormatPointerDefault_path struct {
+	kind          string
+	items, values *unmarshalIntegral_IntegerFormatPointerDefault_path
+	fields        map[string]*unmarshalIntegral_IntegerFormatPointerDefault_path
+}
+
+// at returns the path of the value at key in an object at p. With fold, it also
+// finds a field whose name key matches only when case is ignored, the first such
+// in name order, as encoding/json does.
+func (p *unmarshalIntegral_IntegerFormatPointerDefault_path) at(key string, fold bool) *unmarshalIntegral_IntegerFormatPointerDefault_path {
+	if p.fields == nil {
+		return p.values
+	}
+	f, ok := p.fields[key]
+	if ok || !fold {
+		return f
+	}
+	match := ""
+	for name, g := range p.fields {
+		if strings.EqualFold(name, key) && (!ok || name < match) {
+			match, f, ok = name, g, true
+		}
+	}
+	return f
 }

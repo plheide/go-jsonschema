@@ -183,7 +183,8 @@ func (g *Generator) Sources() (map[string][]byte, error) {
 			continue
 		}
 
-		g.addJSONDecoders(output)
+		g.addDecoders(output)
+		output.resolveDecoders()
 		g.declareConstConstants(output)
 		g.renameConstantsShadowingImports(output)
 

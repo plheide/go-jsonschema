@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A property named additionalProperties, as a schema that describes JSON Schema has, is a property like any other, not the map of the properties a schema doesn't declare.",
+  "properties": {
+    "additionalProperties": {
+      "type": "boolean"
+    },
+    "count": {
+      "type": "integer"
+    }
+  }
+}

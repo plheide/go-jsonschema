@@ -172,9 +172,9 @@ or is listed as unsupported under [Status](#status).
   schema allows them. That is stricter than JSON Schema.
 * **`--only-models`** generates the types without unmarshalers, so nothing is checked.
 * **Numbers in untyped values**, `interface{}` fields and the values they hold, are decoded from JSON as `float64`,
-  which loses integers beyond 2^53. `--use-number` decodes them as `json.Number`, which keeps them exact, and writes
-  their defaults so too. Typed fields, enum values and `AdditionalProperties` are decoded as before, and so is YAML,
-  since yaml.v3 decodes integers exactly.
+  which loses integers beyond 2^53. `--use-number` decodes them as `json.Number`, which keeps them exact, in fields
+  and in `AdditionalProperties`, and writes their defaults so too. Typed fields and enum values are decoded as
+  before, and so is YAML, since yaml.v3 decodes integers exactly.
 
 ### Checks that are off by default
 
@@ -259,8 +259,13 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   wrote `null`, which the schema rejects.
 * A property with a `const` of a string, a number, an integer or a boolean has an exported constant, named after the
   struct and the field, such as `ConfigSchema` for a `$schema` property.
-* An `integer` written with a fraction or an exponent, such as `2.0` or `1e2`, is decoded from JSON, as JSON Schema
-  counts it as an integer. Upstream's code rejected it, as `encoding/json` does for a Go integer.
+* An `integer` written with a fraction or an exponent, such as `2.0` or `1e2`, is decoded from JSON and YAML as the
+  integer it holds, as JSON Schema counts it. A number that holds no integer, or one that the Go type can't hold, is
+  an error in both, and the JSON error names it as written. Upstream's code rejected `2.0` in JSON, as
+  `encoding/json` does for a Go integer, and in YAML truncated `2.5` to 2.
+* Each value of an `AdditionalProperties` field is decoded from its own JSON or YAML, as a declared property's is: an
+  integer exactly, and in YAML a number for a string as its text. Upstream converted the values from a decoded map,
+  which truncated `2.5` to 2 for an integer and wrapped `1e300`.
 * A nested array is held to its own `minItems` and `maxItems`. Upstream held each level to the property's, which
   rejected valid input.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
@@ -305,8 +310,9 @@ classes:
   checks its keywords. This class holds most of the silent missing checks.
 * **Objects without `type: object`.** A schema with `properties` but no `type` becomes a struct, so it rejects the
   non-objects that the suite lets through.
-* **YAML.** yaml.v3 reads some documents differently from JSON. It decodes a number or a boolean into a string, and
-  it can't read an escaped surrogate pair.
+* **YAML.** yaml.v3 reads some documents differently from JSON. It decodes a number or a boolean into a string as its
+  text, and it can't read an escaped surrogate pair. An empty document, or one that is only `null`, decodes to the
+  zero value without an error, so its required properties aren't checked.
 * **`$ref` forms the generator doesn't resolve.** These are a base URI that an `$id` sets, a location-independent
   identifier (`#foo`), a URN, `#` itself, and a pointer into `properties`.
 * **Property names that a Go struct tag can't hold.** The generator rejects these schemas.

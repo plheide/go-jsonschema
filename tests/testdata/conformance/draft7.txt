@@ -8,7 +8,7 @@ it marks valid. A missing check is silent when its case has no generator warning
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
 json: 618 agree, 205 missing checks (168 silent), 18 wrong rejections, 0 panics, 88 not run
-yaml: 595 agree, 229 missing checks (191 silent), 17 wrong rejections, 0 panics, 88 not run
+yaml: 596 agree, 228 missing checks (190 silent), 17 wrong rejections, 0 panics, 88 not run
 cases: 31 generation failures, 2 compilation failures, 39 with warnings
 
 == additionalItems.json
@@ -482,10 +482,10 @@ json missing check (silent): 0.00751 is not multiple of 0.0001
 yaml missing check (silent): 0.00751 is not multiple of 0.0001
 
 -- float division = inf
-compilation failed: root.go:32:11: invalid operation: division by zero root.go:53:11: invalid operation: division by zero
+compilation failed: root.go:33:11: invalid operation: division by zero root.go:54:11: invalid operation: division by zero
 
 -- small multiple of large integer
-compilation failed: root.go:32:11: invalid operation: division by zero root.go:53:11: invalid operation: division by zero
+compilation failed: root.go:33:11: invalid operation: division by zero root.go:54:11: invalid operation: division by zero
 
 == not.json
 
@@ -645,8 +645,8 @@ yaml wrong rejection: ignores other non-objects: unmarshal raw Root: yaml: unmar
 warning: schema fidelity: type Root does not enforce all it declares: patternProperties not checked
 json missing check: patternProperty invalidates property
 yaml missing check: patternProperty invalidates property
-json wrong rejection: patternProperty validates nonproperty: decode additional properties for Root: decoding failed due to the following error(s): '[fxo]' expected type 'int', got unconvertible type '[]interface {}'
-yaml wrong rejection: patternProperty validates nonproperty: decode additional properties for Root: decoding failed due to the following error(s): '[fxo]' expected type 'int', got unconvertible type '[]interface {}'
+json wrong rejection: patternProperty validates nonproperty: decode additional property "fxo" for Root: json: cannot unmarshal array into Go value of type int
+yaml wrong rejection: patternProperty validates nonproperty: decode additional property "fxo" for Root: yaml: unmarshal errors: line 1: cannot unmarshal !!seq into int
 
 -- properties with boolean schema
 warning: schema fidelity: type RootBar does not enforce all it declares: false schema not compiled, so any value passes
@@ -883,7 +883,6 @@ yaml missing check (silent): constructor present
 == type.json
 
 -- integer type matches integers
-yaml missing check (silent): a float is not an integer
 yaml missing check (silent): null is not an integer
 
 -- number type matches numbers
