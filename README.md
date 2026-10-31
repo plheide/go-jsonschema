@@ -318,6 +318,14 @@ classes:
 The suite is vendored in `tests/testdata/JSON-Schema-Test-Suite`. To update it, run
 `scripts/update-test-suite.sh <commit>`, then regenerate the report with `OVERWRITE_EXPECTED_GO_FILE=true`.
 
+`TestDifferentialFixtures` does the same for the fixtures under `tests/data`, which combine keywords as real schemas
+do. It builds documents from each fixture and from each of its top-level definitions, then mutates them one node at
+a time. It compares the generated code's verdicts with those of
+[santhosh-tekuri/jsonschema](https://github.com/santhosh-tekuri/jsonschema), which passes the suite's required tests.
+That validator reads a schema that declares draft-04 or draft-06 as draft-07, as the generator does. The report,
+[`tests/testdata/differential/fixtures.txt`](tests/testdata/differential/fixtures.txt), groups the disagreements by
+schema, keyword and kind of change.
+
 ### Validation
 
 * Core ([RFC draft](http://json-schema.org/latest/json-schema-core.html))

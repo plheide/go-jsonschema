@@ -12,6 +12,7 @@ require (
 	github.com/plheide/go-jsonschema/tests/helpers/other v0.0.0-20260228134922-cb7689305858
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/google/go-cmp v0.7.0
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -24,4 +25,5 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sanity-io/litter v1.5.8 // indirect
 	github.com/sosodev/duration v1.4.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 )

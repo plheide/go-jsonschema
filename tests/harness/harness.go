@@ -35,10 +35,6 @@ const (
 	rootType   = "Root"
 	wrapType   = "Wrap"
 
-	// wrapSchema refers to a schema whose root is only a $ref. Such a root gets no type of its own, only the type
-	// the $ref names, so its documents are decoded as this schema's required value property.
-	wrapSchema = `{"type": "object", "required": ["value"], "properties": {"value": {"$ref": "root.json"}}}`
-
 	// maxErrorLines is how much of a package's build errors an Outcome keeps.
 	maxErrorLines = 5
 	// buildRounds bounds the builds that drop the packages a build failed on before trying again.
@@ -57,6 +53,18 @@ type Schema struct {
 	Name string
 	// Source is the schema document. It is written as root.json, so its root type is Root.
 	Source []byte
+	// File, in place of Source, is a schema file to generate from where it is, so that its relative $refs resolve.
+	// Its documents are decoded through a wrapper (see Outcome.Wrapped).
+	File string
+	// Pointer, with File, is the JSON pointer fragment of the subschema to decode into, such as
+	// "#/definitions/item". It is empty for the file's root.
+	Pointer string
+	// Oracle validates each document with the reference validator too, against the same schema. It asserts
+	// formats when the run's config validates them.
+	Oracle bool
+	// Draft7, with Oracle, has the reference validator read a draft-04 or draft-06 schema as draft-07, as the
+	// generator does.
+	Draft7 bool
 	// Documents are decoded one by one, each into a new value.
 	Documents []json.RawMessage
 	// Cache, when set, returns the schemas to pre-load the loader with, keyed by the URLs $refs name them by. It is
@@ -77,9 +85,12 @@ type Outcome struct {
 	// HasRoot reports whether the generated code declares the root type. Without it, documents decode into
 	// interface{}.
 	HasRoot bool
-	// Wrapped reports that the schema's root is only a $ref, so its documents were decoded as the required value
-	// property of a schema that refers to it.
+	// Wrapped reports that the documents were decoded as the required value property of a schema that refers to
+	// the real one. That is how a File schema is generated, and how a root that is only a $ref is: such a root gets
+	// no type of its own, only the type the $ref names.
 	Wrapped bool
+	// OracleError is the reference validator's error, if it couldn't compile the schema.
+	OracleError string
 	// Results holds each document's verdicts, in order, when they were decoded.
 	Results []driver.Result
 }
@@ -97,13 +108,13 @@ func Run(ctx context.Context, dir string, cfg generator.Config, list []Schema) (
 		return nil, err
 	}
 
-	outcomes := generateAll(moduleDir, cfg, list)
+	outcomes := generateAll(moduleDir, testsDir, cfg, list)
 
 	if err := buildCases(ctx, moduleDir, outcomes); err != nil {
 		return nil, err
 	}
 
-	if err := decodeAll(ctx, moduleDir, list, outcomes); err != nil {
+	if err := decodeAll(ctx, moduleDir, testsDir, cfg, list, outcomes); err != nil {
 		return nil, err
 	}
 
@@ -192,7 +203,7 @@ func writeModule(ctx context.Context, moduleDir, testsDir string) error {
 	return nil
 }
 
-func generateAll(moduleDir string, cfg generator.Config, list []Schema) map[string]*Outcome {
+func generateAll(moduleDir, testsDir string, cfg generator.Config, list []Schema) map[string]*Outcome {
 	outcomes := make(map[string]*Outcome, len(list))
 	for _, s := range list {
 		outcomes[s.Name] = &Outcome{}
@@ -205,7 +216,7 @@ func generateAll(moduleDir string, cfg generator.Config, list []Schema) map[stri
 	for range runtime.GOMAXPROCS(0) {
 		wg.Go(func() {
 			for s := range work {
-				generate(moduleDir, cfg, s, outcomes[s.Name])
+				generate(moduleDir, testsDir, cfg, s, outcomes[s.Name])
 			}
 		})
 	}
@@ -222,9 +233,15 @@ func generateAll(moduleDir string, cfg generator.Config, list []Schema) map[stri
 
 // generate generates one schema into its package and records how that went. A panic is recorded as a generator
 // error, so one schema can't stop the run.
-func generate(moduleDir string, cfg generator.Config, s Schema, o *Outcome) {
+func generate(moduleDir, testsDir string, cfg generator.Config, s Schema, o *Outcome) {
 	dir := filepath.Join(moduleDir, "cases", s.Name)
-	clean := func(msg string) string { return strings.ReplaceAll(msg, dir+string(filepath.Separator), "") }
+	// Messages name files by path; trim the package's directory and the tests module's, so they don't depend on
+	// where the run or the checkout is.
+	clean := func(msg string) string {
+		msg = strings.ReplaceAll(msg, dir+string(filepath.Separator), "")
+
+		return strings.ReplaceAll(msg, testsDir+string(filepath.Separator), "")
+	}
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -242,19 +259,9 @@ func generateInto(dir string, cfg generator.Config, s Schema, o *Outcome, clean 
 		return fmt.Errorf("create package: %w", err)
 	}
 
-	schemaFile := filepath.Join(dir, "root.json")
-	if err := os.WriteFile(schemaFile, s.Source, 0o600); err != nil {
-		return fmt.Errorf("write schema: %w", err)
-	}
-
-	target, typeName := schemaFile, rootType
-
-	if rootIsRef(s.Source) {
-		target, typeName, o.Wrapped = filepath.Join(dir, "wrap.json"), wrapType, true
-
-		if err := os.WriteFile(target, []byte(wrapSchema), 0o600); err != nil {
-			return fmt.Errorf("write wrapper: %w", err)
-		}
+	target, typeName, err := writeSchema(dir, s, o)
+	if err != nil {
+		return err
 	}
 
 	cache := map[string]*schemas.Schema{}
@@ -306,6 +313,43 @@ func generateInto(dir string, cfg generator.Config, s Schema, o *Outcome, clean 
 	}
 
 	return nil
+}
+
+// writeSchema writes the files to generate from into dir, and returns the one to generate and the type to decode
+// into: Source as root.json and its Root type, or else a wrapper and its Wrap type.
+func writeSchema(dir string, s Schema, o *Outcome) (string, string, error) {
+	ref := s.File + s.Pointer
+
+	if s.File == "" {
+		schemaFile := filepath.Join(dir, "root.json")
+		if err := os.WriteFile(schemaFile, s.Source, 0o600); err != nil {
+			return "", "", fmt.Errorf("write schema: %w", err)
+		}
+
+		if !rootIsRef(s.Source) {
+			return schemaFile, rootType, nil
+		}
+
+		ref = "root.json"
+	}
+
+	o.Wrapped = true
+
+	wrapper, err := json.Marshal(map[string]any{
+		"type":       "object",
+		"required":   []string{"value"},
+		"properties": map[string]any{"value": map[string]string{"$ref": ref}},
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("encode wrapper: %w", err)
+	}
+
+	target := filepath.Join(dir, "wrap.json")
+	if err := os.WriteFile(target, wrapper, 0o600); err != nil {
+		return "", "", fmt.Errorf("write wrapper: %w", err)
+	}
+
+	return target, wrapType, nil
 }
 
 // rootIsRef reports whether a schema's root is an object with a $ref, which draft-07 reads as the whole schema.
@@ -432,8 +476,10 @@ func packageErrors(out []byte) map[string]string {
 
 // decodeAll writes and builds the driver, which registers the root type of every package that built, and runs it on
 // the documents of every schema that built.
-func decodeAll(ctx context.Context, moduleDir string, list []Schema, outcomes map[string]*Outcome) error {
-	documents := map[string][]json.RawMessage{}
+func decodeAll(
+	ctx context.Context, moduleDir, testsDir string, cfg generator.Config, list []Schema, outcomes map[string]*Outcome,
+) error {
+	inputs := map[string]driver.Input{}
 
 	var main bytes.Buffer
 
@@ -448,11 +494,18 @@ func decodeAll(ctx context.Context, moduleDir string, list []Schema, outcomes ma
 			continue
 		}
 
-		documents[s.Name] = s.Documents
+		in := driver.Input{Documents: s.Documents, Wrap: o.Wrapped}
 
-		if o.Wrapped {
-			documents[s.Name] = wrapped(s.Documents)
+		if s.Oracle {
+			location := filepath.Join(moduleDir, "cases", s.Name, "root.json")
+			if s.File != "" {
+				location = s.File + s.Pointer
+			}
+
+			in.Oracle = &driver.Oracle{Location: location, AssertFormat: cfg.FormatValidation.Enabled, Draft7: s.Draft7}
 		}
+
+		inputs[s.Name] = in
 
 		if o.HasRoot {
 			fmt.Fprintf(&main, "\t%s %q\n", s.Name, modulePath+"/cases/"+s.Name)
@@ -477,14 +530,14 @@ func decodeAll(ctx context.Context, moduleDir string, list []Schema, outcomes ma
 		return fmt.Errorf("write driver: %w", err)
 	}
 
-	data, err := json.Marshal(documents)
+	data, err := json.Marshal(inputs)
 	if err != nil {
-		return fmt.Errorf("encode documents: %w", err)
+		return fmt.Errorf("encode inputs: %w", err)
 	}
 
-	docsFile := filepath.Join(moduleDir, "documents.json")
-	if err := os.WriteFile(docsFile, data, 0o600); err != nil {
-		return fmt.Errorf("write documents: %w", err)
+	inputsFile := filepath.Join(moduleDir, "inputs.json")
+	if err := os.WriteFile(inputsFile, data, 0o600); err != nil {
+		return fmt.Errorf("write inputs: %w", err)
 	}
 
 	bin := filepath.Join(moduleDir, "driver")
@@ -492,46 +545,37 @@ func decodeAll(ctx context.Context, moduleDir string, list []Schema, outcomes ma
 		return fmt.Errorf("%w: build: %w: %s", errDriver, err, out)
 	}
 
-	resultsFile := filepath.Join(moduleDir, "results.json")
+	outputsFile := filepath.Join(moduleDir, "outputs.json")
 
-	if out, err := exec.CommandContext(ctx, bin, docsFile, resultsFile).CombinedOutput(); err != nil {
+	if out, err := exec.CommandContext(ctx, bin, inputsFile, outputsFile).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %w: %s", errDriver, err, out)
 	}
 
-	data, err = os.ReadFile(resultsFile)
+	data, err = os.ReadFile(outputsFile)
 	if err != nil {
-		return fmt.Errorf("read results: %w", err)
+		return fmt.Errorf("read outputs: %w", err)
 	}
 
-	var results map[string][]driver.Result
-	if err := json.Unmarshal(data, &results); err != nil {
-		return fmt.Errorf("decode results: %w", err)
+	var outputs map[string]driver.Output
+	if err := json.Unmarshal(data, &outputs); err != nil {
+		return fmt.Errorf("decode outputs: %w", err)
 	}
 
-	for name, rs := range results {
+	for name, out := range outputs {
 		// A decoder's error names Go types with their package, which is the schema's name; drop it, so a message
 		// doesn't depend on where the schema sits in the run.
-		for i := range rs {
-			for _, v := range []*driver.Verdict{&rs[i].JSON, &rs[i].YAML} {
+		for i := range out.Results {
+			for _, v := range []*driver.Verdict{&out.Results[i].JSON, &out.Results[i].YAML} {
 				v.Error = strings.ReplaceAll(v.Error, name+".", "")
 				v.Panic = strings.ReplaceAll(v.Panic, name+".", "")
 			}
 		}
 
-		outcomes[name].Results = rs
+		outcomes[name].Results = out.Results
+		outcomes[name].OracleError = strings.ReplaceAll(out.OracleError, testsDir+string(filepath.Separator), "")
 	}
 
 	return nil
-}
-
-// wrapped puts each document in the value property of an object, for the wrapper schema.
-func wrapped(docs []json.RawMessage) []json.RawMessage {
-	out := make([]json.RawMessage, len(docs))
-	for i, doc := range docs {
-		out[i] = slices.Concat([]byte(`{"value": `), doc, []byte(`}`))
-	}
-
-	return out
 }
 
 // goCommand runs the go command that runs the tests (go test puts its GOROOT/bin first on PATH), offline and
