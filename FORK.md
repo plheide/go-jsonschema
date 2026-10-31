@@ -41,6 +41,8 @@ Not offered upstream yet:
   * conditionals keyed on a property a nested object holds, and on an absent discriminator an `if` does not require;
   * writing a required array or object left nil as empty, constants for `const` values, and the `--use-number` opt-in;
   * map defaults that compile, and warnings for the keywords no generated code checks;
+* the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code, and its
+  harness (made on `main`);
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 
