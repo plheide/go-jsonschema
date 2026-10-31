@@ -42,8 +42,8 @@ Not offered upstream yet:
   * writing a required array or object left nil as empty, constants for `const` values, and the `--use-number` opt-in;
   * map defaults that compile, and warnings for the keywords no generated code checks;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
-  differential test, which compares generated code with a reference validator on documents built from the fixtures;
-  and their harness (made on `main`);
+  differential test, which compares generated code with a reference validator on documents built from the fixtures,
+  and weekly on SchemaStore's schemas; and their harness (made on `main`);
 * everything fork-specific: release and image publishing, the module path, the README banner and the README sections
   on the fork, `AGENTS.md`, `CLAUDE.md` and this file.
 

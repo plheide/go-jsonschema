@@ -5,18 +5,27 @@ package driver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
 	"gopkg.in/yaml.v3"
 )
 
-var errUsage = errors.New("usage: driver <inputs.json> <outputs.json>")
+// fetchTimeout bounds each fetch of a remote $ref.
+const fetchTimeout = 30 * time.Second
+
+var (
+	errUsage = errors.New("usage: driver <inputs.json> <outputs.json>")
+	errFetch = errors.New("fetch failed")
+)
 
 // Input is what the driver gets for one schema.
 type Input struct {
@@ -38,6 +47,8 @@ type Oracle struct {
 	// Draft7 reads a schema that declares draft-04 or draft-06 as draft-07, which keeps the meaning of what those
 	// drafts have and adds what they lack, such as const. The generator reads every draft that way.
 	Draft7 bool `json:"draft7,omitempty"`
+	// Remote fetches the http and https $refs the schema makes.
+	Remote bool `json:"remote,omitempty"`
 }
 
 // Output is what came of one schema's documents.
@@ -200,7 +211,14 @@ func compileOracle(o *Oracle) (*jsonschema.Schema, error) {
 		files = draft7Loader{}
 	}
 
-	c.UseLoader(jsonschema.SchemeURLLoader{"file": files})
+	loaders := jsonschema.SchemeURLLoader{"file": files}
+
+	if o.Remote {
+		web := httpLoader{client: &http.Client{Timeout: fetchTimeout}}
+		loaders["http"], loaders["https"] = web, web
+	}
+
+	c.UseLoader(loaders)
 
 	if o.AssertFormat {
 		c.AssertFormat()
@@ -228,6 +246,36 @@ func (draft7Loader) Load(url string) (any, error) {
 		if s, _ := m["$schema"].(string); strings.Contains(s, "/draft-04/") || strings.Contains(s, "/draft-06/") {
 			m["$schema"] = "http://json-schema.org/draft-07/schema#"
 		}
+	}
+
+	return doc, nil
+}
+
+// httpLoader fetches a remote schema.
+type httpLoader struct {
+	client *http.Client
+}
+
+func (l httpLoader) Load(url string) (any, error) {
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errFetch, err)
+	}
+
+	resp, err := l.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errFetch, err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%w: %s", errFetch, resp.Status)
+	}
+
+	doc, err := jsonschema.UnmarshalJSON(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errFetch, err)
 	}
 
 	return doc, nil
