@@ -189,6 +189,15 @@ quietly produces non-deterministic output.
   A new fixture's package can only be imported once its golden file exists: generate first, then add the test.
 - When intentionally changing generator output, use `OVERWRITE_EXPECTED_GO_FILE=true make test` and review the
   diff before committing; the generated files are checked in.
+- `TestConformanceDraft7` (`tests/conformance_test.go`) runs the JSON-Schema-Test-Suite's required draft-07 tests,
+  vendored in `tests/testdata/JSON-Schema-Test-Suite`, through generated code. Its golden report,
+  `tests/testdata/conformance/draft7.txt`, is regenerated with the Go goldens. Review its diff like theirs: each new
+  line is a new disagreement with the suite, and each removed line one fewer. `-short` skips the test.
+  `scripts/update-test-suite.sh <commit>` updates the vendored suite.
+- `tests/harness` is how the conformance test runs generated code. It generates each schema into a package of its
+  own in a temporary module, builds the module offline, and decodes documents with a driver built from it
+  (`tests/harness/driver`, which runs outside the race detector). Its loader reads files and pre-loaded schemas only,
+  so a test never goes to the network.
 - New options should usually get their own `Test*` and a dedicated `tests/data/<feature>/` tree rather than being
   squeezed into `core` or `misc`.
 

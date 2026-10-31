@@ -1,0 +1,994 @@
+JSON-Schema-Test-Suite 89e83a74014617ffbe79a56d83d14d054cd11417 2026-10-21, draft7, required tests: 258 cases, 929 tests.
+
+Each test's document is decoded into the type generated from its schema, as JSON and as YAML.
+A root that is only a $ref gets no type of its own, so its documents are decoded as the
+required property of a schema that refers to it.
+A missing check accepts a document the suite marks invalid, and a wrong rejection rejects one
+it marks valid. A missing check is silent when its case has no generator warning.
+Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
+
+json: 618 agree, 205 missing checks (168 silent), 18 wrong rejections, 0 panics, 88 not run
+yaml: 595 agree, 229 missing checks (191 silent), 17 wrong rejections, 0 panics, 88 not run
+cases: 31 generation failures, 2 compilation failures, 39 with warnings
+
+== additionalItems.json
+
+-- additionalItems as schema
+json missing check (silent): additional items do not match schema
+yaml missing check (silent): additional items do not match schema
+
+-- when items is schema, additionalItems does nothing
+json missing check (silent): invalid with a array of mixed types
+yaml missing check (silent): invalid with a array of mixed types
+
+-- array of items with no additionalItems permitted
+json missing check (silent): additional items are not permitted
+yaml missing check (silent): additional items are not permitted
+
+-- additionalItems does not look in applicators, invalid case
+json missing check (silent): items defined in allOf are not examined
+yaml missing check (silent): items defined in allOf are not examined
+
+-- items validation adjusts the starting index for additionalItems
+json missing check (silent): wrong type of second item
+yaml missing check (silent): wrong type of second item
+
+-- additionalItems with heterogeneous array
+json missing check (silent): heterogeneous invalid instance
+yaml missing check (silent): heterogeneous invalid instance
+
+== additionalProperties.json
+
+-- additionalProperties being false does not allow other properties
+warning: strictAdditionalProperties: skipping Root because patternProperties is not supported
+json missing check: an additional property is invalid
+yaml missing check: an additional property is invalid
+json wrong rejection: ignores arrays: unmarshal raw Root: json: cannot unmarshal array into Go value of type map[string]interface {}
+yaml wrong rejection: ignores arrays: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!seq into map[string]interface {}
+json wrong rejection: ignores strings: unmarshal raw Root: json: cannot unmarshal string into Go value of type map[string]interface {}
+yaml wrong rejection: ignores strings: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!str `foobarbaz` into map[string]interface {}
+json wrong rejection: ignores other non-objects: unmarshal raw Root: json: cannot unmarshal number into Go value of type map[string]interface {}
+yaml wrong rejection: ignores other non-objects: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!int `12` into map[string]interface {}
+
+-- non-ASCII pattern with additionalProperties
+json missing check (silent): not matching the pattern is invalid
+yaml missing check (silent): not matching the pattern is invalid
+
+-- additionalProperties does not look in applicators
+json missing check (silent): properties defined in allOf are not examined
+yaml missing check (silent): properties defined in allOf are not examined
+
+== allOf.json
+
+-- allOf simple types
+json missing check (silent): mismatch one
+yaml missing check (silent): mismatch one
+
+-- allOf with boolean schemas, some false
+warning: schema fidelity: type Root does not enforce all it declares: false schema not compiled, so any value passes (in allOf branch)
+json missing check: any value is invalid
+yaml missing check: any value is invalid
+
+-- allOf with boolean schemas, all false
+warning: schema fidelity: type Root does not enforce all it declares: false schema not compiled, so any value passes (in allOf branch)
+json missing check: any value is invalid
+yaml missing check: any value is invalid
+
+-- allOf with the first empty schema
+json missing check (silent): string is invalid
+yaml missing check (silent): string is invalid
+
+-- allOf with the last empty schema
+json missing check (silent): string is invalid
+yaml missing check (silent): string is invalid
+
+-- nested allOf, to check validation semantics
+json missing check (silent): anything non-null is invalid
+yaml missing check (silent): anything non-null is invalid
+
+-- allOf combined with anyOf, oneOf
+json missing check (silent): allOf: false, anyOf: false, oneOf: false
+yaml missing check (silent): allOf: false, anyOf: false, oneOf: false
+json missing check (silent): allOf: false, anyOf: false, oneOf: true
+yaml missing check (silent): allOf: false, anyOf: false, oneOf: true
+json missing check (silent): allOf: false, anyOf: true, oneOf: false
+yaml missing check (silent): allOf: false, anyOf: true, oneOf: false
+json missing check (silent): allOf: false, anyOf: true, oneOf: true
+yaml missing check (silent): allOf: false, anyOf: true, oneOf: true
+json missing check (silent): allOf: true, anyOf: false, oneOf: false
+yaml missing check (silent): allOf: true, anyOf: false, oneOf: false
+json missing check (silent): allOf: true, anyOf: false, oneOf: true
+yaml missing check (silent): allOf: true, anyOf: false, oneOf: true
+json missing check (silent): allOf: true, anyOf: true, oneOf: false
+yaml missing check (silent): allOf: true, anyOf: true, oneOf: false
+
+== anyOf.json
+
+-- anyOf
+json missing check (silent): neither anyOf valid
+yaml missing check (silent): neither anyOf valid
+
+-- anyOf with base schema
+json missing check (silent): mismatch base schema
+yaml missing check (silent): mismatch base schema
+json missing check (silent): both anyOf invalid
+yaml missing check (silent): both anyOf invalid
+
+-- anyOf with boolean schemas, some true
+warning: schema fidelity: type Root_1 does not enforce all it declares: false schema not compiled, so any value passes
+
+-- anyOf with boolean schemas, all false
+warning: schema fidelity: type Root_0 does not enforce all it declares: false schema not compiled, so any value passes
+warning: schema fidelity: type Root_1 does not enforce all it declares: false schema not compiled, so any value passes
+json missing check: any value is invalid
+yaml missing check: any value is invalid
+
+-- nested anyOf, to check validation semantics
+warning: anyOf generation failed for {[Root] false}; falling back to interface{}: could not merge anyOf types: types list is empty
+json missing check: anything non-null is invalid
+yaml missing check: anything non-null is invalid
+
+== boolean_schema.json
+
+-- boolean schema 'true'
+generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: json: cannot unmarshal bool into Go value of type struct { ID string "json:\"$id\""; LegacyID string "json:\"id\"" }
+
+-- boolean schema 'false'
+generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: json: cannot unmarshal bool into Go value of type struct { ID string "json:\"$id\""; LegacyID string "json:\"id\"" }
+
+== const.json
+
+-- const with object
+json missing check (silent): another object is invalid
+yaml missing check (silent): another object is invalid
+json missing check (silent): another type is invalid
+yaml missing check (silent): another type is invalid
+
+-- const with array
+json missing check (silent): another array item is invalid
+yaml missing check (silent): another array item is invalid
+json missing check (silent): array with additional items is invalid
+yaml missing check (silent): array with additional items is invalid
+
+-- const with null
+warning: Enum field wrapped in struct in order to store values of multiple types
+
+-- const with [false] does not match [0]
+json missing check (silent): [0] is invalid
+yaml missing check (silent): [0] is invalid
+json missing check (silent): [0.0] is invalid
+yaml missing check (silent): [0.0] is invalid
+
+-- const with [true] does not match [1]
+json missing check (silent): [1] is invalid
+yaml missing check (silent): [1] is invalid
+json missing check (silent): [1.0] is invalid
+yaml missing check (silent): [1.0] is invalid
+
+-- const with {"a": false} does not match {"a": 0}
+json missing check (silent): {"a": 0} is invalid
+yaml missing check (silent): {"a": 0} is invalid
+json missing check (silent): {"a": 0.0} is invalid
+yaml missing check (silent): {"a": 0.0} is invalid
+
+-- const with {"a": true} does not match {"a": 1}
+json missing check (silent): {"a": 1} is invalid
+yaml missing check (silent): {"a": 1} is invalid
+json missing check (silent): {"a": 1.0} is invalid
+yaml missing check (silent): {"a": 1.0} is invalid
+
+== contains.json
+
+-- contains keyword validation
+json missing check (silent): array without items matching schema is invalid
+yaml missing check (silent): array without items matching schema is invalid
+json missing check (silent): empty array is invalid
+yaml missing check (silent): empty array is invalid
+
+-- contains keyword with const keyword
+json missing check (silent): array without item 5 is invalid
+yaml missing check (silent): array without item 5 is invalid
+
+-- contains keyword with boolean schema true
+json missing check (silent): empty array is invalid
+yaml missing check (silent): empty array is invalid
+
+-- contains keyword with boolean schema false
+json missing check (silent): any non-empty array is invalid
+yaml missing check (silent): any non-empty array is invalid
+json missing check (silent): empty array is invalid
+yaml missing check (silent): empty array is invalid
+
+-- items + contains
+json missing check (silent): matches items, does not match contains
+yaml missing check (silent): matches items, does not match contains
+json missing check (silent): does not match items, matches contains
+yaml missing check (silent): does not match items, matches contains
+json missing check (silent): matches neither items nor contains
+yaml missing check (silent): matches neither items nor contains
+
+-- contains with false if subschema
+json missing check (silent): empty array is invalid
+yaml missing check (silent): empty array is invalid
+
+== default.json
+
+-- invalid type for default
+warning: default [] for field "foo" is not a value of Go type int; it is left out
+
+-- invalid string value for default
+json wrong rejection: still valid when the invalid default is used: field bar length: must be >= 4
+yaml wrong rejection: still valid when the invalid default is used: field bar length: must be >= 4
+
+-- the default keyword does not do anything if the property is missing
+json wrong rejection: missing properties are not filled in with the default: field alpha: must be <= 3
+yaml wrong rejection: missing properties are not filled in with the default: field alpha: must be <= 3
+
+== definitions.json
+
+-- validate definition against metaschema
+generation failed: generate: cannot add struct field: could not generate type with scope 'WrapValue': cannot generate referenced type: value must point to definition within file: 'http://json-schema.org/draft-07/schema#'
+
+== dependencies.json
+
+-- dependencies
+json missing check (silent): missing dependency
+yaml missing check (silent): missing dependency
+
+-- multiple dependencies
+json missing check (silent): missing dependency
+yaml missing check (silent): missing dependency
+json missing check (silent): missing other dependency
+yaml missing check (silent): missing other dependency
+json missing check (silent): missing both dependencies
+yaml missing check (silent): missing both dependencies
+
+-- multiple dependencies subschema
+json missing check (silent): wrong type
+yaml missing check (silent): wrong type
+json missing check (silent): wrong type other
+yaml missing check (silent): wrong type other
+json missing check (silent): wrong type both
+yaml missing check (silent): wrong type both
+
+-- dependencies with boolean subschemas
+json missing check (silent): object with property having schema false is invalid
+yaml missing check (silent): object with property having schema false is invalid
+json missing check (silent): object with both properties is invalid
+yaml missing check (silent): object with both properties is invalid
+
+-- dependencies with escaped characters
+json missing check (silent): invalid object 1
+yaml missing check (silent): invalid object 1
+json missing check (silent): invalid object 2
+yaml missing check (silent): invalid object 2
+json missing check (silent): invalid object 3
+yaml missing check (silent): invalid object 3
+json missing check (silent): invalid object 4
+yaml missing check (silent): invalid object 4
+
+-- dependent subschema incompatible with root
+warning: schema fidelity: type Root does not enforce all it declares: dependentSchemas not checked
+json missing check: matches root
+yaml missing check: matches root
+json missing check: matches both
+yaml missing check: matches both
+
+== enum.json
+
+-- heterogeneous enum validation
+warning: Enum field wrapped in struct in order to store values of multiple types
+yaml missing check: something else is invalid
+yaml wrong rejection: valid object matches: invalid value (expected one of []interface {}{6, "foo", []interface {}{}, true, map[string]interface {}{"foo":12}}): map[string]interface {}{"foo":12}
+
+-- heterogeneous enum-with-null validation
+json wrong rejection: null is valid: invalid value (expected one of []interface {}{6, interface {}(nil)}): 0
+
+-- enum with escaped characters
+warning: Enum Root: constant name "RootFooBar" is already declared in this package; declaring it as "RootFooBar_1" instead
+
+-- enum with [false] does not match [0]
+generation failed: generate: enum has non-primitive value [false]
+
+-- enum with [true] does not match [1]
+generation failed: generate: enum has non-primitive value [true]
+
+-- enum with [0] does not match [false]
+generation failed: generate: enum has non-primitive value [0]
+
+-- enum with [1] does not match [true]
+generation failed: generate: enum has non-primitive value [1]
+
+== exclusiveMaximum.json
+
+-- exclusiveMaximum validation
+json missing check (silent): boundary point is invalid
+yaml missing check (silent): boundary point is invalid
+json missing check (silent): above the exclusiveMaximum is invalid
+yaml missing check (silent): above the exclusiveMaximum is invalid
+
+== exclusiveMinimum.json
+
+-- exclusiveMinimum validation
+json missing check (silent): boundary point is invalid
+yaml missing check (silent): boundary point is invalid
+json missing check (silent): below the exclusiveMinimum is invalid
+yaml missing check (silent): below the exclusiveMinimum is invalid
+
+== if-then-else.json
+
+-- if and then without else
+json missing check (silent): invalid through then
+yaml missing check (silent): invalid through then
+
+-- if and else without then
+json missing check (silent): invalid through else
+yaml missing check (silent): invalid through else
+
+-- validate against correct branch, then vs else
+json missing check (silent): invalid through then
+yaml missing check (silent): invalid through then
+json missing check (silent): invalid through else
+yaml missing check (silent): invalid through else
+
+-- non-interference across combined schemas
+warning: schema fidelity: type Root does not enforce all it declares: if/then/else not compiled (in allOf branch)
+
+-- if with boolean schema true
+json missing check (silent): boolean schema true in if always chooses the then path (invalid)
+yaml missing check (silent): boolean schema true in if always chooses the then path (invalid)
+
+-- if with boolean schema false
+json missing check (silent): boolean schema false in if always chooses the else path (invalid)
+yaml missing check (silent): boolean schema false in if always chooses the else path (invalid)
+
+-- if appears at the end when serialized (keyword processing sequence)
+json missing check (silent): no redirects to then and fails
+yaml missing check (silent): no redirects to then and fails
+json missing check (silent): invalid redirects to else and fails
+yaml missing check (silent): invalid redirects to else and fails
+
+-- then: false fails when condition matches
+json missing check (silent): matches if → then=false → invalid
+yaml missing check (silent): matches if → then=false → invalid
+
+-- else: false fails when condition does not match
+json missing check (silent): does not match if → else executes → invalid
+yaml missing check (silent): does not match if → else executes → invalid
+
+== items.json
+
+-- a schema given for items
+json missing check (silent): wrong type of items
+yaml missing check (silent): wrong type of items
+
+-- an array of schemas for items
+json missing check (silent): wrong types
+yaml missing check (silent): wrong types
+
+-- items with boolean schema (false)
+json missing check (silent): any non-empty array is invalid
+yaml missing check (silent): any non-empty array is invalid
+
+-- items with boolean schemas
+json missing check (silent): array with two items is invalid
+yaml missing check (silent): array with two items is invalid
+
+-- items and subitems
+warning: Array Item uses a tuple for items that does not describe a single element type; positional types are not modelled and it will be represented as an untyped array
+warning: Array Root uses a tuple for items that does not describe a single element type; positional types are not modelled and it will be represented as an untyped array
+warning: Object type with no properties has required fields; skipping validation code for them since we don't know their types
+json missing check: too many sub-items
+yaml missing check: too many sub-items
+json missing check: wrong item
+yaml missing check: wrong item
+json missing check: wrong sub-item
+yaml missing check: wrong sub-item
+
+== maxItems.json
+
+-- maxItems validation
+json missing check (silent): too long is invalid
+yaml missing check (silent): too long is invalid
+
+-- maxItems validation with a decimal
+generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 2.0 into Go struct field ObjectAsType.maxItems of type int
+
+== maxLength.json
+
+-- maxLength validation
+json missing check (silent): too long is invalid
+yaml missing check (silent): too long is invalid
+yaml wrong rejection: two graphemes is long enough: yaml: found invalid Unicode character escape code
+
+-- maxLength validation with a decimal
+generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 2.0 into Go struct field ObjectAsType.maxLength of type int
+
+== maxProperties.json
+
+-- maxProperties validation
+json missing check (silent): too long is invalid
+yaml missing check (silent): too long is invalid
+
+-- maxProperties validation with a decimal
+generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 2.0 into Go struct field ObjectAsType.maxProperties of type int
+
+-- maxProperties = 0 means the object is empty
+json missing check (silent): one property is invalid
+yaml missing check (silent): one property is invalid
+
+== maximum.json
+
+-- maximum validation
+json missing check (silent): above the maximum is invalid
+yaml missing check (silent): above the maximum is invalid
+
+-- maximum validation with unsigned integer
+json missing check (silent): above the maximum is invalid
+yaml missing check (silent): above the maximum is invalid
+
+== minItems.json
+
+-- minItems validation
+json missing check (silent): too short is invalid
+yaml missing check (silent): too short is invalid
+
+-- minItems validation with a decimal
+generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 1.0 into Go struct field ObjectAsType.minItems of type int
+
+== minLength.json
+
+-- minLength validation
+json missing check (silent): too short is invalid
+yaml missing check (silent): too short is invalid
+json missing check (silent): one grapheme is not long enough
+
+-- minLength validation with a decimal
+generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 2.0 into Go struct field ObjectAsType.minLength of type int
+
+== minProperties.json
+
+-- minProperties validation
+json missing check (silent): too short is invalid
+yaml missing check (silent): too short is invalid
+
+-- minProperties validation with a decimal
+generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 1.0 into Go struct field ObjectAsType.minProperties of type int
+
+== minimum.json
+
+-- minimum validation
+json missing check (silent): below the minimum is invalid
+yaml missing check (silent): below the minimum is invalid
+
+-- minimum validation with signed integer
+json missing check (silent): float below the minimum is invalid
+yaml missing check (silent): float below the minimum is invalid
+json missing check (silent): int below the minimum is invalid
+yaml missing check (silent): int below the minimum is invalid
+
+== multipleOf.json
+
+-- by int
+json missing check (silent): int by int fail
+yaml missing check (silent): int by int fail
+
+-- by number
+json missing check (silent): 35 is not multiple of 1.5
+yaml missing check (silent): 35 is not multiple of 1.5
+
+-- by small number
+json missing check (silent): 0.00751 is not multiple of 0.0001
+yaml missing check (silent): 0.00751 is not multiple of 0.0001
+
+-- float division = inf
+compilation failed: root.go:32:11: invalid operation: division by zero root.go:53:11: invalid operation: division by zero
+
+-- small multiple of large integer
+compilation failed: root.go:32:11: invalid operation: division by zero root.go:53:11: invalid operation: division by zero
+
+== not.json
+
+-- not
+json missing check (silent): disallowed
+yaml missing check (silent): disallowed
+
+-- not multiple types
+json missing check (silent): mismatch
+yaml missing check (silent): mismatch
+json missing check (silent): other mismatch
+yaml missing check (silent): other mismatch
+
+-- not more complex schema
+json missing check (silent): mismatch
+yaml missing check (silent): mismatch
+
+-- forbidden property
+warning: schema fidelity: type RootFoo does not enforce all it declares: false schema not compiled, so any value passes
+json missing check: property present
+yaml missing check: property present
+
+-- forbid everything with empty schema
+json missing check (silent): number is invalid
+yaml missing check (silent): number is invalid
+json missing check (silent): string is invalid
+yaml missing check (silent): string is invalid
+json missing check (silent): boolean true is invalid
+yaml missing check (silent): boolean true is invalid
+json missing check (silent): boolean false is invalid
+yaml missing check (silent): boolean false is invalid
+json missing check (silent): null is invalid
+yaml missing check (silent): null is invalid
+json missing check (silent): object is invalid
+yaml missing check (silent): object is invalid
+json missing check (silent): empty object is invalid
+yaml missing check (silent): empty object is invalid
+json missing check (silent): array is invalid
+yaml missing check (silent): array is invalid
+json missing check (silent): empty array is invalid
+yaml missing check (silent): empty array is invalid
+
+-- forbid everything with boolean schema true
+json missing check (silent): number is invalid
+yaml missing check (silent): number is invalid
+json missing check (silent): string is invalid
+yaml missing check (silent): string is invalid
+json missing check (silent): boolean true is invalid
+yaml missing check (silent): boolean true is invalid
+json missing check (silent): boolean false is invalid
+yaml missing check (silent): boolean false is invalid
+json missing check (silent): null is invalid
+yaml missing check (silent): null is invalid
+json missing check (silent): object is invalid
+yaml missing check (silent): object is invalid
+json missing check (silent): empty object is invalid
+yaml missing check (silent): empty object is invalid
+json missing check (silent): array is invalid
+yaml missing check (silent): array is invalid
+json missing check (silent): empty array is invalid
+yaml missing check (silent): empty array is invalid
+
+== oneOf.json
+
+-- oneOf
+warning: schema fidelity: type Root falls back to interface{} due to oneOf variant 1 declares constraints the primitive wrapper cannot enforce; declared but not enforced: numeric constraint; affected configuration: numeric validator
+json missing check: both oneOf valid
+yaml missing check: both oneOf valid
+json missing check: neither oneOf valid
+yaml missing check: neither oneOf valid
+
+-- oneOf with base schema
+yaml missing check (silent): mismatch base schema
+json missing check (silent): both oneOf valid
+yaml missing check (silent): both oneOf valid
+
+-- oneOf with boolean schemas, all true
+json missing check (silent): any value is invalid
+yaml missing check (silent): any value is invalid
+
+-- oneOf with boolean schemas, one true
+warning: schema fidelity: type Root falls back to interface{} due to oneOf not compiled; declared but not enforced: false schema (in oneOf branch)
+
+-- oneOf with boolean schemas, more than one true
+warning: schema fidelity: type Root falls back to interface{} due to oneOf not compiled; declared but not enforced: false schema (in oneOf branch)
+json missing check: any value is invalid
+yaml missing check: any value is invalid
+
+-- oneOf with boolean schemas, all false
+warning: schema fidelity: type Root falls back to interface{} due to oneOf not compiled; declared but not enforced: false schema (in oneOf branch)
+json missing check: any value is invalid
+yaml missing check: any value is invalid
+
+-- oneOf complex types
+yaml missing check (silent): neither oneOf valid (complex)
+
+-- oneOf with empty schema
+json missing check (silent): both valid - invalid
+yaml missing check (silent): both valid - invalid
+
+-- oneOf with required
+warning: schema fidelity: type Root does not enforce all it declares: oneOf of 2 branches not compiled, so a value matching none or several of them passes
+json missing check: both invalid - invalid
+yaml missing check: both invalid - invalid
+json missing check: both valid - invalid
+yaml missing check: both valid - invalid
+
+-- nested oneOf, to check validation semantics
+json missing check (silent): anything non-null is invalid
+yaml missing check (silent): anything non-null is invalid
+
+== pattern.json
+
+-- pattern validation
+json missing check (silent): a non-matching pattern is invalid
+yaml missing check (silent): a non-matching pattern is invalid
+
+== patternProperties.json
+
+-- patternProperties validates properties matching a regex
+json missing check (silent): a single invalid match is invalid
+yaml missing check (silent): a single invalid match is invalid
+json missing check (silent): multiple invalid matches is invalid
+yaml missing check (silent): multiple invalid matches is invalid
+
+-- multiple simultaneous patternProperties are validated
+json missing check (silent): an invalid due to one is invalid
+yaml missing check (silent): an invalid due to one is invalid
+json missing check (silent): an invalid due to the other is invalid
+yaml missing check (silent): an invalid due to the other is invalid
+json missing check (silent): an invalid due to both is invalid
+yaml missing check (silent): an invalid due to both is invalid
+
+-- regexes are not anchored by default and are case sensitive
+json missing check (silent): recognized members are accounted for
+yaml missing check (silent): recognized members are accounted for
+json missing check (silent): regexes are case sensitive, 2
+yaml missing check (silent): regexes are case sensitive, 2
+
+-- patternProperties with boolean schemas
+json missing check (silent): object with property matching schema false is invalid
+yaml missing check (silent): object with property matching schema false is invalid
+json missing check (silent): object with both properties is invalid
+yaml missing check (silent): object with both properties is invalid
+json missing check (silent): object with a property matching both true and false is invalid
+yaml missing check (silent): object with a property matching both true and false is invalid
+
+== properties.json
+
+-- object properties validation
+json wrong rejection: ignores arrays: unmarshal raw Root: json: cannot unmarshal array into Go value of type map[string]interface {}
+yaml wrong rejection: ignores arrays: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!seq into map[string]interface {}
+json wrong rejection: ignores other non-objects: unmarshal raw Root: json: cannot unmarshal number into Go value of type map[string]interface {}
+yaml wrong rejection: ignores other non-objects: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!int `12` into map[string]interface {}
+
+-- properties, patternProperties, additionalProperties interaction
+warning: schema fidelity: type Root does not enforce all it declares: patternProperties not checked
+json missing check: patternProperty invalidates property
+yaml missing check: patternProperty invalidates property
+json wrong rejection: patternProperty validates nonproperty: decode additional properties for Root: decoding failed due to the following error(s): '[fxo]' expected type 'int', got unconvertible type '[]interface {}'
+yaml wrong rejection: patternProperty validates nonproperty: decode additional properties for Root: decoding failed due to the following error(s): '[fxo]' expected type 'int', got unconvertible type '[]interface {}'
+
+-- properties with boolean schema
+warning: schema fidelity: type RootBar does not enforce all it declares: false schema not compiled, so any value passes
+json missing check: only 'false' property present is invalid
+yaml missing check: only 'false' property present is invalid
+json missing check: both properties present is invalid
+yaml missing check: both properties present is invalid
+
+-- properties with escaped characters
+generation failed: generate: property name cannot be represented in a Go struct tag that encoding/json accepts: "foo\tbar"
+
+-- properties whose names are Javascript object property names
+json wrong rejection: ignores arrays: unmarshal raw Root: json: cannot unmarshal array into Go value of type map[string]interface {}
+yaml wrong rejection: ignores arrays: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!seq into map[string]interface {}
+json wrong rejection: ignores other non-objects: unmarshal raw Root: json: cannot unmarshal number into Go value of type map[string]interface {}
+yaml wrong rejection: ignores other non-objects: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!int `12` into map[string]interface {}
+yaml missing check (silent): toString not valid
+
+== propertyNames.json
+
+-- propertyNames validation
+json missing check (silent): some property names invalid
+yaml missing check (silent): some property names invalid
+
+-- propertyNames validation with pattern
+json missing check (silent): non-matching property name is invalid
+yaml missing check (silent): non-matching property name is invalid
+
+-- propertyNames with boolean schema false
+json missing check (silent): object with any properties is invalid
+yaml missing check (silent): object with any properties is invalid
+
+-- propertyNames with const
+json missing check (silent): object with any other property is invalid
+yaml missing check (silent): object with any other property is invalid
+
+-- propertyNames with enum
+json missing check (silent): object with any other property is invalid
+yaml missing check (silent): object with any other property is invalid
+
+== ref.json
+
+-- root pointer ref
+generation failed: generate: cannot add struct field: could not generate type with scope 'RootFoo': cannot generate referenced type: value must point to definition within file: '#'
+
+-- relative pointer ref to object
+generation failed: generate: cannot add struct field: could not generate type with scope 'RootBar': cannot generate referenced type: value must point to definition within file: '#/properties/foo'
+
+-- relative pointer ref to array
+json missing check (silent): mismatch array
+yaml missing check (silent): mismatch array
+
+-- nested refs
+warning: schema fidelity: type Root falls back to interface{} due to allOf merge produced empty result; declared but not enforced: $ref #/definitions/c
+json missing check: nested ref invalid
+yaml missing check: nested ref invalid
+
+-- $ref prevents a sibling $id from changing the base uri
+warning: Could not resolve ref "foo.json": could not follow $ref "foo.json" to file "foo.json": cannot load schema failed to load schema "foo.json": cannot resolve schema "foo.json"
+warning: allOf generation failed for {[Root] false}; falling back to interface{}: could not merge allOf types: types list is empty
+json missing check: $ref resolves to /definitions/base_foo, data does not validate
+yaml missing check: $ref resolves to /definitions/base_foo, data does not validate
+
+-- remote ref, containing refs itself
+generation failed: generate: cannot add struct field: could not generate type with scope 'WrapValue': cannot generate referenced type: value must point to definition within file: 'http://json-schema.org/draft-07/schema#'
+
+-- property named $ref that is not a reference
+yaml missing check (silent): property named $ref invalid
+
+-- property named $ref, containing an actual $ref
+yaml missing check (silent): property named $ref invalid
+
+-- $ref to boolean schema false
+warning: schema fidelity: type Bool does not enforce all it declares: false schema not compiled, so any value passes
+json missing check: any value is invalid
+yaml missing check: any value is invalid
+
+-- Recursive references between schemas
+generation failed: generate: cannot add struct field: could not generate type with scope 'NodeSubtree': could not follow $ref "tree" to file "tree": cannot load schema failed to load schema "tree": cannot resolve schema "tree"
+
+-- refs with quote
+generation failed: generate: property name cannot be represented in a Go struct tag that encoding/json accepts: "foo\"bar"
+
+-- Location-independent identifier
+warning: Could not resolve ref "#foo": cannot generate referenced type: value must point to definition within file: '#foo'
+warning: allOf generation failed for {[Root] false}; falling back to interface{}: could not merge allOf types: types list is empty
+json missing check: mismatch
+yaml missing check: mismatch
+
+-- Reference an anchor with a non-relative URI
+warning: Could not resolve ref "https://example.com/schema-with-anchor#foo": cannot generate referenced type: value must point to definition within file: 'https://example.com/schema-with-anchor#foo'
+warning: allOf generation failed for {[Root] false}; falling back to interface{}: could not merge allOf types: types list is empty
+json missing check: mismatch
+yaml missing check: mismatch
+
+-- Location-independent identifier with base URI change in subschema
+warning: Could not resolve ref "http://localhost:1234/nested.json#foo": cannot generate referenced type: value must point to definition within file: 'http://localhost:1234/nested.json#foo'
+warning: allOf generation failed for {[Root] false}; falling back to interface{}: could not merge allOf types: types list is empty
+json missing check: mismatch
+yaml missing check: mismatch
+
+-- naive replacement of $ref with its destination is not correct
+generation failed: generate: enum has non-primitive value map[$ref:#/definitions/a_string]
+
+-- refs with relative uris and defs
+warning: Could not resolve ref "schema-relative-uri-defs2.json": could not follow $ref "schema-relative-uri-defs2.json" to file "schema-relative-uri-defs2.json": cannot load schema failed to load schema "schema-relative-uri-defs2.json": cannot resolve schema "schema-relative-uri-defs2.json"
+generation failed: generate: could not merge allOf types: types list is empty
+
+-- relative refs with absolute uris and defs
+warning: Could not resolve ref "schema-refs-absolute-uris-defs2.json": could not follow $ref "schema-refs-absolute-uris-defs2.json" to file "schema-refs-absolute-uris-defs2.json": cannot load schema failed to load schema "schema-refs-absolute-uris-defs2.json": cannot resolve schema "schema-refs-absolute-uris-defs2.json"
+generation failed: generate: could not merge allOf types: types list is empty
+
+-- $id must be resolved against nearest parent, not just immediate parent
+warning: Could not resolve ref "http://example.com/b/d.json": could not follow $ref "http://example.com/b/d.json" to file "http://example.com/b/d.json": cannot load schema unsupported $ref format
+warning: allOf generation failed for {[Root] false}; falling back to interface{}: could not merge allOf types: types list is empty
+warning: schema fidelity: type X does not enforce all it declares: "not" keyword not compiled
+json missing check: non-number is invalid
+yaml missing check: non-number is invalid
+
+-- simple URN base URI with $ref via the URN
+generation failed: generate: cannot add struct field: could not generate type with scope 'RootFoo': could not follow $ref "urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed" to file "urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed": cannot load schema cannot get $ref type: unsupported $ref schema
+
+-- simple URN base URI with JSON pointer
+yaml missing check (silent): a non-string is invalid
+
+-- URN base URI with NSS
+yaml missing check (silent): a non-string is invalid
+
+-- URN base URI with r-component
+yaml missing check (silent): a non-string is invalid
+
+-- URN base URI with q-component
+yaml missing check (silent): a non-string is invalid
+
+-- URN base URI with URN and JSON pointer ref
+generation failed: generate: cannot add struct field: could not generate type with scope 'RootFoo': could not follow $ref "urn:uuid:deadbeef-1234-0000-0000-4321feebdaed#/definitions/bar" to file "urn:uuid:deadbeef-1234-0000-0000-4321feebdaed": cannot load schema cannot get $ref type: unsupported $ref schema
+
+-- URN base URI with URN and anchor ref
+generation failed: generate: cannot add struct field: could not generate type with scope 'RootFoo': cannot generate referenced type: value must point to definition within file: 'urn:uuid:deadbeef-1234-ff00-00ff-4321feebdaed#something'
+
+-- ref to if
+warning: Could not resolve ref "http://example.com/ref/if": could not follow $ref "http://example.com/ref/if" to file "http://example.com/ref/if": cannot load schema unsupported $ref format
+json missing check: a non-integer is invalid due to the $ref
+yaml missing check: a non-integer is invalid due to the $ref
+
+-- ref to then
+warning: Could not resolve ref "http://example.com/ref/then": could not follow $ref "http://example.com/ref/then" to file "http://example.com/ref/then": cannot load schema unsupported $ref format
+json missing check: a non-integer is invalid due to the $ref
+yaml missing check: a non-integer is invalid due to the $ref
+
+-- ref to else
+warning: Could not resolve ref "http://example.com/ref/else": could not follow $ref "http://example.com/ref/else" to file "http://example.com/ref/else": cannot load schema unsupported $ref format
+json missing check: a non-integer is invalid due to the $ref
+yaml missing check: a non-integer is invalid due to the $ref
+
+-- ref with absolute-path-reference
+warning: Could not resolve ref "/absref/foobar.json": could not follow $ref "/absref/foobar.json" to file "/absref/foobar.json": cannot load schema failed to load schema "/absref/foobar.json": cannot resolve schema "/absref/foobar.json"
+warning: allOf generation failed for {[Root] false}; falling back to interface{}: could not merge allOf types: types list is empty
+json missing check: an integer is invalid
+yaml missing check: an integer is invalid
+
+-- $id with file URI still resolves pointers - *nix
+warning: schema fidelity: type Root falls back to interface{} due to allOf merge produced empty result; declared but not enforced: $ref #/definitions/foo
+json missing check: non-number is invalid
+yaml missing check: non-number is invalid
+
+-- $id with file URI still resolves pointers - windows
+warning: schema fidelity: type Root falls back to interface{} due to allOf merge produced empty result; declared but not enforced: $ref #/definitions/foo
+json missing check: non-number is invalid
+yaml missing check: non-number is invalid
+
+-- empty tokens in $ref json-pointer
+warning: schema fidelity: type Root falls back to interface{} due to allOf merge produced empty result; declared but not enforced: $ref #/definitions//definitions/
+json missing check: non-number is invalid
+yaml missing check: non-number is invalid
+
+== refRemote.json
+
+-- base URI change
+json missing check (silent): base URI change ref invalid
+yaml missing check (silent): base URI change ref invalid
+
+-- base URI change - change folder
+generation failed: generate: could not follow $ref "folderInteger.json" to file "folderInteger.json": cannot load schema failed to load schema "folderInteger.json": cannot resolve schema "folderInteger.json"
+
+-- base URI change - change folder in subschema
+generation failed: generate: cannot add struct field: could not generate type with scope 'RootList': could not follow $ref "folderInteger.json" to file "folderInteger.json": cannot load schema failed to load schema "folderInteger.json": cannot resolve schema "folderInteger.json"
+
+-- root ref in remote ref
+generation failed: generate: cannot add struct field: could not generate type with scope 'RootName': could not follow $ref "draft7/name.json#/definitions/orNull" to file "draft7/name.json": cannot load schema failed to load schema "draft7/name.json": cannot resolve schema "draft7/name.json"
+
+-- remote ref with ref to definitions
+warning: Could not resolve ref "draft7/ref-and-definitions.json": could not follow $ref "draft7/ref-and-definitions.json" to file "draft7/ref-and-definitions.json": cannot load schema failed to load schema "draft7/ref-and-definitions.json": cannot resolve schema "draft7/ref-and-definitions.json"
+warning: allOf generation failed for {[Root] false}; falling back to interface{}: could not merge allOf types: types list is empty
+json missing check: invalid
+yaml missing check: invalid
+
+-- Location-independent identifier in remote ref
+generation failed: generate: cannot add struct field: could not generate type with scope 'WrapValue': cannot generate referenced type: value must point to definition within file: '#foo'
+
+-- retrieved nested refs resolve relative to their URI not $id
+generation failed: generate: cannot add struct field: could not generate type with scope 'RootName': could not follow $ref "nested/foo-ref-string.json" to file "nested/foo-ref-string.json": cannot load schema failed to load schema "nested/foo-ref-string.json": cannot resolve schema "nested/foo-ref-string.json"
+
+-- $ref to $ref finds location-independent $id
+generation failed: generate: cannot add struct field: could not generate type with scope 'WrapValue': cannot generate referenced type: value must point to definition within file: '#detached'
+
+== required.json
+
+-- required validation
+json wrong rejection: ignores arrays: unmarshal raw Root: json: cannot unmarshal array into Go value of type map[string]interface {}
+yaml wrong rejection: ignores arrays: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!seq into map[string]interface {}
+json wrong rejection: ignores strings: unmarshal raw Root: json: cannot unmarshal string into Go value of type map[string]interface {}
+yaml wrong rejection: ignores strings: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!str `` into map[string]interface {}
+json wrong rejection: ignores other non-objects: unmarshal raw Root: json: cannot unmarshal number into Go value of type map[string]interface {}
+yaml wrong rejection: ignores other non-objects: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!int `12` into map[string]interface {}
+json wrong rejection: ignores null: Root: must not be null
+json wrong rejection: ignores boolean: unmarshal raw Root: json: cannot unmarshal bool into Go value of type map[string]interface {}
+yaml wrong rejection: ignores boolean: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!bool `true` into map[string]interface {}
+
+-- required with escaped characters
+json missing check (silent): object with some properties missing is invalid
+yaml missing check (silent): object with some properties missing is invalid
+
+-- required properties whose names are Javascript object property names
+json missing check (silent): none of the properties mentioned
+yaml missing check (silent): none of the properties mentioned
+json missing check (silent): __proto__ present
+yaml missing check (silent): __proto__ present
+json missing check (silent): toString present
+yaml missing check (silent): toString present
+json missing check (silent): constructor present
+yaml missing check (silent): constructor present
+
+== type.json
+
+-- integer type matches integers
+yaml missing check (silent): a float is not an integer
+yaml missing check (silent): null is not an integer
+
+-- number type matches numbers
+yaml missing check (silent): null is not a number
+
+-- string type matches strings
+yaml missing check (silent): 1 is not a string
+yaml missing check (silent): a float is not a string
+yaml missing check (silent): a boolean is not a string
+yaml missing check (silent): null is not a string
+
+-- object type matches objects
+yaml missing check (silent): null is not an object
+
+-- array type matches arrays
+yaml missing check (silent): null is not an array
+
+-- boolean type matches booleans
+yaml missing check (silent): null is not a boolean
+
+-- null type matches only the null object
+json missing check (silent): an integer is not null
+yaml missing check (silent): an integer is not null
+json missing check (silent): a float is not null
+yaml missing check (silent): a float is not null
+json missing check (silent): zero is not null
+yaml missing check (silent): zero is not null
+json missing check (silent): a string is not null
+yaml missing check (silent): a string is not null
+json missing check (silent): an empty string is not null
+yaml missing check (silent): an empty string is not null
+json missing check (silent): an object is not null
+yaml missing check (silent): an object is not null
+json missing check (silent): an array is not null
+yaml missing check (silent): an array is not null
+json missing check (silent): true is not null
+yaml missing check (silent): true is not null
+json missing check (silent): false is not null
+yaml missing check (silent): false is not null
+
+-- multiple types can be specified in an array
+json wrong rejection: an integer is valid: unmarshal Root: json: cannot unmarshal number into Go value of type Plain
+yaml missing check (silent): a float is invalid
+yaml missing check (silent): a boolean is invalid
+yaml missing check (silent): null is invalid
+
+-- type as array with one item
+yaml missing check (silent): number is invalid
+
+-- type: array or object
+json wrong rejection: array is valid: unmarshal Root: json: cannot unmarshal array into Go value of type Plain
+yaml wrong rejection: array is valid: unmarshal Root: yaml: unmarshal errors: line 1: cannot unmarshal !!seq into Plain
+yaml missing check (silent): null is invalid
+
+-- type: array, object or null
+warning: Property has multiple types; will be represented as interface{} with no validation
+json missing check: number is invalid
+yaml missing check: number is invalid
+json missing check: string is invalid
+yaml missing check: string is invalid
+
+== uniqueItems.json
+
+-- uniqueItems validation
+json missing check (silent): non-unique array of integers is invalid
+yaml missing check (silent): non-unique array of integers is invalid
+json missing check (silent): non-unique array of more than two integers is invalid
+yaml missing check (silent): non-unique array of more than two integers is invalid
+json missing check (silent): numbers are unique if mathematically unequal
+yaml missing check (silent): numbers are unique if mathematically unequal
+json missing check (silent): non-unique array of strings is invalid
+yaml missing check (silent): non-unique array of strings is invalid
+json missing check (silent): non-unique array of objects is invalid
+yaml missing check (silent): non-unique array of objects is invalid
+json missing check (silent): property order of array of objects is ignored
+yaml missing check (silent): property order of array of objects is ignored
+json missing check (silent): non-unique array of nested objects is invalid
+yaml missing check (silent): non-unique array of nested objects is invalid
+json missing check (silent): non-unique array of arrays is invalid
+yaml missing check (silent): non-unique array of arrays is invalid
+json missing check (silent): non-unique array of more than two arrays is invalid
+yaml missing check (silent): non-unique array of more than two arrays is invalid
+json missing check (silent): non-unique heterogeneous types are invalid
+yaml missing check (silent): non-unique heterogeneous types are invalid
+json missing check (silent): objects are non-unique despite key order
+yaml missing check (silent): objects are non-unique despite key order
+
+-- uniqueItems with an array of items
+json missing check (silent): [false, false] from items array is not valid
+yaml missing check (silent): [false, false] from items array is not valid
+json missing check (silent): [true, true] from items array is not valid
+yaml missing check (silent): [true, true] from items array is not valid
+json missing check (silent): non-unique array extended from [false, true] is not valid
+yaml missing check (silent): non-unique array extended from [false, true] is not valid
+json missing check (silent): non-unique array extended from [true, false] is not valid
+yaml missing check (silent): non-unique array extended from [true, false] is not valid
+
+-- uniqueItems with an array of items and additionalItems=false
+json missing check (silent): [false, false] from items array is not valid
+yaml missing check (silent): [false, false] from items array is not valid
+json missing check (silent): [true, true] from items array is not valid
+yaml missing check (silent): [true, true] from items array is not valid
+json missing check (silent): extra items are invalid even if unique
+yaml missing check (silent): extra items are invalid even if unique
+
+-- uniqueItems=false with an array of items and additionalItems=false
+json missing check (silent): extra items are invalid even if unique
+yaml missing check (silent): extra items are invalid even if unique

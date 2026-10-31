@@ -284,6 +284,40 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 While not finished, go-jsonschema can be used today. Aside from some minor features,
 only specific validations remain to be fully implemented.
 
+### Conformance
+
+`TestConformanceDraft7` runs the required draft-07 tests of the
+[JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite) through generated code. It
+decodes each test's document into the type generated from the test's schema, as JSON and as YAML, and compares the
+verdict with the suite's. The report, [`tests/testdata/conformance/draft7.txt`](tests/testdata/conformance/draft7.txt),
+lists every disagreement:
+
+* a **missing check** accepts a document the suite marks invalid. It is **silent** when the generator gave no warning
+  for the schema;
+* a **wrong rejection** rejects a document the suite marks valid;
+* a schema the generator rejects, or whose code doesn't compile, leaves its tests not run.
+
+The suite tests one keyword at a time, mostly on schemas without a `type`. Real schemas rarely put such keywords on a
+schema without a `type`: 28 of the 1,482 schemas in SchemaStore's catalog do. The disagreements fall into these
+classes:
+
+* **Keywords on a schema without a `type`.** Such a schema becomes `interface{}`, or no type at all, and nothing
+  checks its keywords. This class holds most of the silent missing checks.
+* **Objects without `type: object`.** A schema with `properties` but no `type` becomes a struct, so it rejects the
+  non-objects that the suite lets through.
+* **YAML.** yaml.v3 reads some documents differently from JSON. It decodes a number or a boolean into a string, and
+  it can't read an escaped surrogate pair.
+* **`$ref` forms the generator doesn't resolve.** These are a base URI that an `$id` sets, a location-independent
+  identifier (`#foo`), a URN, `#` itself, and a pointer into `properties`.
+* **Property names that a Go struct tag can't hold.** The generator rejects these schemas.
+* **Defects,** such as:
+  * a two-type union at the root that keeps only its last type;
+  * counts written `2.0`, which fail to load;
+  * an integer `multipleOf` below 1, whose code doesn't compile.
+
+The suite is vendored in `tests/testdata/JSON-Schema-Test-Suite`. To update it, run
+`scripts/update-test-suite.sh <commit>`, then regenerate the report with `OVERWRITE_EXPECTED_GO_FILE=true`.
+
 ### Validation
 
 * Core ([RFC draft](http://json-schema.org/latest/json-schema-core.html))
