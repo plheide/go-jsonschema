@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"testing"
 )
 
 const (
@@ -20,6 +21,9 @@ const (
 	maxDocuments = 300
 	// maxSeedDepth bounds how deep a seed goes, which also stops recursive schemas.
 	maxSeedDepth = 6
+	// maxSeedSchemas bounds the subschemas a seed is built from. A big schema's seed would otherwise grow with each
+	// property and $ref it reaches, and each mutant is a copy of the seed.
+	maxSeedSchemas = 500
 	// maxSeedItems bounds the items of an array in a seed.
 	maxSeedItems = 3
 	// maxExampleLen bounds how much of a value a report's example shows.
@@ -172,21 +176,27 @@ func documentsFor(files *schemaFiles, f *schemaFile, schema any) []mutant {
 		}
 	}
 
-	g := seeder{files: files}
-	seeds = append(seeds, g.synth(f, schema, 0, false), g.synth(f, schema, 0, true))
+	for _, requiredOnly := range []bool{false, true} {
+		g := seeder{files: files}
+		seeds = append(seeds, g.synth(f, schema, 0, requiredOnly))
+	}
 
 	var docs []mutant
 
 	seen := map[string]bool{}
 
-	add := func(kind, example string, v any) {
-		data, err := json.Marshal(v)
-		if err != nil || seen[string(data)] || len(docs) >= maxDocuments {
-			return
+	// add keeps a document it hasn't seen, and reports whether there is room for more.
+	add := func(kind, example string, v any) bool {
+		if len(docs) >= maxDocuments {
+			return false
 		}
 
-		seen[string(data)] = true
-		docs = append(docs, mutant{kind: kind, example: example, doc: data})
+		if data, err := json.Marshal(v); err == nil && !seen[string(data)] {
+			seen[string(data)] = true
+			docs = append(docs, mutant{kind: kind, example: example, doc: data})
+		}
+
+		return len(docs) < maxDocuments
 	}
 
 	for i, s := range seeds {
@@ -194,6 +204,10 @@ func documentsFor(files *schemaFiles, f *schemaFile, schema any) []mutant {
 	}
 
 	for _, s := range seeds {
+		if len(docs) >= maxDocuments {
+			break
+		}
+
 		mutateBreadthFirst(s, add)
 	}
 
@@ -205,8 +219,9 @@ type node struct {
 	value any
 }
 
-// mutateBreadthFirst hands each mutant of a seed to add, the root's first, then each level's in turn.
-func mutateBreadthFirst(seed any, add func(kind, example string, v any)) {
+// mutateBreadthFirst hands each mutant of a seed to add, the root's first, then each level's in turn, until add has
+// no room for more.
+func mutateBreadthFirst(seed any, add func(kind, example string, v any) bool) {
 	queue := []node{{value: seed}}
 
 	for len(queue) > 0 {
@@ -216,12 +231,18 @@ func mutateBreadthFirst(seed any, add func(kind, example string, v any)) {
 		at := "/" + strings.Join(n.path, "/")
 
 		for _, m := range mutations(n.value) {
-			example := at + " = " + shortJSON(m.value)
-			if m.key != "" {
+			var example string
+
+			if m.kind == deleteKey {
+				m.value = withoutKey(n.value, m.key)
 				example = strings.TrimSuffix(at, "/") + "/" + m.key + " deleted"
+			} else {
+				example = at + " = " + shortJSON(m.value)
 			}
 
-			add(m.kind, example, replaceAt(seed, n.path, m.value))
+			if !add(m.kind, example, replaceAt(seed, n.path, m.value)) {
+				return
+			}
 		}
 
 		switch c := n.value.(type) {
@@ -237,7 +258,12 @@ func mutateBreadthFirst(seed any, add func(kind, example string, v any)) {
 	}
 }
 
-// mutation replaces a node with value. key names the property a "delete key" mutation removed.
+// deleteKey is the kind of the mutation that removes a property. Deletions are told apart by kind, not by key: a
+// property's name can be empty.
+const deleteKey = "delete key"
+
+// mutation replaces a node with value. key names the property a deleteKey mutation removes. Its value is built only
+// when it is tried: building every deletion first would copy the object once per key.
 type mutation struct {
 	kind  string
 	value any
@@ -251,9 +277,7 @@ func mutations(v any) []mutation {
 	switch c := v.(type) {
 	case map[string]any:
 		for _, k := range slices.Sorted(maps.Keys(c)) {
-			m := maps.Clone(c)
-			delete(m, k)
-			ms = append(ms, mutation{kind: "delete key", value: m, key: k})
+			ms = append(ms, mutation{kind: deleteKey, key: k})
 		}
 
 		m := maps.Clone(c)
@@ -309,6 +333,14 @@ func wrongType(v any) any {
 	}
 }
 
+// withoutKey returns a copy of the object v without its property key.
+func withoutKey(v any, key string) any {
+	m := maps.Clone(v.(map[string]any))
+	delete(m, key)
+
+	return m
+}
+
 // replaceAt returns root with the node at path replaced by v, copying only the containers on the way.
 func replaceAt(root any, path []string, v any) any {
 	if len(path) == 0 {
@@ -353,12 +385,16 @@ func shortJSON(v any) string {
 // value before a mutant changes it. It needn't be valid: the reference validator judges every document.
 type seeder struct {
 	files *schemaFiles
+	// schemas counts the subschemas the seed is built from.
+	schemas int
 }
 
-func (g seeder) synth(f *schemaFile, schema any, depth int, requiredOnly bool) any {
-	if depth > maxSeedDepth {
+func (g *seeder) synth(f *schemaFile, schema any, depth int, requiredOnly bool) any {
+	if depth > maxSeedDepth || g.schemas >= maxSeedSchemas {
 		return nil
 	}
+
+	g.schemas++
 
 	s, ok := schema.(map[string]any)
 	if !ok {
@@ -406,7 +442,7 @@ func (g seeder) synth(f *schemaFile, schema any, depth int, requiredOnly bool) a
 	return v
 }
 
-func (g seeder) synthOwn(f *schemaFile, s map[string]any, depth int, requiredOnly bool) any {
+func (g *seeder) synthOwn(f *schemaFile, s map[string]any, depth int, requiredOnly bool) any {
 	switch schemaType(s) {
 	case "object":
 		return g.synthObject(f, s, depth, requiredOnly)
@@ -425,7 +461,7 @@ func (g seeder) synthOwn(f *schemaFile, s map[string]any, depth int, requiredOnl
 	}
 }
 
-func (g seeder) synthObject(f *schemaFile, s map[string]any, depth int, requiredOnly bool) any {
+func (g *seeder) synthObject(f *schemaFile, s map[string]any, depth int, requiredOnly bool) any {
 	props, _ := s["properties"].(map[string]any)
 	required := map[string]bool{}
 
@@ -458,7 +494,7 @@ func (g seeder) synthObject(f *schemaFile, s map[string]any, depth int, required
 	return m
 }
 
-func (g seeder) synthArray(f *schemaFile, s map[string]any, depth int, requiredOnly bool) any {
+func (g *seeder) synthArray(f *schemaFile, s map[string]any, depth int, requiredOnly bool) any {
 	if tuple, ok := s["items"].([]any); ok {
 		arr := make([]any, 0, min(len(tuple), maxSeedItems))
 		for _, item := range tuple[:min(len(tuple), maxSeedItems)] {
@@ -603,4 +639,22 @@ func mergeSeeds(a, b any) any {
 	}
 
 	return a
+}
+
+func TestMutantsDeleteEveryKey(t *testing.T) {
+	t.Parallel()
+
+	var deleted []string
+
+	mutateBreadthFirst(map[string]any{"": "x", "a": "y"}, func(kind, example string, v any) bool {
+		if kind == deleteKey {
+			deleted = append(deleted, example+": "+shortJSON(v))
+		}
+
+		return true
+	})
+
+	if want := []string{`/ deleted: {"a":"y"}`, `/a deleted: {"":"x"}`}; !slices.Equal(deleted, want) {
+		t.Errorf("deletions = %q, want %q", deleted, want)
+	}
 }

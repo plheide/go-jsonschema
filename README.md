@@ -326,6 +326,10 @@ That validator reads a schema that declares draft-04 or draft-06 as draft-07, as
 [`tests/testdata/differential/fixtures.txt`](tests/testdata/differential/fixtures.txt), groups the disagreements by
 schema, keyword and kind of change.
 
+Every week, a [workflow](.github/workflows/differential.yaml) runs the same comparison over SchemaStore's schemas,
+once with the generator on `main` and once with the latest release. It fails on a disagreement that only `main` has,
+and on a schema that only the release generates and builds, if a second run of the schema shows it again.
+
 ### Validation
 
 * Core ([RFC draft](http://json-schema.org/latest/json-schema-core.html))
