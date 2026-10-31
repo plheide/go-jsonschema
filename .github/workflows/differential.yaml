@@ -1,0 +1,48 @@
+---
+name: differential
+on:
+  schedule:
+    # Weekly: SchemaStore's schemas through the generator on main and through
+    # the latest release, so a change that gets a real schema wrong fails a run.
+    - cron: "17 7 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  schemastore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup Golang
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: 1.26.10
+      - name: Setup workspace
+        run: cp go.work.dist go.work
+      - name: Build the generator under test
+        run: go build -o "${RUNNER_TEMP}/go-jsonschema" .
+      - name: Install the latest release as the baseline
+        run: go install github.com/plheide/go-jsonschema@latest
+        env:
+          GOBIN: ${{ runner.temp }}/baseline
+          GOWORK: "off"
+      - name: Fetch SchemaStore
+        run: git clone --quiet --depth 1 https://github.com/SchemaStore/schemastore.git "${RUNNER_TEMP}/schemastore"
+      - name: Compare
+        run: >-
+          go test ./tests -run TestDifferentialCorpus -count=1 -timeout 100m -args
+          -differential.corpus="${RUNNER_TEMP}/schemastore/src/schemas/json"
+          -differential.generator="${RUNNER_TEMP}/go-jsonschema"
+          -differential.baseline="${RUNNER_TEMP}/baseline/go-jsonschema"
+          -differential.report="${RUNNER_TEMP}/differential-report.txt"
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: differential-report
+          path: ${{ runner.temp }}/differential-report.txt
+          if-no-files-found: ignore
