@@ -117,6 +117,36 @@ func TestRootSchemaAcceptsTupleItems(t *testing.T) {
 	}
 }
 
+// TestRootSchemaAcceptsBoolean covers a root schema that is `true`, which every
+// value meets, or `false`, which none meets, in JSON and YAML.
+func TestRootSchemaAcceptsBoolean(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		input string
+		not   bool
+	}{
+		{"true", false},
+		{"false", true},
+	} {
+		fromJSON, err := schemas.FromJSONReader(strings.NewReader(tc.input))
+		if err != nil {
+			t.Fatalf("FromJSONReader(%s): %v", tc.input, err)
+		}
+
+		fromYAML, err := schemas.FromYAMLReader(strings.NewReader(tc.input + "\n"))
+		if err != nil {
+			t.Fatalf("FromYAMLReader(%s): %v", tc.input, err)
+		}
+
+		for _, s := range []*schemas.Schema{fromJSON, fromYAML} {
+			if (s.Not != nil) != tc.not || len(s.Type) != 0 || s.Properties != nil {
+				t.Errorf("%s: Not = %v, Type = %v, Properties = %v", tc.input, s.Not, s.Type, s.Properties)
+			}
+		}
+	}
+}
+
 // TestRootSchemaRejectsNullItems covers `items: null` at the root. A null never
 // reaches a decoder hook, so only the pre-processing Type does can reject it.
 func TestRootSchemaRejectsNullItems(t *testing.T) {

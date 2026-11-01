@@ -735,8 +735,8 @@ func ifClauseHasExtraValidation(ifc *schemas.Type) bool {
 		ifc.Enum != nil ||
 		ifc.Pattern != "" ||
 		ifc.Format != "" ||
-		ifc.MinLength != 0 || ifc.MaxLength != 0 ||
-		ifc.MinItems != 0 || ifc.MaxItems != 0 ||
+		ifc.MinLength != 0 || ifc.HasMaxLength() ||
+		ifc.MinItems != 0 || ifc.HasMaxItems() ||
 		ifc.UniqueItems ||
 		ifc.Minimum != nil || ifc.Maximum != nil ||
 		ifc.ExclusiveMinimum != nil || ifc.ExclusiveMaximum != nil ||
@@ -751,7 +751,7 @@ func ifClauseHasExtraStructure(ifc *schemas.Type) bool {
 	return len(ifc.Required) > 0 ||
 		ifc.AdditionalProperties != nil ||
 		len(ifc.PatternProperties) > 0 ||
-		ifc.MinProperties != 0 || ifc.MaxProperties != 0 ||
+		ifc.MinProperties != 0 || ifc.HasMaxProperties() ||
 		ifc.Items != nil ||
 		ifc.AdditionalItems != nil ||
 		len(ifc.DependentRequired) > 0 ||

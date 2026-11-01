@@ -82,8 +82,8 @@ func (g *schemaGenerator) valueKeywords(s *schemas.Type, path string, visited ma
 	add(s.ExclusiveMinimum != nil, "exclusiveMinimum")
 	add(s.Format != "" && isKnownFormatKeyword(s.Format) && g.config.FormatValidation.shouldValidate(s.Format),
 		"format")
-	add(s.MaxItems != 0, "maxItems")
-	add(s.MaxLength != 0, "maxLength")
+	add(s.HasMaxItems(), "maxItems")
+	add(s.HasMaxLength(), "maxLength")
 	add(s.Maximum != nil, "maximum")
 	add(s.MinItems != 0, "minItems")
 	add(s.MinLength != 0, "minLength")

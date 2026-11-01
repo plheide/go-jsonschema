@@ -240,7 +240,7 @@ func primitiveHasValidationConstraints(v *schemas.Type) bool {
 		return true
 	}
 
-	if v.MinLength != 0 || v.MaxLength != 0 {
+	if v.MinLength != 0 || v.HasMaxLength() {
 		return true
 	}
 
@@ -255,7 +255,7 @@ func primitiveHasValidationConstraints(v *schemas.Type) bool {
 		return true
 	}
 
-	if v.Items != nil || v.MinItems != 0 || v.MaxItems != 0 || v.UniqueItems {
+	if v.Items != nil || v.MinItems != 0 || v.HasMaxItems() || v.UniqueItems {
 		return true
 	}
 

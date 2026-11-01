@@ -200,6 +200,8 @@ When generated code doesn't check something a schema declares, the generator say
   07's `dependencies` counts as these), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`,
   `unevaluatedItems` and `unevaluatedProperties`. A keyword whose subschemas admit every value, such as
   `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
+* `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
+  value meets. Nothing is generated for it.
 
 ### Options for names, types and tags
 
@@ -272,6 +274,17 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   which truncated `2.5` to 2 for an integer and wrapped `1e300`.
 * A nested array is held to its own `minItems` and `maxItems`. Upstream held each level to the property's, which
   rejected valid input.
+* A count, such as `minItems` or `maxLength`, written `2.0` or `2e0` is read as the integer it holds, and one that
+  holds no integer stops generation with an error that names it. Upstream failed to load the schema. `maxLength: 0`
+  and `maxItems: 0` are checked, where upstream read a zero as no limit.
+* An `integer`'s `multipleOf` with a fraction is checked on the integers it allows: the multiples of 5 for `2.5`, and
+  every integer for `0.5`. Upstream checked the multiples of 2 for `2.5`, and its code for a value below 1 did not
+  compile.
+* A `type` of two types without `null`, such as `["integer", "string"]`, keeps both: where no union wrapper holds
+  them, it is `interface{}` with a warning, as it was in a property. Upstream kept only the last type at the root, in a
+  definition and for the values of a map, which rejected values of the first.
+* A schema file that is only `true` or `false` is read. `true` generates no type, as `{}` does, and `false` is
+  reported, since no generated code rejects every value. Upstream failed to load either.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
   Upstream generated a tag that decodes nothing.
 * A `null` where a schema belongs, such as an entry of `allOf`, a property or a definition, stops generation with an
@@ -321,9 +334,9 @@ classes:
   identifier (`#foo`), a URN, `#` itself, and a pointer into `properties`.
 * **Property names that a Go struct tag can't hold.** The generator rejects these schemas.
 * **Defects,** such as:
-  * a two-type union at the root that keeps only its last type;
-  * counts written `2.0`, which fail to load;
-  * an integer `multipleOf` below 1, whose code doesn't compile.
+  * `type: null` on its own, which lets any value through;
+  * a `default` that breaks its property's own keywords, which rejects every document that leaves the property out;
+  * an `enum` that lists `null` beside a number, which rejects `null`.
 
 The suite is vendored in `tests/testdata/JSON-Schema-Test-Suite`. To update it, run
 `scripts/update-test-suite.sh <commit>`, then regenerate the report with `OVERWRITE_EXPECTED_GO_FILE=true`.

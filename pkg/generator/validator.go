@@ -848,13 +848,15 @@ func (v *arrayValidator) desc() *validatorDesc {
 type stringValidator struct {
 	checkTarget
 
-	jsonName   string
-	fieldName  string
-	minLength  int
-	maxLength  int
-	isNillable bool
-	pattern    string
-	constVal   *string
+	jsonName  string
+	fieldName string
+	minLength int
+	maxLength int
+	// maxLengthSet distinguishes a maximum of zero from no maximum.
+	maxLengthSet bool
+	isNillable   bool
+	pattern      string
+	constVal     *string
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
@@ -908,7 +910,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 		out.Printlnf("}")
 	}
 
-	if v.minLength == 0 && v.maxLength == 0 {
+	if v.minLength == 0 && !v.maxLengthSet {
 		return nil
 	}
 
@@ -920,7 +922,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 		out.Printlnf("}")
 	}
 
-	if v.maxLength != 0 {
+	if v.maxLengthSet {
 		out.Printlnf(`if %sutf8.RuneCountInString(string(%s%s)) > %d {`, checkPointer, pointerPrefix, value, v.maxLength)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", %s, %d)`, fieldName, v.maxLength)
@@ -937,7 +939,7 @@ func (v *stringValidator) desc() *validatorDesc {
 		beforeJSONUnmarshal: false,
 	}
 
-	if v.minLength != 0 || v.maxLength != 0 {
+	if v.minLength != 0 || v.maxLengthSet {
 		d.imports = append(d.imports, packageImport{qualifiedName: "unicode/utf8"})
 	}
 
@@ -957,9 +959,11 @@ type numericValidator struct {
 	exclusiveMinimum *any
 	constVal         any
 	roundToInt       bool
-	// goType is the Go type of the value, and the texts are its bounds as
-	// written, which an integer's check reads. See integer_bounds.go.
+	// goType is the Go type of the value, and the texts are its multipleOf
+	// and bounds as written, which an integer's check reads. See
+	// integer_bounds.go.
 	goType               string
+	multipleOfText       string
 	maximumText          string
 	exclusiveMaximumText string
 	minimumText          string
@@ -987,11 +991,7 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 
 	if v.multipleOf != nil {
 		if v.roundToInt {
-			out.Printlnf(`if %s %s%s %% %v != 0 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
-			out.Indent(1)
-			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", %s, %f)`, name, *v.multipleOf)
-			out.Indent(-1)
-			out.Printlnf("}")
+			v.genIntegerMultipleOf(out, checkPointer, pointerPrefix, value, name)
 		} else {
 			if v.isNillable {
 				out.Printlnf(`if %s != nil {`, value)

@@ -99,8 +99,14 @@ func (g *schemaGenerator) generateRootType() error {
 	// The root may declare a `type` OR be a pure composition / $ref / enum
 	// (no `type`, but oneOf/anyOf/allOf/$ref/enum/const populated). Drop
 	// only when the root is structurally empty (e.g. `{}` or a schema that
-	// declares only metadata like `$schema`/`$id`).
+	// declares only metadata like `$schema`/`$id`). The schema `false`, which
+	// no value meets, has nothing to generate either, and says so.
 	if !rootHasGeneratable(root) {
+		if isFalseSchema(root) {
+			g.warner(fmt.Sprintf("schema fidelity: root of %s does not enforce all it declares: %s",
+				g.schemaFileName, ownConditionalReason(root)))
+		}
+
 		return nil
 	}
 
@@ -1102,7 +1108,7 @@ func (g *schemaGenerator) structFieldValidators(
 		switch {
 		case v.Type == schemas.TypeNameString:
 			pattern := g.compilablePattern(f.SchemaType.Pattern, f.JSONName)
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || pattern != "" || f.SchemaType.Const != nil {
+			if f.SchemaType.MinLength != 0 || f.SchemaType.HasMaxLength() || pattern != "" || f.SchemaType.Const != nil {
 				var constVal *string
 
 				if f.SchemaType.Const != nil {
@@ -1114,13 +1120,15 @@ func (g *schemaGenerator) structFieldValidators(
 				}
 
 				validators = append(validators, &stringValidator{
-					jsonName:   f.JSONName,
-					fieldName:  f.Name,
-					minLength:  f.SchemaType.MinLength,
-					maxLength:  f.SchemaType.MaxLength,
-					pattern:    pattern,
-					constVal:   constVal,
-					isNillable: isNillable,
+					jsonName:  f.JSONName,
+					fieldName: f.Name,
+					minLength: f.SchemaType.MinLength,
+					maxLength: f.SchemaType.MaxLength,
+					// A maxLength of 0 admits only the empty string.
+					maxLengthSet: f.SchemaType.HasMaxLength(),
+					pattern:      pattern,
+					constVal:     constVal,
+					isNillable:   isNillable,
 				})
 			}
 
@@ -1614,9 +1622,9 @@ func effectiveMaxItems(t *schemas.Type) (int, bool) {
 
 	switch {
 	case !tupleClosed:
-		return t.MaxItems, t.MaxItems != 0
+		return t.MaxItems, t.HasMaxItems()
 
-	case t.MaxItems == 0:
+	case !t.HasMaxItems():
 		return tupleMax, true
 
 	default:
@@ -1866,21 +1874,15 @@ func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
 		return t.Type[0], false
 	}
 
-	if len(t.Type) == 2 {
-		tidx := 0
-		isPtr := false
-
-		for k, v := range t.Type {
-			if v == "null" {
-				isPtr = true
-
-				continue
+	// A type and null is the type, behind a pointer. Two types without null
+	// are as many types as three: the value is either, which no Go type
+	// holds.
+	if len(t.Type) == 2 && slices.Contains(t.Type, schemas.TypeNameNull) {
+		for _, v := range t.Type {
+			if v != schemas.TypeNameNull {
+				return v, true
 			}
-
-			tidx = k
 		}
-
-		return t.Type[tidx], isPtr
 	}
 
 	g.warner("Property has multiple types; will be represented as interface{} with no validation")

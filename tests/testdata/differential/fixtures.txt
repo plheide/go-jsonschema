@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 561 (327 fixtures, 234 definitions), 25 skipped; documents: 14653
-json: 13599 agree, 574 missing checks (120 silent), 480 wrong rejections, 0 panics
-yaml: 12555 agree, 1605 missing checks (875 silent), 493 wrong rejections, 0 panics
+schemas: 565 (330 fixtures, 235 definitions), 25 skipped; documents: 14792
+json: 13733 agree, 578 missing checks (120 silent), 481 wrong rejections, 0 panics
+yaml: 12687 agree, 1611 missing checks (877 silent), 494 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/allOf/allOf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1135,6 +1135,18 @@ yaml missing check (silent) additionalItems: append null ×1, e.g. /licenses = [
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /licenses/0/expression = 12345
 
+== core/twoTypes/twoTypes.json
+json missing check type: 0.5 ×1, e.g. / = 0.5
+json missing check type: null ×1, e.g. / = null
+yaml missing check type: 0.5 ×1, e.g. / = 0.5
+yaml missing check type: null ×1, e.g. / = null
+
+== core/twoTypes/twoTypes.json#/definitions/listOrMap
+json missing check type: null ×1, e.g. / = null
+json missing check type: wrong type ×1, e.g. / = "x"
+yaml missing check type: null ×1, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. / = "x"
+
 == crossPackage/other/other.json#/$defs/Thing
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /s = 12345
@@ -1667,6 +1679,11 @@ yaml wrong rejection: wrong type ×3, e.g. /actions/0/count = "12345": unmarshal
 == integralNumbers/cycle/cycle.json#/definitions/other
 yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: wrong type ×1, e.g. /name = 12345
+
+== integralNumbers/multiples/multiples.json
+json wrong rejection: 1e300 ×1, e.g. /fiveHalves = 1e300: unmarshal Wrap: unmarshal Multiples: json: cannot unmarshal number 1e300 into Go struct field Plain.fiveHalves of type int
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml wrong rejection: 1e300 ×1, e.g. /fiveHalves = 1e300: unmarshal Wrap: unmarshal Multiples: field fiveHalves: 1e300 is out of range for int
 
 == integralNumbers/shapes/shapes.json
 json wrong rejection: 1e300 ×10, e.g. /count = 1e300: unmarshal Wrap: unmarshal Shapes: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
@@ -2795,6 +2812,9 @@ yaml missing check (silent) type: wrong type ×1, e.g. /0 = 12345
 == validation/array_defs/array_defs.json#/$defs/tags
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /0 = 12345
+
+== validation/counts/counts.json
+yaml missing check (silent) type: null ×1, e.g. / = null
 
 == validation/description/description.json
 yaml missing check (silent) type: null ×1, e.g. / = null

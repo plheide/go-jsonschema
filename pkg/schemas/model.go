@@ -28,8 +28,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"math"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 
 	"dario.cat/mergo"
@@ -44,6 +46,9 @@ var (
 	// ErrNullNotASchema is returned where JSON Schema requires a schema
 	// (an object or a boolean) but the document supplies null.
 	ErrNullNotASchema = fmt.Errorf("null is not a valid schema")
+	// ErrCountNotInteger is returned for a count keyword, such as minItems,
+	// whose value is a number that holds no integer.
+	ErrCountNotInteger = fmt.Errorf("count is not an integer")
 )
 
 // Schema is the root schema.
@@ -72,8 +77,11 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 		LegacyID string `json:"id"`
 	}
 
-	if err := json.Unmarshal(data, &ids); err != nil {
-		return fmt.Errorf("failed to unmarshal schema: %w", err)
+	// A boolean schema, `true` or `false`, has no identifiers.
+	if !isJSONBoolean(data) {
+		if err := json.Unmarshal(data, &ids); err != nil {
+			return fmt.Errorf("failed to unmarshal schema: %w", err)
+		}
 	}
 
 	// Fall back to id if $id is not present.
@@ -216,11 +224,12 @@ type Type struct {
 	ExclusiveMinimum *any     `json:"exclusiveMinimum,omitempty"` // Section 5.5. Changed in draft 4.
 	MaxLength        int      `json:"maxLength,omitempty"`        // Section 5.6.
 	MinLength        int      `json:"minLength,omitempty"`        // Section 5.7.
-	// MaximumExact, ExclusiveMaximumExact, MinimumExact and
-	// ExclusiveMinimumExact are the numeric bounds as written, as
-	// json.Number, or "" for a bound that is absent or, for an exclusive one,
-	// a draft-04 boolean. The float64 fields round an integer beyond 2^53. Set
-	// by Type's custom UnmarshalJSON.
+	// MultipleOfExact, MaximumExact, ExclusiveMaximumExact, MinimumExact
+	// and ExclusiveMinimumExact are the numeric keywords as written, as
+	// json.Number, or "" for one that is absent or, for an exclusive bound,
+	// a draft-04 boolean. The float64 fields round an integer beyond 2^53 and
+	// most fractions. Set by Type's custom UnmarshalJSON.
+	MultipleOfExact       json.Number `json:"-"`
 	MaximumExact          json.Number `json:"-"`
 	ExclusiveMaximumExact json.Number `json:"-"`
 	MinimumExact          json.Number `json:"-"`
@@ -249,6 +258,12 @@ type Type struct {
 	// Const == nil) from an absent `const` field (which also decodes to nil).
 	// Set by Type's custom UnmarshalJSON via a separate raw-key probe.
 	ConstIsSet bool `json:"-"`
+	// MaxLengthIsSet, MaxItemsIsSet and MaxPropertiesIsSet tell a maximum of
+	// 0, which the document declares, from an absent one. Set by Type's custom
+	// UnmarshalJSON; see HasMaxLength.
+	MaxLengthIsSet     bool `json:"-"`
+	MaxItemsIsSet      bool `json:"-"`
+	MaxPropertiesIsSet bool `json:"-"`
 	// ConstExact is Const with its numbers as written, as json.Number. Const
 	// holds them as float64, which rounds an integer beyond 2^53. Set by the
 	// same probe.
@@ -433,6 +448,79 @@ func isJSONNull(raw []byte) bool {
 	return string(bytes.TrimSpace(raw)) == "null"
 }
 
+// readCounts returns raw, a schema object, with each count keyword written
+// with a fraction or an exponent, such as `"minItems": 2.0`, written as the
+// integer it holds, which JSON Schema counts it as, and the count keywords
+// that raw declares a number for. A count that holds no integer is an error
+// that names its keyword. One that is no number is left to the decode of raw,
+// which rejects it as before.
+func readCounts(raw []byte) ([]byte, map[string]bool, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return raw, nil, nil //nolint:nilerr // deliberate: defer to the main decode
+	}
+
+	declared := map[string]bool{}
+	changed := false
+
+	for _, key := range []string{"maxLength", "minLength", "maxItems", "minItems", "maxProperties", "minProperties"} {
+		value, ok := fields[key]
+		text := string(bytes.TrimSpace(value))
+
+		if !ok || text == "" || text == "null" || text[0] == '"' {
+			continue
+		}
+
+		declared[key] = true
+
+		if !strings.ContainsAny(text, ".eE") {
+			continue
+		}
+
+		// A count beyond 2^53 is no count a schema means.
+		f, err := strconv.ParseFloat(text, 64)
+		if err != nil || f != math.Trunc(f) || math.Abs(f) > 1<<53 {
+			return nil, nil, fmt.Errorf("%s: %w: %s", key, ErrCountNotInteger, text)
+		}
+
+		fields[key] = json.RawMessage(strconv.FormatInt(int64(f), 10))
+		changed = true
+	}
+
+	if !changed {
+		return raw, declared, nil
+	}
+
+	written, err := json.Marshal(fields)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to write counts: %w", err)
+	}
+
+	return written, declared, nil
+}
+
+// HasMaxLength reports whether t declares a maxLength, 0 included.
+func (t *Type) HasMaxLength() bool {
+	return t.MaxLengthIsSet || t.MaxLength != 0
+}
+
+// HasMaxItems reports whether t declares a maxItems, 0 included.
+func (t *Type) HasMaxItems() bool {
+	return t.MaxItemsIsSet || t.MaxItems != 0
+}
+
+// HasMaxProperties reports whether t declares a maxProperties, 0 included.
+func (t *Type) HasMaxProperties() bool {
+	return t.MaxPropertiesIsSet || t.MaxProperties != 0
+}
+
+// isJSONBoolean reports whether raw is the JSON literal true or false.
+func isJSONBoolean(raw []byte) bool {
+	s := string(bytes.TrimSpace(raw))
+
+	return s == "true" || s == "false"
+}
+
 // nullSubschema names the first composition entry, property, pattern
 // property, dependent schema or definition of obj that is null, or returns ""
 // when there is none. Unlike `items` and `dependencies`, these never reach a
@@ -513,10 +601,19 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		return err
 	}
 
+	effectiveRaw, counts, err := readCounts(effectiveRaw)
+	if err != nil {
+		return err
+	}
+
 	var obj ObjectAsType
 	if err := json.Unmarshal(effectiveRaw, &obj); err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
 	}
+
+	obj.MaxLengthIsSet = counts["maxLength"]
+	obj.MaxItemsIsSet = counts["maxItems"]
+	obj.MaxPropertiesIsSet = counts["maxProperties"]
 
 	if tupleRaw != nil {
 		var tuple []*Type
@@ -632,16 +729,17 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	*value = Type(obj)
 
 	value.ConstIsSet, value.ConstExact = probeConst(raw)
-	value.MaximumExact, value.ExclusiveMaximumExact, value.MinimumExact, value.ExclusiveMinimumExact = probeBounds(raw)
+	value.probeNumbers(raw)
 
 	return nil
 }
 
-// probeBounds returns the numeric bounds that raw, a schema object, declares,
-// as written. A bound that is absent, a draft-04 boolean or anything else but
-// a number is returned as "".
-func probeBounds(raw []byte) (json.Number, json.Number, json.Number, json.Number) {
+// probeNumbers sets the numeric keywords that raw, a schema object, declares,
+// as written: multipleOf and the bounds. One that is absent, a draft-04
+// boolean or anything else but a number is left "".
+func (value *Type) probeNumbers(raw []byte) {
 	var probe struct {
+		MultipleOf       json.RawMessage `json:"multipleOf"`
 		Maximum          json.RawMessage `json:"maximum"`
 		ExclusiveMaximum json.RawMessage `json:"exclusiveMaximum"`
 		Minimum          json.RawMessage `json:"minimum"`
@@ -649,7 +747,7 @@ func probeBounds(raw []byte) (json.Number, json.Number, json.Number, json.Number
 	}
 
 	if json.Unmarshal(raw, &probe) != nil {
-		return "", "", "", ""
+		return
 	}
 
 	number := func(raw json.RawMessage) json.Number {
@@ -661,7 +759,11 @@ func probeBounds(raw []byte) (json.Number, json.Number, json.Number, json.Number
 		return n
 	}
 
-	return number(probe.Maximum), number(probe.ExclusiveMaximum), number(probe.Minimum), number(probe.ExclusiveMinimum)
+	value.MultipleOfExact = number(probe.MultipleOf)
+	value.MaximumExact = number(probe.Maximum)
+	value.ExclusiveMaximumExact = number(probe.ExclusiveMaximum)
+	value.MinimumExact = number(probe.Minimum)
+	value.ExclusiveMinimumExact = number(probe.ExclusiveMinimum)
 }
 
 // probeConst probes raw, a schema object, for an explicit "const" key so
