@@ -10,6 +10,7 @@ import (
 
 	testBounds "github.com/plheide/go-jsonschema/tests/data/integralNumbers/bounds"
 	testCycle "github.com/plheide/go-jsonschema/tests/data/integralNumbers/cycle"
+	testMultiples "github.com/plheide/go-jsonschema/tests/data/integralNumbers/multiples"
 	testShapes "github.com/plheide/go-jsonschema/tests/data/integralNumbers/shapes"
 	testWritten "github.com/plheide/go-jsonschema/tests/data/integralNumbers/written"
 	testExact "github.com/plheide/go-jsonschema/tests/data/minSizedInts/exactReferences"
@@ -333,6 +334,38 @@ func TestIntegerBounds(t *testing.T) {
 		{`{"none": -9223372036854775808}`, "field none: must be <= -1e30"},
 	} {
 		var fromJSON, fromYAML testBounds.Bounds
+
+		require.ErrorContains(t, json.Unmarshal([]byte(tc.input), &fromJSON), tc.wantErr, "json %s", tc.input)
+		require.ErrorContains(t, yamlv3.Unmarshal([]byte(tc.input), &fromYAML), tc.wantErr, "yaml %s", tc.input)
+	}
+}
+
+// TestIntegerMultipleOf covers multipleOf on an integer. One with a fraction
+// holds an integer to multiples of its numerator, in lowest terms: 2.5 to
+// multiples of 5, and 0.5 to nothing.
+func TestIntegerMultipleOf(t *testing.T) {
+	t.Parallel()
+
+	for _, input := range []string{
+		`{"fiveHalves": 10, "half": 7, "tiny": 12391239123, "huge": 0, "three": 9, "halves": [1, 2, 3]}`,
+		`{"fiveHalves": -5, "three": 0}`,
+	} {
+		var fromJSON, fromYAML testMultiples.Multiples
+
+		require.NoError(t, json.Unmarshal([]byte(input), &fromJSON), "json %s", input)
+		require.NoError(t, yamlv3.Unmarshal([]byte(input), &fromYAML), "yaml %s", input)
+		assert.Equal(t, fromJSON, fromYAML, input)
+	}
+
+	for _, tc := range []struct {
+		input   string
+		wantErr string
+	}{
+		{`{"fiveHalves": 7}`, "field fiveHalves: must be a multiple of 2.5"},
+		{`{"huge": 1}`, "field huge: must be a multiple of 1e30"},
+		{`{"three": 4}`, "field three: must be a multiple of 3"},
+	} {
+		var fromJSON, fromYAML testMultiples.Multiples
 
 		require.ErrorContains(t, json.Unmarshal([]byte(tc.input), &fromJSON), tc.wantErr, "json %s", tc.input)
 		require.ErrorContains(t, yamlv3.Unmarshal([]byte(tc.input), &fromYAML), tc.wantErr, "yaml %s", tc.input)

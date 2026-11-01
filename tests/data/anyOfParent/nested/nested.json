@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/anyOfParent/nested",
+  "title": "Nested",
+  "description": "A branch that requires a property inside one the parent declares binds only where that branch matches: the struct merged from the anyOf requires what the parent requires, and what every branch requires.",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "const": "x" },
+    "s": { "type": "string", "minLength": 2 },
+    "meta": { "type": "object", "properties": { "m": { "type": "string" } } }
+  },
+  "required": ["kind"],
+  "anyOf": [
+    {
+      "properties": {
+        "a": { "type": "string" },
+        "s": { "maxLength": 3 },
+        "meta": { "required": ["m"] }
+      },
+      "required": ["a"]
+    },
+    {
+      "properties": { "b": { "type": "string" } },
+      "required": ["b"]
+    }
+  ]
+}

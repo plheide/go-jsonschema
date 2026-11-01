@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 561 (327 fixtures, 234 definitions), 25 skipped; documents: 14653
-json: 13599 agree, 574 missing checks (120 silent), 480 wrong rejections, 0 panics
-yaml: 12555 agree, 1605 missing checks (875 silent), 493 wrong rejections, 0 panics
+schemas: 582 (336 fixtures, 246 definitions), 25 skipped; documents: 15083
+json: 13996 agree, 604 missing checks (134 silent), 483 wrong rejections, 0 panics
+yaml: 12926 agree, 1662 missing checks (913 silent), 495 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/allOf/allOf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -31,21 +31,36 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
 
+== anyOfParent/declaredProperty/declaredProperty.json
+json missing check (silent) type: null ×1, e.g. /thing = null
+yaml missing check (silent) type: null ×2, e.g. / = null
+
+== anyOfParent/declaredProperty/declaredProperty.json#/definitions/kind
+yaml missing check (silent) type: null ×1, e.g. / = null
+
+== anyOfParent/declaredProperty/declaredProperty.json#/definitions/thing
+yaml missing check (silent) type: null ×1, e.g. / = null
+
+== anyOfParent/nested/nested.json
+json missing check (silent) maxLength: 5000 characters ×1, e.g. /s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (silent) maxLength: off-enum string ×1, e.g. /s = "zzOffEnum"
+json missing check (silent) required: delete key ×1, e.g. /meta/m deleted
+yaml missing check (silent) maxLength: 5000 characters ×1, e.g. /s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (silent) maxLength: off-enum string ×1, e.g. /s = "zzOffEnum"
+yaml missing check (silent) required: delete key ×1, e.g. /meta/m deleted
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×4, e.g. /a = 12345
+
 == anyOfParent/parent/parent.json
-json missing check maxLength: 5000 characters ×1, e.g. /s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
-json missing check maxLength: off-enum string ×1, e.g. /s = "zzOffEnum"
-json missing check minLength: empty string ×2, e.g. /s = ""
-json missing check type: append null ×1, e.g. /codes = ["aa",null]
-json missing check type: null ×3, e.g. /codes = null
+json missing check (silent) maxLength: 5000 characters ×1, e.g. /s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (silent) maxLength: off-enum string ×1, e.g. /s = "zzOffEnum"
 json wrong rejection: 1e300 ×1, e.g. /n = 1e300: unmarshal Wrap: unmarshal Parent: json: cannot unmarshal number 1e300 into Go struct field Plain.n of type int
 json wrong rejection: 2^63 ×1, e.g. /n = 9223372036854775808: unmarshal Wrap: unmarshal Parent: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.n of type int
 json wrong rejection: 2^64 ×1, e.g. /n = 18446744073709551616: unmarshal Wrap: unmarshal Parent: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.n of type int
-yaml missing check maxLength: 5000 characters ×1, e.g. /s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
-yaml missing check maxLength: off-enum string ×1, e.g. /s = "zzOffEnum"
-yaml missing check minLength: empty string ×2, e.g. /s = ""
-yaml missing check type: append null ×1, e.g. /codes = ["aa",null]
-yaml missing check type: null ×4, e.g. / = null
-yaml missing check type: wrong type ×4, e.g. /a = 12345
+yaml missing check (silent) maxLength: 5000 characters ×1, e.g. /s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (silent) maxLength: off-enum string ×1, e.g. /s = "zzOffEnum"
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×4, e.g. /a = 12345
 yaml wrong rejection: 1e300 ×1, e.g. /n = 1e300: unmarshal Wrap: unmarshal Parent: field n: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /n = 9223372036854775808: unmarshal Wrap: unmarshal Parent: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
 yaml wrong rejection: 2^64 ×1, e.g. /n = 18446744073709551616: unmarshal Wrap: unmarshal Parent: field n: 18446744073709551616 is out of range for int
@@ -454,6 +469,11 @@ yaml missing check (silent) type: wrong type ×1, e.g. /baseField = 12345
 == core/allOf/allOfMultipleRequired.json#/definitions/MultipleRequiredMiddle
 yaml missing check (silent) type: null ×1, e.g. / = null
 
+== core/allOf/allOfNested.json
+json missing check (silent) type: null ×1, e.g. /deep = null
+yaml missing check (silent) type: null ×2, e.g. / = null
+yaml missing check (silent) type: wrong type ×1, e.g. /deep/e = 12345
+
 == core/allOf/allOfNestedRefs.json
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /bar = 12345
@@ -686,6 +706,30 @@ json missing check type: wrong type ×1, e.g. / = 12345
 yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: wrong type ×1, e.g. / = 12345
 
+== core/anyOf/anyOfRecursiveAllOf.json
+json missing check type: append null ×3, e.g. /lists = [[[]],null]
+json missing check type: null ×4, e.g. /lists = null
+yaml missing check type: append null ×3, e.g. /lists = [[[]],null]
+yaml missing check type: null ×5, e.g. / = null
+
+== core/anyOf/anyOfRecursiveAllOf.json#/definitions/list
+json missing check type: append null ×3, e.g. / = [[[]],null]
+json missing check type: null ×2, e.g. /0 = null
+yaml missing check type: append null ×3, e.g. / = [[[]],null]
+yaml missing check type: null ×3, e.g. / = null
+
+== core/anyOf/anyOfRecursiveAllOf.json#/definitions/node
+yaml missing check type: null ×1, e.g. / = null
+
+== core/anyOf/anyOfRecursiveAllOf.json#/definitions/otherList
+json missing check type: append null ×3, e.g. / = [[[]],null]
+json missing check type: null ×2, e.g. /0 = null
+yaml missing check type: append null ×3, e.g. / = [[[]],null]
+yaml missing check type: null ×3, e.g. / = null
+
+== core/anyOf/anyOfRecursiveAllOf.json#/definitions/otherNode
+yaml missing check type: null ×1, e.g. / = null
+
 == core/anyOf/anyOfRefToEnum.json
 json missing check (silent) type: null ×1, e.g. /kind = null
 json missing check (silent) type: wrong type ×1, e.g. /kind = 12345
@@ -729,6 +773,23 @@ json missing check (silent) type: null ×1, e.g. /environment = null
 json wrong rejection: wrong type ×1, e.g. /environment/global = "x": unmarshal Wrap: unmarshal Job: unmarshal JobEnvironment: unmarshal EnvVars: json: cannot unmarshal string into Go value of type Plain
 yaml missing check (silent) type: null ×3, e.g. / = null
 yaml wrong rejection: wrong type ×1, e.g. /environment/global = "x": unmarshal Wrap: unmarshal Job: unmarshal JobEnvironment: unmarshal EnvVars: yaml: unmarshal errors: line 1: cannot unmarshal !!str `x` into Plain
+
+== core/anyOf/anyOfTypelessRef.json
+json missing check required: delete key ×1, e.g. /pair/x deleted
+json missing check type: null ×1, e.g. /pair/x = null
+yaml missing check required: delete key ×1, e.g. /pair/x deleted
+yaml missing check type: null ×2, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. /pair/x = 12345
+
+== core/anyOf/anyOfTypelessRef.json#/definitions/hasX
+json wrong rejection: null ×1, e.g. / = null: unmarshal Wrap: HasX: must not be null
+json wrong rejection: wrong type ×1, e.g. / = "x": unmarshal Wrap: unmarshal raw HasX: json: cannot unmarshal string into Go value of type map[string]interface {}
+yaml missing check type: wrong type ×1, e.g. /x = 12345
+yaml wrong rejection: wrong type ×1, e.g. / = "x": unmarshal Wrap: unmarshal raw HasX: yaml: unmarshal errors: line 1: cannot unmarshal !!str `x` into map[string]interface {}
+
+== core/anyOf/anyOfTypelessRef.json#/definitions/hasY
+json missing check required: delete key ×1, e.g. /y deleted
+yaml missing check required: delete key ×1, e.g. /y deleted
 
 == core/anyOf/anyOfWithDirectProperties.json#/definitions/BaseObject
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1134,6 +1195,18 @@ yaml missing check (silent) type: wrong type ×1, e.g. /0 = 12345
 yaml missing check (silent) additionalItems: append null ×1, e.g. /licenses = [{"expression":"a"},null]
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /licenses/0/expression = 12345
+
+== core/twoTypes/twoTypes.json
+json missing check type: 0.5 ×1, e.g. / = 0.5
+json missing check type: null ×1, e.g. / = null
+yaml missing check type: 0.5 ×1, e.g. / = 0.5
+yaml missing check type: null ×1, e.g. / = null
+
+== core/twoTypes/twoTypes.json#/definitions/listOrMap
+json missing check type: null ×1, e.g. / = null
+json missing check type: wrong type ×1, e.g. / = "x"
+yaml missing check type: null ×1, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. / = "x"
 
 == crossPackage/other/other.json#/$defs/Thing
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1667,6 +1740,11 @@ yaml wrong rejection: wrong type ×3, e.g. /actions/0/count = "12345": unmarshal
 == integralNumbers/cycle/cycle.json#/definitions/other
 yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: wrong type ×1, e.g. /name = 12345
+
+== integralNumbers/multiples/multiples.json
+json wrong rejection: 1e300 ×1, e.g. /fiveHalves = 1e300: unmarshal Wrap: unmarshal Multiples: json: cannot unmarshal number 1e300 into Go struct field Plain.fiveHalves of type int
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml wrong rejection: 1e300 ×1, e.g. /fiveHalves = 1e300: unmarshal Wrap: unmarshal Multiples: field fiveHalves: 1e300 is out of range for int
 
 == integralNumbers/shapes/shapes.json
 json wrong rejection: 1e300 ×10, e.g. /count = 1e300: unmarshal Wrap: unmarshal Shapes: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
@@ -2761,6 +2839,30 @@ yaml missing check (silent) type: wrong type ×1, e.g. /0 = 12345
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. / = 12345
 
+== validateNullTypes/nullSharedRef.json
+json missing check (silent) maxLength: 5000 characters ×2, e.g. /short = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (silent) maxLength: off-enum string ×2, e.g. /short = "zzOffEnum"
+json missing check (silent) type: wrong type ×1, e.g. /short = 12345
+yaml missing check (silent) maxLength: 5000 characters ×2, e.g. /short = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (silent) maxLength: off-enum string ×2, e.g. /short = "zzOffEnum"
+yaml missing check (silent) required: wrong type ×1, e.g. /either/x = 12345
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×2, e.g. /short = 12345
+
+== validateNullTypes/nullSharedRef.json#/definitions/bar
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×1, e.g. /y = 12345
+
+== validateNullTypes/nullSharedRef.json#/definitions/foo
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×1, e.g. /x = 12345
+
+== validateNullTypes/nullSharedRef.json#/definitions/upToThree
+json missing check (silent) maxLength: 5000 characters ×1, e.g. / = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (silent) maxLength: off-enum string ×1, e.g. / = "zzOffEnum"
+yaml missing check (silent) maxLength: 5000 characters ×1, e.g. / = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (silent) maxLength: off-enum string ×1, e.g. / = "zzOffEnum"
+
 == validateNullTypes/nullTypes.json
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×6, e.g. /Bar = 12345
@@ -2795,6 +2897,9 @@ yaml missing check (silent) type: wrong type ×1, e.g. /0 = 12345
 == validation/array_defs/array_defs.json#/$defs/tags
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /0 = 12345
+
+== validation/counts/counts.json
+yaml missing check (silent) type: null ×1, e.g. / = null
 
 == validation/description/description.json
 yaml missing check (silent) type: null ×1, e.g. / = null

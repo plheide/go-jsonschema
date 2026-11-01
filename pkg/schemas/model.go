@@ -28,8 +28,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"math"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 
 	"dario.cat/mergo"
@@ -44,6 +46,9 @@ var (
 	// ErrNullNotASchema is returned where JSON Schema requires a schema
 	// (an object or a boolean) but the document supplies null.
 	ErrNullNotASchema = fmt.Errorf("null is not a valid schema")
+	// ErrCountNotInteger is returned for a count keyword, such as minItems,
+	// whose value is a number that holds no integer.
+	ErrCountNotInteger = fmt.Errorf("count is not an integer")
 )
 
 // Schema is the root schema.
@@ -72,8 +77,11 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 		LegacyID string `json:"id"`
 	}
 
-	if err := json.Unmarshal(data, &ids); err != nil {
-		return fmt.Errorf("failed to unmarshal schema: %w", err)
+	// A boolean schema, `true` or `false`, has no identifiers.
+	if !isJSONBoolean(data) {
+		if err := json.Unmarshal(data, &ids); err != nil {
+			return fmt.Errorf("failed to unmarshal schema: %w", err)
+		}
 	}
 
 	// Fall back to id if $id is not present.
@@ -216,11 +224,12 @@ type Type struct {
 	ExclusiveMinimum *any     `json:"exclusiveMinimum,omitempty"` // Section 5.5. Changed in draft 4.
 	MaxLength        int      `json:"maxLength,omitempty"`        // Section 5.6.
 	MinLength        int      `json:"minLength,omitempty"`        // Section 5.7.
-	// MaximumExact, ExclusiveMaximumExact, MinimumExact and
-	// ExclusiveMinimumExact are the numeric bounds as written, as
-	// json.Number, or "" for a bound that is absent or, for an exclusive one,
-	// a draft-04 boolean. The float64 fields round an integer beyond 2^53. Set
-	// by Type's custom UnmarshalJSON.
+	// MultipleOfExact, MaximumExact, ExclusiveMaximumExact, MinimumExact
+	// and ExclusiveMinimumExact are the numeric keywords as written, as
+	// json.Number, or "" for one that is absent or, for an exclusive bound,
+	// a draft-04 boolean. The float64 fields round an integer beyond 2^53 and
+	// most fractions. Set by Type's custom UnmarshalJSON.
+	MultipleOfExact       json.Number `json:"-"`
 	MaximumExact          json.Number `json:"-"`
 	ExclusiveMaximumExact json.Number `json:"-"`
 	MinimumExact          json.Number `json:"-"`
@@ -249,6 +258,12 @@ type Type struct {
 	// Const == nil) from an absent `const` field (which also decodes to nil).
 	// Set by Type's custom UnmarshalJSON via a separate raw-key probe.
 	ConstIsSet bool `json:"-"`
+	// MaxLengthIsSet, MaxItemsIsSet and MaxPropertiesIsSet tell a maximum of
+	// 0, which the document declares, from an absent one. Set by Type's custom
+	// UnmarshalJSON; see HasMaxLength.
+	MaxLengthIsSet     bool `json:"-"`
+	MaxItemsIsSet      bool `json:"-"`
+	MaxPropertiesIsSet bool `json:"-"`
 	// ConstExact is Const with its numbers as written, as json.Number. Const
 	// holds them as float64, which rounds an integer beyond 2^53. Set by the
 	// same probe.
@@ -433,6 +448,79 @@ func isJSONNull(raw []byte) bool {
 	return string(bytes.TrimSpace(raw)) == "null"
 }
 
+// readCounts returns raw, a schema object, with each count keyword written
+// with a fraction or an exponent, such as `"minItems": 2.0`, written as the
+// integer it holds, which JSON Schema counts it as, and the count keywords
+// that raw declares a number for. A count that holds no integer is an error
+// that names its keyword. One that is no number is left to the decode of raw,
+// which rejects it as before.
+func readCounts(raw []byte) ([]byte, map[string]bool, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return raw, nil, nil //nolint:nilerr // deliberate: defer to the main decode
+	}
+
+	declared := map[string]bool{}
+	changed := false
+
+	for _, key := range []string{"maxLength", "minLength", "maxItems", "minItems", "maxProperties", "minProperties"} {
+		value, ok := fields[key]
+		text := string(bytes.TrimSpace(value))
+
+		if !ok || text == "" || text == "null" || text[0] == '"' {
+			continue
+		}
+
+		declared[key] = true
+
+		if !strings.ContainsAny(text, ".eE") {
+			continue
+		}
+
+		// A count beyond 2^53 is no count a schema means.
+		f, err := strconv.ParseFloat(text, 64)
+		if err != nil || f != math.Trunc(f) || math.Abs(f) > 1<<53 {
+			return nil, nil, fmt.Errorf("%s: %w: %s", key, ErrCountNotInteger, text)
+		}
+
+		fields[key] = json.RawMessage(strconv.FormatInt(int64(f), 10))
+		changed = true
+	}
+
+	if !changed {
+		return raw, declared, nil
+	}
+
+	written, err := json.Marshal(fields)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to write counts: %w", err)
+	}
+
+	return written, declared, nil
+}
+
+// HasMaxLength reports whether t declares a maxLength, 0 included.
+func (t *Type) HasMaxLength() bool {
+	return t.MaxLengthIsSet || t.MaxLength != 0
+}
+
+// HasMaxItems reports whether t declares a maxItems, 0 included.
+func (t *Type) HasMaxItems() bool {
+	return t.MaxItemsIsSet || t.MaxItems != 0
+}
+
+// HasMaxProperties reports whether t declares a maxProperties, 0 included.
+func (t *Type) HasMaxProperties() bool {
+	return t.MaxPropertiesIsSet || t.MaxProperties != 0
+}
+
+// isJSONBoolean reports whether raw is the JSON literal true or false.
+func isJSONBoolean(raw []byte) bool {
+	s := string(bytes.TrimSpace(raw))
+
+	return s == "true" || s == "false"
+}
+
 // nullSubschema names the first composition entry, property, pattern
 // property, dependent schema or definition of obj that is null, or returns ""
 // when there is none. Unlike `items` and `dependencies`, these never reach a
@@ -513,10 +601,19 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		return err
 	}
 
+	effectiveRaw, counts, err := readCounts(effectiveRaw)
+	if err != nil {
+		return err
+	}
+
 	var obj ObjectAsType
 	if err := json.Unmarshal(effectiveRaw, &obj); err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
 	}
+
+	obj.MaxLengthIsSet = counts["maxLength"]
+	obj.MaxItemsIsSet = counts["maxItems"]
+	obj.MaxPropertiesIsSet = counts["maxProperties"]
 
 	if tupleRaw != nil {
 		var tuple []*Type
@@ -632,16 +729,17 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	*value = Type(obj)
 
 	value.ConstIsSet, value.ConstExact = probeConst(raw)
-	value.MaximumExact, value.ExclusiveMaximumExact, value.MinimumExact, value.ExclusiveMinimumExact = probeBounds(raw)
+	value.probeNumbers(raw)
 
 	return nil
 }
 
-// probeBounds returns the numeric bounds that raw, a schema object, declares,
-// as written. A bound that is absent, a draft-04 boolean or anything else but
-// a number is returned as "".
-func probeBounds(raw []byte) (json.Number, json.Number, json.Number, json.Number) {
+// probeNumbers sets the numeric keywords that raw, a schema object, declares,
+// as written: multipleOf and the bounds. One that is absent, a draft-04
+// boolean or anything else but a number is left "".
+func (value *Type) probeNumbers(raw []byte) {
 	var probe struct {
+		MultipleOf       json.RawMessage `json:"multipleOf"`
 		Maximum          json.RawMessage `json:"maximum"`
 		ExclusiveMaximum json.RawMessage `json:"exclusiveMaximum"`
 		Minimum          json.RawMessage `json:"minimum"`
@@ -649,7 +747,7 @@ func probeBounds(raw []byte) (json.Number, json.Number, json.Number, json.Number
 	}
 
 	if json.Unmarshal(raw, &probe) != nil {
-		return "", "", "", ""
+		return
 	}
 
 	number := func(raw json.RawMessage) json.Number {
@@ -661,7 +759,11 @@ func probeBounds(raw []byte) (json.Number, json.Number, json.Number, json.Number
 		return n
 	}
 
-	return number(probe.Maximum), number(probe.ExclusiveMaximum), number(probe.Minimum), number(probe.ExclusiveMinimum)
+	value.MultipleOfExact = number(probe.MultipleOf)
+	value.MaximumExact = number(probe.Maximum)
+	value.ExclusiveMaximumExact = number(probe.ExclusiveMaximum)
+	value.MinimumExact = number(probe.Minimum)
+	value.ExclusiveMinimumExact = number(probe.ExclusiveMinimum)
 }
 
 // probeConst probes raw, a schema object, for an explicit "const" key so
@@ -736,10 +838,44 @@ func AllOf(types []*Type, baseType *Type) (*Type, error) {
 	return typ, nil
 }
 
+// AnyOf merges the branches of an anyOf and the schema it is declared on into
+// the schema of the struct that holds an instance. The struct holds what any
+// branch can, but binds every instance, so it has every property, and requires
+// only what the parent requires and what every branch requires, at every depth
+// of the properties the parent declares; see anyOfProperty. A property that
+// only branches declare is the first such branch's; see anyOfBranchProperty.
+// The merge works on copies, so it changes neither the parent nor a branch.
+// MergeTypes would write the branches' keywords into the schemas of the
+// parent's properties, and so bind every instance to them.
 func AnyOf(types []*Type, baseType *Type) (*Type, error) {
-	typ, err := MergeTypes(types, baseType)
+	if len(types) == 0 {
+		return nil, ErrEmptyTypesList
+	}
+
+	if isPrimitiveTypeList(types, nil) {
+		return MergeTypes(types, baseType)
+	}
+
+	// The properties are merged on their own, below.
+	withoutProperties := func(t *Type) *Type {
+		c := *t
+		c.Properties = nil
+
+		return &c
+	}
+
+	branches := make([]*Type, len(types))
+	for i, t := range types {
+		branches[i] = withoutProperties(t)
+	}
+
+	typ, err := mergeIsolated(branches, withoutProperties(baseType))
 	if err != nil {
 		return nil, err
+	}
+
+	if properties := anyOfProperties(types, baseType); len(properties) > 0 {
+		typ.Properties = properties
 	}
 
 	typ.Required = mergeRequiredUnion(types, baseType)
@@ -747,6 +883,305 @@ func AnyOf(types []*Type, baseType *Type) (*Type, error) {
 	typ.subSchemasCount = len(types)
 
 	return typ, nil
+}
+
+// anyOfProperties returns the properties of the struct that an anyOf merges
+// into: each that the parent declares, as anyOfProperty gives it, and each
+// that only branches declare, as anyOfBranchProperty does.
+func anyOfProperties(types []*Type, baseType *Type) map[string]*Type {
+	properties := map[string]*Type{}
+
+	for name, p := range baseType.Properties {
+		properties[name] = anyOfProperty(p, declarations(types, name), len(types), nil)
+	}
+
+	for _, t := range types {
+		for name := range t.Properties {
+			if _, ok := properties[name]; !ok {
+				properties[name] = anyOfBranchProperty(declarations(types, name), len(types), nil)
+			}
+		}
+	}
+
+	return properties
+}
+
+// anyOfProperty returns the schema of a property that the parent of an anyOf
+// declares, in the struct that the anyOf merges into: the parent's, whose
+// keywords bind every instance, as mergedProperty makes it. declared are the
+// schemas that branches declare for the property, of branchCount branches,
+// and merging the merges of the properties that hold it.
+func anyOfProperty(parent *Type, declared []*Type, branchCount int, merging []propertyMerge) *Type {
+	if parent == nil || len(declared) == 0 || parent.Ref != "" {
+		return parent
+	}
+
+	return mergedProperty(parent, declared, branchCount, true, merging)
+}
+
+// anyOfBranchProperty returns the schema of a property that only branches of
+// an anyOf declare, in the struct that the anyOf merges into. Declared by one
+// branch, it is that branch's schema, which the branch's own type was made
+// from. Declared by more, it is the first of them, as mergedProperty makes it:
+// it requires what the first requires, so that where it holds nothing more,
+// the type declared for the first is its type. A document that another branch
+// accepts, with a value there that the first refuses, is rejected, as the
+// README describes.
+func anyOfBranchProperty(declared []*Type, branchCount int, merging []propertyMerge) *Type {
+	first := declared[0]
+	if len(declared) == 1 || first.Ref != "" {
+		return first
+	}
+
+	return mergedProperty(first, declared, branchCount, false, merging)
+}
+
+// propertyMerge is a call of mergedProperty.
+type propertyMerge struct {
+	base     *Type
+	declared []*Type
+	binds    bool
+}
+
+func (m propertyMerge) equal(other propertyMerge) bool {
+	return m.base == other.base && m.binds == other.binds && slices.Equal(m.declared, other.declared)
+}
+
+// mergedProperty returns base made to hold the properties that declared
+// declare in it as well, at every depth, and to require what base requires and
+// what every one of branchCount branches requires. binds tells whether base is
+// the parent's, whose keywords bind every instance, or the first of declared.
+// A branch's other keywords on the property stay with the branch's own type.
+// Where that changes nothing, it is base itself, so that the type already
+// declared for base is the property's type here as well. merging are the
+// merges of the properties that hold it.
+func mergedProperty(base *Type, declared []*Type, branchCount int, binds bool, merging []propertyMerge) *Type {
+	// A schema can hold itself, as one that the merge of a recursive allOf
+	// has written into can. A merge that comes back to itself would never
+	// end, so base stays as it is there.
+	call := propertyMerge{base: base, declared: declared, binds: binds}
+	if slices.ContainsFunc(merging, call.equal) {
+		return base
+	}
+
+	merging = append(merging, call)
+
+	var properties map[string]*Type
+
+	changed := false
+
+	for name, p := range base.Properties {
+		if properties == nil {
+			properties = map[string]*Type{}
+		}
+
+		if binds {
+			properties[name] = anyOfProperty(p, declarations(declared, name), branchCount, merging)
+		} else {
+			properties[name] = anyOfBranchProperty(declarations(declared, name), branchCount, merging)
+		}
+
+		changed = changed || properties[name] != p
+	}
+
+	for _, d := range declared {
+		for name := range d.Properties {
+			if _, ok := properties[name]; ok {
+				continue
+			}
+
+			if properties == nil {
+				properties = map[string]*Type{}
+			}
+
+			properties[name] = anyOfBranchProperty(declarations(declared, name), branchCount, merging)
+			changed = true
+		}
+	}
+
+	// A branch that doesn't declare the property requires nothing in it.
+	required := slices.Clone(base.Required)
+	if len(declared) == branchCount {
+		for _, r := range declared[0].Required {
+			if !slices.Contains(required, r) &&
+				!slices.ContainsFunc(declared, func(d *Type) bool { return !slices.Contains(d.Required, r) }) {
+				required = append(required, r)
+			}
+		}
+	}
+
+	if !changed && slices.Equal(required, base.Required) {
+		return base
+	}
+
+	merged := *base
+	merged.Properties = properties
+	merged.Required = required
+
+	if len(merged.Type) == 0 && len(merged.Properties) > 0 {
+		merged.Type = TypeList{TypeNameObject}
+	}
+
+	// Where base gives the property no title, description or deprecation,
+	// the first branch that does names and documents it.
+	for _, d := range declared {
+		if merged.Title == "" {
+			merged.Title = d.Title
+		}
+
+		if merged.Description == "" {
+			merged.Description = d.Description
+		}
+
+		if !merged.Deprecated.Marked {
+			merged.Deprecated = d.Deprecated
+		}
+	}
+
+	return &merged
+}
+
+// declarations returns the schemas that types declare for the property name.
+func declarations(types []*Type, name string) []*Type {
+	var declared []*Type
+
+	for _, t := range types {
+		if p, ok := t.Properties[name]; ok && p != nil {
+			declared = append(declared, p)
+		}
+	}
+
+	return declared
+}
+
+// mergeIsolated merges as MergeTypes does, but into copies: before each
+// schema is merged in, the result gets its own copy of whatever that schema
+// holds as well, at every depth, so that the merge writes into nothing that
+// the schemas share.
+func mergeIsolated(types []*Type, baseType *Type) (*Type, error) {
+	result := &Type{}
+
+	opts := []func(*mergo.Config){
+		mergo.WithAppendSlice,
+		mergo.WithTransformers(typeListTransformer{}),
+	}
+
+	for _, t := range append([]*Type{baseType}, types...) {
+		isolate(reflect.ValueOf(result).Elem(), reflect.ValueOf(t).Elem())
+
+		if err := mergo.Merge(result, t, opts...); err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrCannotMergeTypes, err)
+		}
+	}
+
+	return result, nil
+}
+
+// isolate gives dst a copy of each map, slice and pointer that src holds as
+// well, and of the values in them, at every depth at which both hold one, so
+// that a merge of src into dst writes into the copies alone.
+func isolate(dst, src reflect.Value) {
+	isolateIn(dst, src, map[isolation]reflect.Value{})
+}
+
+// isolation is a map or a pointer that dst holds, with the one that src holds
+// in its place.
+type isolation struct {
+	typ      reflect.Type
+	dst, src uintptr
+}
+
+// isolateIn is isolate within the maps and pointers whose copies copying
+// holds. A schema can hold itself, as one that the merge of a recursive allOf
+// has written into can. Where dst comes back to a map or a pointer it is
+// copying, for the same one of src, it gets that copy, which then holds itself
+// as the schema does, and which the merge then writes into once.
+func isolateIn(dst, src reflect.Value, copying map[isolation]reflect.Value) {
+	// A merge writes src into dst only where both have the same type, such as
+	// two JSON objects, and keeps dst where they differ.
+	if !src.IsValid() || dst.Type() != src.Type() {
+		return
+	}
+
+	switch dst.Kind() { //nolint:exhaustive // Other kinds are values, which a merge sets, not writes into.
+	case reflect.Struct:
+		for i := range dst.NumField() {
+			if dst.Field(i).CanSet() {
+				isolateIn(dst.Field(i), src.Field(i), copying)
+			}
+		}
+
+	case reflect.Pointer:
+		if dst.IsNil() || src.IsNil() {
+			return
+		}
+
+		key := isolation{typ: dst.Type(), dst: dst.Pointer(), src: src.Pointer()}
+		if c, ok := copying[key]; ok {
+			dst.Set(c)
+
+			return
+		}
+
+		c := reflect.New(dst.Elem().Type())
+		c.Elem().Set(dst.Elem())
+		dst.Set(c)
+
+		copying[key] = c
+		defer delete(copying, key)
+
+		isolateIn(dst.Elem(), src.Elem(), copying)
+
+	case reflect.Map:
+		if dst.IsNil() || src.IsNil() {
+			return
+		}
+
+		key := isolation{typ: dst.Type(), dst: dst.Pointer(), src: src.Pointer()}
+		if c, ok := copying[key]; ok {
+			dst.Set(c)
+
+			return
+		}
+
+		c := reflect.MakeMapWithSize(dst.Type(), dst.Len())
+
+		copying[key] = c
+		defer delete(copying, key)
+
+		for it := dst.MapRange(); it.Next(); {
+			value := reflect.New(it.Value().Type()).Elem()
+			value.Set(it.Value())
+
+			if s := src.MapIndex(it.Key()); s.IsValid() {
+				isolateIn(value, s, copying)
+			}
+
+			c.SetMapIndex(it.Key(), value)
+		}
+
+		dst.Set(c)
+
+	case reflect.Slice:
+		if dst.Len() == 0 || src.Len() == 0 {
+			return
+		}
+
+		c := reflect.MakeSlice(dst.Type(), dst.Len(), dst.Len())
+		reflect.Copy(c, dst)
+		dst.Set(c)
+
+	case reflect.Interface:
+		if dst.IsNil() || src.IsNil() {
+			return
+		}
+
+		// A JSON value, such as a default, whose maps a merge writes into.
+		value := reflect.New(dst.Elem().Type()).Elem()
+		value.Set(dst.Elem())
+		isolateIn(value, src.Elem(), copying)
+		dst.Set(value)
+	}
 }
 
 func MergeTypes(types []*Type, baseType *Type) (*Type, error) {

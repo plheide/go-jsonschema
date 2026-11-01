@@ -194,12 +194,13 @@ When generated code doesn't check something a schema declares, the generator say
 * `schema fidelity: type X falls back to interface{} due to <reason>; declared but not enforced: <keywords>` means
   the type became `interface{}`.
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
-  `oneOf`, an `if`/`then`/`else`, a `not` or a `false` schema, or the keywords of a property that an `anyOf` branch
-  declares as well. A reason such as `minProperties, propertyNames not checked` names keywords that no generated
-  code checks: `contains` (with `minContains` and `maxContains`), `dependentRequired` and `dependentSchemas` (draft
-  07's `dependencies` counts as these), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`,
-  `unevaluatedItems` and `unevaluatedProperties`. A keyword whose subschemas admit every value, such as
-  `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
+  `oneOf`, an `if`/`then`/`else`, a `not` or a `false` schema. A reason such as `minProperties, propertyNames not
+  checked` names keywords that no generated code checks: `contains` (with `minContains` and `maxContains`),
+  `dependentRequired` and `dependentSchemas` (draft 07's `dependencies` counts as these), `maxProperties`,
+  `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and `unevaluatedProperties`. A keyword
+  whose subschemas admit every value, such as `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
+* `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
+  value meets. Nothing is generated for it.
 
 ### Options for names, types and tags
 
@@ -272,6 +273,26 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   which truncated `2.5` to 2 for an integer and wrapped `1e300`.
 * A nested array is held to its own `minItems` and `maxItems`. Upstream held each level to the property's, which
   rejected valid input.
+* A count, such as `minItems` or `maxLength`, written `2.0` or `2e0` is read as the integer it holds, and one that
+  holds no integer stops generation with an error that names it. Upstream failed to load the schema. `maxLength: 0`
+  and `maxItems: 0` are checked, where upstream read a zero as no limit.
+* An `integer`'s `multipleOf` with a fraction is checked on the integers it allows: the multiples of 5 for `2.5`, and
+  every integer for `0.5`. Upstream checked the multiples of 2 for `2.5`, and its code for a value below 1 did not
+  compile.
+* An `allOf` written inside a branch of an `allOf` is merged with the other branches. Upstream made it `interface{}`,
+  without a warning.
+* A `type` of two types without `null`, such as `["integer", "string"]`, keeps both: where no union wrapper holds
+  them, it is `interface{}` with a warning, as it was in a property. Upstream kept only the last type at the root, in a
+  definition and for the values of a map, which rejected values of the first.
+* A schema file that is only `true` or `false` is read. `true` generates no type, as `{}` does, and `false` is
+  reported, since no generated code rejects every value. Upstream failed to load either.
+* An `anyOf` is merged on copies, so it changes none of the schemas it reads. Upstream's merge wrote into them: the
+  branches' keywords into the properties of the object or of the first branch, and the object's type and `null` into
+  the schemas its branches refer to. A struct's property could then take its type from another branch, a `$ref` to a
+  schema the merge had changed got a duplicate type, and an `anyOf` whose branches had all become `null` failed to
+  generate. A branch that is a `$ref` to a definition without a `type`, declared as `interface{}`, is decoded as the
+  type the `anyOf` declares, where upstream's code for it did not compile. A branch that admits only `null`, such as
+  `{"enum": [null]}`, is the `anyOf`'s `null`, as `{"type": "null"}` is.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
   Upstream generated a tag that decodes nothing.
 * A `null` where a schema belongs, such as an entry of `allOf`, a property or a definition, stops generation with an
@@ -321,9 +342,9 @@ classes:
   identifier (`#foo`), a URN, `#` itself, and a pointer into `properties`.
 * **Property names that a Go struct tag can't hold.** The generator rejects these schemas.
 * **Defects,** such as:
-  * a two-type union at the root that keeps only its last type;
-  * counts written `2.0`, which fail to load;
-  * an integer `multipleOf` below 1, whose code doesn't compile.
+  * `type: null` on its own, which lets any value through;
+  * a `default` that breaks its property's own keywords, which rejects every document that leaves the property out;
+  * an `enum` that lists `null` beside a number, which rejects `null`.
 
 The suite is vendored in `tests/testdata/JSON-Schema-Test-Suite`. To update it, run
 `scripts/update-test-suite.sh <commit>`, then regenerate the report with `OVERWRITE_EXPECTED_GO_FILE=true`.
@@ -335,6 +356,12 @@ a time. It compares the generated code's verdicts with those of
 That validator reads a schema that declares draft-04 or draft-06 as draft-07, as the generator does. The report,
 [`tests/testdata/differential/fixtures.txt`](tests/testdata/differential/fixtures.txt), groups the disagreements by
 schema, keyword and kind of change.
+
+One more class shows there, by design. A struct merged from an `anyOf` types a property that only branches declare
+after the first branch that declares it, which holds the properties the other branches declare in it as well. A
+document that another branch accepts, with a value there that the first branch's schema refuses, is rejected. A
+`goJSONSchema` `type` on the property sets its Go type in the struct and in the branch's own type, which drops that
+branch's check of it too.
 
 Every week, a [workflow](.github/workflows/differential.yaml) runs the same comparison over SchemaStore's schemas,
 once with the generator on `main` and once with the latest release. It fails on a disagreement that only `main` has,

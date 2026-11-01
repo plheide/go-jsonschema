@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "An anyOf on an object whose branch hasY is a $ref to a definition with no type. The branch decodes as an object, its parent's type, through a type of its own: the declaration of hasY is interface{}, which can have no UnmarshalJSON.",
+  "type": "object",
+  "properties": {
+    "pair": {
+      "type": "object",
+      "anyOf": [{ "$ref": "#/definitions/hasX" }, { "$ref": "#/definitions/hasY" }]
+    }
+  },
+  "definitions": {
+    "hasX": {
+      "properties": { "x": { "type": "string" } },
+      "required": ["x"]
+    },
+    "hasY": { "required": ["y"] }
+  }
+}

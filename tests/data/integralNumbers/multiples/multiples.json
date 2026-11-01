@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/integralNumbers/multiples",
+  "title": "Multiples",
+  "description": "An integer is a multiple of p/q, in lowest terms, when it is a multiple of p: a multipleOf with a fraction holds an integer to multiples of its numerator.",
+  "type": "object",
+  "properties": {
+    "fiveHalves": {
+      "type": "integer",
+      "multipleOf": 2.5
+    },
+    "half": {
+      "type": "integer",
+      "multipleOf": 0.5
+    },
+    "tiny": {
+      "type": "integer",
+      "multipleOf": 1e-8
+    },
+    "huge": {
+      "type": "integer",
+      "multipleOf": 1e30,
+      "examples": [0]
+    },
+    "three": {
+      "type": "integer",
+      "multipleOf": 3
+    },
+    "halves": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "multipleOf": 0.5
+      }
+    }
+  }
+}

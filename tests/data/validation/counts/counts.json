@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/validation/counts",
+  "title": "Counts",
+  "description": "A count is an integer, however it is written, and a maximum of 0 is a cap.",
+  "type": "object",
+  "properties": {
+    "pair": {
+      "type": "array",
+      "minItems": 2.0,
+      "maxItems": 2e0
+    },
+    "word": {
+      "type": "string",
+      "minLength": 1.0,
+      "maxLength": 5.0
+    },
+    "empty": {
+      "type": "string",
+      "maxLength": 0
+    },
+    "none": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "maxItems": 0
+      }
+    }
+  }
+}

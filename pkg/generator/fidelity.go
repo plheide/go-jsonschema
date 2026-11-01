@@ -172,7 +172,7 @@ func unenforcedKeywords(t *schemas.Type) []string {
 	add(len(t.DependentRequired) > 0, "dependentRequired")
 	add(anyConstrains(t.DependentSchemas), "dependentSchemas")
 	add(t.Contains != nil && t.MaxContains != nil, "maxContains")
-	add(t.MaxProperties != 0, "maxProperties")
+	add(t.HasMaxProperties(), "maxProperties")
 	add(t.Contains != nil && t.MinContains != nil, "minContains")
 	add(t.MinProperties != 0, "minProperties")
 	add(anyConstrains(t.PatternProperties), "patternProperties")
@@ -409,7 +409,7 @@ func collectDroppedKeywords(t *schemas.Type) []string {
 			add("pattern")
 		}
 
-		if t.MinLength != 0 || t.MaxLength != 0 {
+		if t.MinLength != 0 || t.HasMaxLength() {
 			add("string length constraint")
 		}
 
@@ -419,7 +419,7 @@ func collectDroppedKeywords(t *schemas.Type) []string {
 			add("numeric constraint")
 		}
 
-		if t.MinItems != 0 || t.MaxItems != 0 || t.UniqueItems {
+		if t.MinItems != 0 || t.HasMaxItems() || t.UniqueItems {
 			add("array constraint")
 		}
 

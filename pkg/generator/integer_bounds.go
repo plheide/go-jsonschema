@@ -3,6 +3,7 @@ package generator
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -43,6 +44,7 @@ func newNumericValidator(f codegen.StructField, goType string, isNillable bool) 
 		constVal:             preciseConst(s),
 		roundToInt:           strings.Contains(goType, "int"),
 		goType:               goType,
+		multipleOfText:       boundText(s.MultipleOf, s.MultipleOfExact),
 		maximumText:          boundText(s.Maximum, s.MaximumExact),
 		exclusiveMaximumText: exclusiveBoundText(s.ExclusiveMaximum, s.ExclusiveMaximumExact),
 		minimumText:          boundText(s.Minimum, s.MinimumExact),
@@ -276,12 +278,18 @@ func (v *numericValidator) checksIntegerBound(upper bool) bool {
 
 // checksSomething reports whether the validator writes any check.
 func (v *numericValidator) checksSomething() bool {
-	if v.constVal != nil || v.multipleOf != nil {
+	if v.constVal != nil {
 		return true
 	}
 
 	if v.roundToInt {
-		return v.checksIntegerBound(true) || v.checksIntegerBound(false)
+		_, multipleOf := v.integerMultipleOf()
+
+		return multipleOf || v.checksIntegerBound(true) || v.checksIntegerBound(false)
+	}
+
+	if v.multipleOf != nil {
+		return true
 	}
 
 	return v.maximum != nil || v.exclusiveMaximum != nil || v.minimum != nil || v.exclusiveMinimum != nil
@@ -348,4 +356,54 @@ func (v *numericValidator) genIntegerBoundary(
 // mirror returns the comparison that holds with its operands swapped.
 func mirror(comp string) string {
 	return map[string]string{"<": ">", ">": "<"}[comp]
+}
+
+// integerMultipleOf returns the number that the validator's multipleOf holds
+// an integer to a multiple of, and false when it holds an integer to nothing.
+// An integer is a multiple of p/q, in lowest terms, when it is a multiple of
+// p: a multipleOf of 2.5 holds an integer to multiples of 5, and one of 0.5,
+// or of any 1/q, holds it to nothing. JSON Schema requires a multipleOf
+// greater than 0.
+func (v *numericValidator) integerMultipleOf() (*big.Int, bool) {
+	if v.multipleOf == nil {
+		return nil, false
+	}
+
+	r, ok := boundValue(v.multipleOfText)
+	if !ok || r.Sign() <= 0 || r.Num().Cmp(big.NewInt(1)) == 0 {
+		return nil, false
+	}
+
+	return r.Num(), true
+}
+
+// genIntegerMultipleOf writes the check of the validator's multipleOf on an
+// integer.
+func (v *numericValidator) genIntegerMultipleOf(
+	out *codegen.Emitter, checkPointer, pointerPrefix, value, name string,
+) {
+	p, ok := v.integerMultipleOf()
+	if !ok {
+		return
+	}
+
+	// The error names an int64 multipleOf as it always has, and any other as
+	// written.
+	message := fmt.Sprintf("%f", *v.multipleOf)
+	if r, _ := boundValue(v.multipleOfText); !r.IsInt() || !r.Num().IsInt64() {
+		message = strconv.Quote(v.multipleOfText)
+	}
+
+	if _, hi := integerRange(v.goType); p.Cmp(hi) > 0 {
+		// Of the values of the type, only 0 is a multiple of a number past
+		// them all.
+		out.Printlnf(`if %s%s%s != 0 {`, checkPointer, pointerPrefix, value)
+	} else {
+		out.Printlnf(`if %s %s%s %% %s != 0 {`, checkPointer, pointerPrefix, value, p)
+	}
+
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", %s, %s)`, name, message)
+	out.Indent(-1)
+	out.Printlnf("}")
 }

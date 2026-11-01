@@ -7,9 +7,9 @@ A missing check accepts a document the suite marks invalid, and a wrong rejectio
 it marks valid. A missing check is silent when its case has no generator warning.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-json: 618 agree, 205 missing checks (168 silent), 18 wrong rejections, 0 panics, 88 not run
-yaml: 596 agree, 228 missing checks (190 silent), 17 wrong rejections, 0 panics, 88 not run
-cases: 31 generation failures, 2 compilation failures, 39 with warnings
+json: 629 agree, 228 missing checks (156 silent), 16 wrong rejections, 0 panics, 56 not run
+yaml: 610 agree, 247 missing checks (174 silent), 16 wrong rejections, 0 panics, 56 not run
+cases: 23 generation failures, 0 compilation failures, 44 with warnings
 
 == additionalItems.json
 
@@ -130,11 +130,26 @@ yaml missing check: anything non-null is invalid
 
 == boolean_schema.json
 
--- boolean schema 'true'
-generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: json: cannot unmarshal bool into Go value of type struct { ID string "json:\"$id\""; LegacyID string "json:\"id\"" }
-
 -- boolean schema 'false'
-generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: json: cannot unmarshal bool into Go value of type struct { ID string "json:\"$id\""; LegacyID string "json:\"id\"" }
+warning: schema fidelity: root of root.json does not enforce all it declares: false schema not compiled, so any value passes
+json missing check: number is invalid
+yaml missing check: number is invalid
+json missing check: string is invalid
+yaml missing check: string is invalid
+json missing check: boolean true is invalid
+yaml missing check: boolean true is invalid
+json missing check: boolean false is invalid
+yaml missing check: boolean false is invalid
+json missing check: null is invalid
+yaml missing check: null is invalid
+json missing check: object is invalid
+yaml missing check: object is invalid
+json missing check: empty object is invalid
+yaml missing check: empty object is invalid
+json missing check: array is invalid
+yaml missing check: array is invalid
+json missing check: empty array is invalid
+yaml missing check: empty array is invalid
 
 == const.json
 
@@ -392,7 +407,8 @@ json missing check (silent): too long is invalid
 yaml missing check (silent): too long is invalid
 
 -- maxItems validation with a decimal
-generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 2.0 into Go struct field ObjectAsType.maxItems of type int
+json missing check (silent): too long is invalid
+yaml missing check (silent): too long is invalid
 
 == maxLength.json
 
@@ -402,7 +418,8 @@ yaml missing check (silent): too long is invalid
 yaml wrong rejection: two graphemes is long enough: yaml: found invalid Unicode character escape code
 
 -- maxLength validation with a decimal
-generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 2.0 into Go struct field ObjectAsType.maxLength of type int
+json missing check (silent): too long is invalid
+yaml missing check (silent): too long is invalid
 
 == maxProperties.json
 
@@ -411,7 +428,8 @@ json missing check (silent): too long is invalid
 yaml missing check (silent): too long is invalid
 
 -- maxProperties validation with a decimal
-generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 2.0 into Go struct field ObjectAsType.maxProperties of type int
+json missing check (silent): too long is invalid
+yaml missing check (silent): too long is invalid
 
 -- maxProperties = 0 means the object is empty
 json missing check (silent): one property is invalid
@@ -434,7 +452,8 @@ json missing check (silent): too short is invalid
 yaml missing check (silent): too short is invalid
 
 -- minItems validation with a decimal
-generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 1.0 into Go struct field ObjectAsType.minItems of type int
+json missing check (silent): too short is invalid
+yaml missing check (silent): too short is invalid
 
 == minLength.json
 
@@ -444,7 +463,8 @@ yaml missing check (silent): too short is invalid
 json missing check (silent): one grapheme is not long enough
 
 -- minLength validation with a decimal
-generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 2.0 into Go struct field ObjectAsType.minLength of type int
+json missing check (silent): too short is invalid
+yaml missing check (silent): too short is invalid
 
 == minProperties.json
 
@@ -453,7 +473,8 @@ json missing check (silent): too short is invalid
 yaml missing check (silent): too short is invalid
 
 -- minProperties validation with a decimal
-generation failed: generate: error parsing from file root.json: cannot load schema failed to load schema "root.json": error parsing JSON file root.json: failed to unmarshal JSON: failed to unmarshal schema: failed to unmarshal type: json: cannot unmarshal number 1.0 into Go struct field ObjectAsType.minProperties of type int
+json missing check (silent): too short is invalid
+yaml missing check (silent): too short is invalid
 
 == minimum.json
 
@@ -481,12 +502,6 @@ yaml missing check (silent): 35 is not multiple of 1.5
 json missing check (silent): 0.00751 is not multiple of 0.0001
 yaml missing check (silent): 0.00751 is not multiple of 0.0001
 
--- float division = inf
-compilation failed: root.go:33:11: invalid operation: division by zero root.go:54:11: invalid operation: division by zero
-
--- small multiple of large integer
-compilation failed: root.go:33:11: invalid operation: division by zero root.go:54:11: invalid operation: division by zero
-
 == not.json
 
 -- not
@@ -509,44 +524,46 @@ json missing check: property present
 yaml missing check: property present
 
 -- forbid everything with empty schema
-json missing check (silent): number is invalid
-yaml missing check (silent): number is invalid
-json missing check (silent): string is invalid
-yaml missing check (silent): string is invalid
-json missing check (silent): boolean true is invalid
-yaml missing check (silent): boolean true is invalid
-json missing check (silent): boolean false is invalid
-yaml missing check (silent): boolean false is invalid
-json missing check (silent): null is invalid
-yaml missing check (silent): null is invalid
-json missing check (silent): object is invalid
-yaml missing check (silent): object is invalid
-json missing check (silent): empty object is invalid
-yaml missing check (silent): empty object is invalid
-json missing check (silent): array is invalid
-yaml missing check (silent): array is invalid
-json missing check (silent): empty array is invalid
-yaml missing check (silent): empty array is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: false schema not compiled, so any value passes
+json missing check: number is invalid
+yaml missing check: number is invalid
+json missing check: string is invalid
+yaml missing check: string is invalid
+json missing check: boolean true is invalid
+yaml missing check: boolean true is invalid
+json missing check: boolean false is invalid
+yaml missing check: boolean false is invalid
+json missing check: null is invalid
+yaml missing check: null is invalid
+json missing check: object is invalid
+yaml missing check: object is invalid
+json missing check: empty object is invalid
+yaml missing check: empty object is invalid
+json missing check: array is invalid
+yaml missing check: array is invalid
+json missing check: empty array is invalid
+yaml missing check: empty array is invalid
 
 -- forbid everything with boolean schema true
-json missing check (silent): number is invalid
-yaml missing check (silent): number is invalid
-json missing check (silent): string is invalid
-yaml missing check (silent): string is invalid
-json missing check (silent): boolean true is invalid
-yaml missing check (silent): boolean true is invalid
-json missing check (silent): boolean false is invalid
-yaml missing check (silent): boolean false is invalid
-json missing check (silent): null is invalid
-yaml missing check (silent): null is invalid
-json missing check (silent): object is invalid
-yaml missing check (silent): object is invalid
-json missing check (silent): empty object is invalid
-yaml missing check (silent): empty object is invalid
-json missing check (silent): array is invalid
-yaml missing check (silent): array is invalid
-json missing check (silent): empty array is invalid
-yaml missing check (silent): empty array is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: false schema not compiled, so any value passes
+json missing check: number is invalid
+yaml missing check: number is invalid
+json missing check: string is invalid
+yaml missing check: string is invalid
+json missing check: boolean true is invalid
+yaml missing check: boolean true is invalid
+json missing check: boolean false is invalid
+yaml missing check: boolean false is invalid
+json missing check: null is invalid
+yaml missing check: null is invalid
+json missing check: object is invalid
+yaml missing check: object is invalid
+json missing check: empty object is invalid
+yaml missing check: empty object is invalid
+json missing check: array is invalid
+yaml missing check: array is invalid
+json missing check: empty array is invalid
+yaml missing check: empty array is invalid
 
 == oneOf.json
 
@@ -924,18 +941,29 @@ json missing check (silent): false is not null
 yaml missing check (silent): false is not null
 
 -- multiple types can be specified in an array
-json wrong rejection: an integer is valid: unmarshal Root: json: cannot unmarshal number into Go value of type Plain
-yaml missing check (silent): a float is invalid
-yaml missing check (silent): a boolean is invalid
-yaml missing check (silent): null is invalid
+warning: Property has multiple types; will be represented as interface{} with no validation
+json missing check: a float is invalid
+yaml missing check: a float is invalid
+json missing check: an object is invalid
+yaml missing check: an object is invalid
+json missing check: an array is invalid
+yaml missing check: an array is invalid
+json missing check: a boolean is invalid
+yaml missing check: a boolean is invalid
+json missing check: null is invalid
+yaml missing check: null is invalid
 
 -- type as array with one item
 yaml missing check (silent): number is invalid
 
 -- type: array or object
-json wrong rejection: array is valid: unmarshal Root: json: cannot unmarshal array into Go value of type Plain
-yaml wrong rejection: array is valid: unmarshal Root: yaml: unmarshal errors: line 1: cannot unmarshal !!seq into Plain
-yaml missing check (silent): null is invalid
+warning: Property has multiple types; will be represented as interface{} with no validation
+json missing check: number is invalid
+yaml missing check: number is invalid
+json missing check: string is invalid
+yaml missing check: string is invalid
+json missing check: null is invalid
+yaml missing check: null is invalid
 
 -- type: array, object or null
 warning: Property has multiple types; will be represented as interface{} with no validation
