@@ -37,9 +37,15 @@ type output struct {
 	// numbersHelperName is the name of the file's helper that decodes JSON
 	// with useNumber, once declared.
 	numbersHelperName string
-	// integralHelperName is the name of the file's helper that retries a
-	// JSON decode with integral numbers written as integers, once declared.
+	// integralHelperName is the base name of the file's helpers that write
+	// integral numbers as integers, once declared.
 	integralHelperName string
+	// integerPathVars maps the literal of each set of integer paths those
+	// helpers read to the variable that holds it.
+	integerPathVars map[string]string
+	// pendingDecoders are the decoders whose handling of integers is worked
+	// out once every schema is generated.
+	pendingDecoders []*pendingDecoder
 	// uniqueKeyHelperName is the name of the file's helper that keys the
 	// items of a uniqueItems check, once declared.
 	uniqueKeyHelperName string

@@ -475,6 +475,21 @@ func TestJSONUnmarshalAdditionalProperties(t *testing.T) {
 	}
 }
 
+// TestJSONUnmarshalPropertyNamedAdditionalProperties covers a property that a
+// schema declares under the name additionalProperties, which is decoded into
+// its field as any other property is.
+func TestJSONUnmarshalPropertyNamedAdditionalProperties(t *testing.T) {
+	t.Parallel()
+
+	var v testAdditionalProperties.PropertyNamedAdditionalProperties
+
+	require.NoError(t, json.Unmarshal([]byte(`{"additionalProperties": true, "count": 2, "other": "x"}`), &v))
+	assert.Equal(t, testAdditionalProperties.PropertyNamedAdditionalProperties{
+		AdditionalProperties: ptr(true),
+		Count:                ptr(2),
+	}, v)
+}
+
 func TestJsonUnmarshalFormatValidation(t *testing.T) {
 	t.Parallel()
 

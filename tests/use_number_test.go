@@ -49,12 +49,24 @@ func TestUseNumber(t *testing.T) {
 		assert.Equal(t, testUseNumber.Anything(json.Number("9007199254740993")), v.Holder.X)
 	})
 
-	t.Run("an integral integer is retried, and the retry keeps json.Number", func(t *testing.T) {
+	// The retry writes only the integer's number again: the untyped one keeps
+	// its text.
+	t.Run("an integral integer is retried, and the retry keeps json.Number as written", func(t *testing.T) {
 		t.Parallel()
 
 		v := decode(t, `{"count": 2.0, "value": 3.0}`)
 		assert.Equal(t, 2, *v.Count)
-		assert.Equal(t, json.Number("3"), v.Value)
+		assert.Equal(t, json.Number("3.0"), v.Value)
+	})
+
+	t.Run("an additional property holds json.Number", func(t *testing.T) {
+		t.Parallel()
+
+		v := decode(t, `{"other": 1.5, "more": [9007199254740993]}`)
+		assert.Equal(t, map[string]any{
+			"other": json.Number("1.5"),
+			"more":  []any{json.Number("9007199254740993")},
+		}, v.AdditionalProperties)
 	})
 
 	t.Run("an untyped default holds json.Number", func(t *testing.T) {

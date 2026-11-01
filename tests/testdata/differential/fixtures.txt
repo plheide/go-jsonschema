@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 553 (323 fixtures, 230 definitions), 25 skipped; documents: 14260
-json: 13118 agree, 543 missing checks (120 silent), 599 wrong rejections, 0 panics
-yaml: 12077 agree, 1700 missing checks (995 silent), 483 wrong rejections, 0 panics
+schemas: 561 (327 fixtures, 234 definitions), 25 skipped; documents: 14653
+json: 13599 agree, 574 missing checks (120 silent), 480 wrong rejections, 0 panics
+yaml: 12555 agree, 1605 missing checks (875 silent), 493 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/allOf/allOf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -46,9 +46,9 @@ yaml missing check minLength: empty string ×2, e.g. /s = ""
 yaml missing check type: append null ×1, e.g. /codes = ["aa",null]
 yaml missing check type: null ×4, e.g. / = null
 yaml missing check type: wrong type ×4, e.g. /a = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /n = 1e300: unmarshal Wrap: unmarshal Parent: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /n = 1e300: unmarshal Wrap: unmarshal Parent: field n: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /n = 9223372036854775808: unmarshal Wrap: unmarshal Parent: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /n = 18446744073709551616: unmarshal Wrap: unmarshal Parent: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /n = 18446744073709551616: unmarshal Wrap: unmarshal Parent: field n: 18446744073709551616 is out of range for int
 
 == collisionStrategy/alphaResults.schema.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -123,16 +123,14 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /b = 12345
 
 == conditionalDiscriminator/basic/basic.json
-json wrong rejection: 0e99 ×1, e.g. /version = 0e99: unmarshal Wrap: unmarshal Basic: json: cannot unmarshal number 0e99 into Go struct field Plain.version of type int
 json wrong rejection: 1e300 ×1, e.g. /version = 1e300: unmarshal Wrap: unmarshal Basic: json: cannot unmarshal number 1e300 into Go struct field Plain.version of type int
 json wrong rejection: 2^63 ×1, e.g. /version = 9223372036854775808: unmarshal Wrap: unmarshal Basic: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.version of type int
 json wrong rejection: 2^64 ×1, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal Basic: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.version of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /version = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /id = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /version = 1e300: unmarshal Wrap: unmarshal Basic: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /version = 1e300: unmarshal Wrap: unmarshal Basic: field version: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /version = 9223372036854775808: unmarshal Wrap: unmarshal Basic: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal Basic: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal Basic: field version: 18446744073709551616 is out of range for int
 
 == conditionalDiscriminator/elementKeywords/elementKeywords.json
 yaml missing check type: null ×1, e.g. / = null
@@ -179,31 +177,27 @@ yaml missing check type: wrong type ×3, e.g. /details = 12345
 json missing check required: N.0 ×1, e.g. /level = 1.0
 json missing check required: Ne0 ×1, e.g. /level = 1e0
 json missing check required: seed ×1, e.g. seed 1
-json wrong rejection: 0e99 ×2, e.g. /level = 0e99: unmarshal Wrap: unmarshal EnumIfNumeric: json: cannot unmarshal number 0e99 into Go struct field Plain.level of type int
 json wrong rejection: 1e300 ×2, e.g. /level = 1e300: unmarshal Wrap: unmarshal EnumIfNumeric: json: cannot unmarshal number 1e300 into Go struct field Plain.level of type int
 json wrong rejection: 2^63 ×2, e.g. /level = 9223372036854775808: unmarshal Wrap: unmarshal EnumIfNumeric: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.level of type int
 json wrong rejection: 2^64 ×2, e.g. /level = 18446744073709551616: unmarshal Wrap: unmarshal EnumIfNumeric: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.level of type int
 yaml missing check required: N.0 ×1, e.g. /level = 1.0
 yaml missing check required: Ne0 ×1, e.g. /level = 1e0
 yaml missing check required: seed ×1, e.g. seed 1
-yaml missing check type: 0.5 ×2, e.g. /level = 0.5
 yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: wrong type ×1, e.g. /details = 12345
-yaml wrong rejection: 1e300 ×2, e.g. /level = 1e300: unmarshal Wrap: unmarshal EnumIfNumeric: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×2, e.g. /level = 1e300: unmarshal Wrap: unmarshal EnumIfNumeric: field level: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×2, e.g. /level = 9223372036854775808: unmarshal Wrap: unmarshal EnumIfNumeric: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×2, e.g. /level = 18446744073709551616: unmarshal Wrap: unmarshal EnumIfNumeric: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×2, e.g. /level = 18446744073709551616: unmarshal Wrap: unmarshal EnumIfNumeric: field level: 18446744073709551616 is out of range for int
 
 == conditionalDiscriminator/enumIfOverlapping/enumIfOverlapping.json
-json wrong rejection: 0e99 ×1, e.g. /age = 0e99: unmarshal Wrap: unmarshal EnumIfOverlapping: json: cannot unmarshal number 0e99 into Go struct field Plain.age of type int
 json wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: unmarshal EnumIfOverlapping: json: cannot unmarshal number 1e300 into Go struct field Plain.age of type int
 json wrong rejection: 2^63 ×1, e.g. /age = 9223372036854775808: unmarshal Wrap: unmarshal EnumIfOverlapping: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.age of type int
 json wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: unmarshal EnumIfOverlapping: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.age of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /age = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /bark = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: unmarshal EnumIfOverlapping: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: unmarshal EnumIfOverlapping: field age: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /age = 9223372036854775808: unmarshal Wrap: unmarshal EnumIfOverlapping: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: unmarshal EnumIfOverlapping: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: unmarshal EnumIfOverlapping: field age: 18446744073709551616 is out of range for int
 
 == conditionalDiscriminator/enumIfRequiredOnIf/enumIfRequiredOnIf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -322,6 +316,7 @@ yaml missing check (silent) type: wrong type ×1, e.g. /values/0 = 12345
 
 == conditionalDiscriminator/thenConstraints/thenConstraints.json
 json missing check minimum: 0 ×1, e.g. /x = 0
+json missing check minimum: 0e99 ×1, e.g. /x = 0e99
 json missing check minimum: N.0 ×1, e.g. /x = 1.0
 json missing check minimum: Ne0 ×1, e.g. /x = 1e0
 json missing check minimum: add unknown key ×1, e.g. / = {"kind":"a","x":1,"zzUnknown":"x"}
@@ -333,7 +328,6 @@ json wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal Then
 json wrong rejection: 2^63 ×1, e.g. /x = 9223372036854775808: unmarshal Wrap: unmarshal ThenConstraints: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.x of type int
 json wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal ThenConstraints: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.x of type int
 yaml missing check minimum: 0 ×1, e.g. /x = 0
-yaml missing check minimum: 0.5 ×1, e.g. /x = 0.5
 yaml missing check minimum: 0e99 ×1, e.g. /x = 0e99
 yaml missing check minimum: N.0 ×1, e.g. /x = 1.0
 yaml missing check minimum: Ne0 ×1, e.g. /x = 1e0
@@ -343,31 +337,27 @@ yaml missing check minimum: seed ×1, e.g. seed 0
 yaml missing check required: add unknown key ×1, e.g. / = {"kind":"a","zzUnknown":"x"}
 yaml missing check required: seed ×1, e.g. seed 1
 yaml missing check type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal ThenConstraints: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal ThenConstraints: field x: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /x = 9223372036854775808: unmarshal Wrap: unmarshal ThenConstraints: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal ThenConstraints: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal ThenConstraints: field x: 18446744073709551616 is out of range for int
 
 == conditionalDiscriminator/vacuousIf/vacuousIf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×3, e.g. /label = 12345
 
 == conditionalDiscriminator/withElse/withElse.json
-json wrong rejection: 0e99 ×1, e.g. /weight = 0e99: unmarshal Wrap: unmarshal WithElse: json: cannot unmarshal number 0e99 into Go struct field Plain.weight of type int
 json wrong rejection: 1e300 ×1, e.g. /weight = 1e300: unmarshal Wrap: unmarshal WithElse: json: cannot unmarshal number 1e300 into Go struct field Plain.weight of type int
 json wrong rejection: 2^63 ×1, e.g. /weight = 9223372036854775808: unmarshal Wrap: unmarshal WithElse: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.weight of type int
 json wrong rejection: 2^64 ×1, e.g. /weight = 18446744073709551616: unmarshal Wrap: unmarshal WithElse: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.weight of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /weight = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /label = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /weight = 1e300: unmarshal Wrap: unmarshal WithElse: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /weight = 1e300: unmarshal Wrap: unmarshal WithElse: field weight: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /weight = 9223372036854775808: unmarshal Wrap: unmarshal WithElse: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /weight = 18446744073709551616: unmarshal Wrap: unmarshal WithElse: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /weight = 18446744073709551616: unmarshal Wrap: unmarshal WithElse: field weight: 18446744073709551616 is out of range for int
 
 == constConstants/consts/consts.json
 yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: wrong type ×1, e.g. /other/text = 12345
-yaml wrong rejection: N.0 ×1, e.g. /build = 9007199254740993.0: unmarshal Wrap: field build: must be equal to 9007199254740993
-yaml wrong rejection: Ne0 ×1, e.g. /build = 9007199254740993e0: unmarshal Wrap: field build: must be equal to 9007199254740993
 
 == constConstants/consts/consts.json#/definitions/ConstsLabel
 yaml missing check type: null ×1, e.g. / = null
@@ -403,6 +393,15 @@ json missing check (silent) type: add unknown key ×2, e.g. / = {"bar":"a","foo"
 yaml missing check (silent) type: add unknown key ×2, e.g. / = {"bar":"a","foo":"a","zzUnknown":"x"}
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /bar = 12345
+
+== core/additionalProperties/propertyNamedAdditionalProperties.json
+json wrong rejection: 1e300 ×1, e.g. /count = 1e300: unmarshal Wrap: unmarshal PropertyNamedAdditionalProperties: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
+json wrong rejection: 2^63 ×1, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal PropertyNamedAdditionalProperties: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
+json wrong rejection: 2^64 ×1, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal PropertyNamedAdditionalProperties: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml wrong rejection: 1e300 ×1, e.g. /count = 1e300: unmarshal Wrap: unmarshal PropertyNamedAdditionalProperties: field count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal PropertyNamedAdditionalProperties: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal PropertyNamedAdditionalProperties: field count: 18446744073709551616 is out of range for int
 
 == core/additionalProperties/stringAdditionalProperties.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -740,16 +739,14 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×3, e.g. /BaseField = 12345
 
 == core/array/array.json
-json wrong rejection: 0e99 ×1, e.g. /myIntegerArray/0 = 0e99: unmarshal Wrap: unmarshal Array: json: cannot unmarshal number 0e99 into Go struct field Plain.myIntegerArray of type int
 json wrong rejection: 1e300 ×1, e.g. /myIntegerArray/0 = 1e300: unmarshal Wrap: unmarshal Array: json: cannot unmarshal number 1e300 into Go struct field Plain.myIntegerArray of type int
 json wrong rejection: 2^63 ×1, e.g. /myIntegerArray/0 = 9223372036854775808: unmarshal Wrap: unmarshal Array: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myIntegerArray of type int
 json wrong rejection: 2^64 ×1, e.g. /myIntegerArray/0 = 18446744073709551616: unmarshal Wrap: unmarshal Array: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myIntegerArray of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myIntegerArray/0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /myStringArray/0 = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myIntegerArray/0 = 1e300: unmarshal Wrap: unmarshal Array: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myIntegerArray/0 = 1e300: unmarshal Wrap: unmarshal Array: field myIntegerArray[0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myIntegerArray/0 = 9223372036854775808: unmarshal Wrap: unmarshal Array: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myIntegerArray/0 = 18446744073709551616: unmarshal Wrap: unmarshal Array: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myIntegerArray/0 = 18446744073709551616: unmarshal Wrap: unmarshal Array: field myIntegerArray[0]: 18446744073709551616 is out of range for int
 
 == core/const/const.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -810,15 +807,13 @@ yaml wrong rejection: delete key ×2, e.g. /myObject/withDefault deleted: unmars
 yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Duration: unmarshal DurationMyObject: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration line 1: cannot unmarshal !!str `P1D` into time.Duration
 
 == core/integerFormat/integerFormatDefault.json
-json wrong rejection: 0e99 ×3, e.g. /count = 0e99: unmarshal Wrap: unmarshal IntegerFormatDefault: json: cannot unmarshal number 0e99 into Go struct field Plain.count of type int
 json wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormatDefault: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
 json wrong rejection: 2^63 ×3, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal IntegerFormatDefault: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
 json wrong rejection: 2^64 ×3, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatDefault: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
-yaml missing check (silent) type: 0.5 ×3, e.g. /count = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormatDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormatDefault: field count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×3, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal IntegerFormatDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×3, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×3, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatDefault: field count: 18446744073709551616 is out of range for int
 
 == core/ip/ip.json
 json missing check (silent) format: empty string ×1, e.g. /myObject/myIp = ""
@@ -829,32 +824,28 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == core/nestedRefs/nestedRefs.json
-json wrong rejection: 0e99 ×1, e.g. /intoDef/y = 0e99: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: json: cannot unmarshal number 0e99 into Go struct field Plain.y of type int
 json wrong rejection: 1e300 ×1, e.g. /intoDef/y = 1e300: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: json: cannot unmarshal number 1e300 into Go struct field Plain.y of type int
 json wrong rejection: 2^63 ×1, e.g. /intoDef/y = 9223372036854775808: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.y of type int
 json wrong rejection: 2^64 ×1, e.g. /intoDef/y = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.y of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /intoDef/y = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /intoProp/x = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /intoDef/y = 1e300: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /intoDef/y = 1e300: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: field y: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /intoDef/y = 9223372036854775808: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /intoDef/y = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /intoDef/y = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefs: unmarshal HolderNested: field y: 18446744073709551616 is out of range for int
 
 == core/nestedRefs/nestedRefs.json#/definitions/Holder
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /inner/x = 12345
 
 == core/nestedRefs/nestedRefsArray.json
-json wrong rejection: 0e99 ×1, e.g. /variant/b = 0e99: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: json: cannot unmarshal number 0e99 into Go struct field Plain.b of type int
 json wrong rejection: 1e300 ×1, e.g. /variant/b = 1e300: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: json: cannot unmarshal number 1e300 into Go struct field Plain.b of type int
 json wrong rejection: 2^63 ×1, e.g. /variant/b = 9223372036854775808: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.b of type int
 json wrong rejection: 2^64 ×1, e.g. /variant/b = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.b of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /variant/b = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /item/name = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /variant/b = 1e300: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /variant/b = 1e300: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: field b: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /variant/b = 9223372036854775808: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /variant/b = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /variant/b = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefsArray: unmarshal Choice1: field b: 18446744073709551616 is out of range for int
 
 == core/nestedRefs/nestedRefsArray.json#/definitions/Choice
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -874,28 +865,24 @@ yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: wrong type ×1, e.g. /flag = 12345
 
 == core/nestedRefs/nestedRefsEscapes.json
-json wrong rejection: 0e99 ×1, e.g. /tilde/y = 0e99: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: json: cannot unmarshal number 0e99 into Go struct field Plain.y of type int
 json wrong rejection: 1e300 ×1, e.g. /tilde/y = 1e300: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: json: cannot unmarshal number 1e300 into Go struct field Plain.y of type int
 json wrong rejection: 2^63 ×1, e.g. /tilde/y = 9223372036854775808: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.y of type int
 json wrong rejection: 2^64 ×1, e.g. /tilde/y = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.y of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /tilde/y = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /slash/x = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /tilde/y = 1e300: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /tilde/y = 1e300: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: field y: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /tilde/y = 9223372036854775808: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /tilde/y = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /tilde/y = 18446744073709551616: unmarshal Wrap: unmarshal NestedRefsEscapes: unmarshal EscCD: field y: 18446744073709551616 is out of range for int
 
 == core/nestedRefs/nestedRefsEscapes.json#/definitions/Esc
-json wrong rejection: 0e99 ×1, e.g. /c~d/y = 0e99: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: json: cannot unmarshal number 0e99 into Go struct field Plain.y of type int
 json wrong rejection: 1e300 ×1, e.g. /c~d/y = 1e300: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: json: cannot unmarshal number 1e300 into Go struct field Plain.y of type int
 json wrong rejection: 2^63 ×1, e.g. /c~d/y = 9223372036854775808: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.y of type int
 json wrong rejection: 2^64 ×1, e.g. /c~d/y = 18446744073709551616: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.y of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /c~d/y = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /a/b/x = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /c~d/y = 1e300: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /c~d/y = 1e300: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: field y: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /c~d/y = 9223372036854775808: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /c~d/y = 18446744073709551616: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /c~d/y = 18446744073709551616: unmarshal Wrap: unmarshal Esc: unmarshal EscCD: field y: 18446744073709551616 is out of range for int
 
 == core/nestedRefs/nestedRefsKeywordNames.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -955,32 +942,26 @@ yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: wrong type ×1, e.g. /clash = 12345
 
 == core/nullablePrimitives/nullablePrimitives.json
-json wrong rejection: 0e99 ×1, e.g. /count = 0e99: unmarshal Wrap: unmarshal NullablePrimitives: json: cannot unmarshal number 0e99 into Go struct field Plain.count of type int
 json wrong rejection: 1e300 ×2, e.g. /count = 1e300: unmarshal Wrap: unmarshal NullablePrimitives: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
 json wrong rejection: 2^63 ×2, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal NullablePrimitives: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
 json wrong rejection: 2^64 ×2, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal NullablePrimitives: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /count = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×4, e.g. /label = 12345
-yaml wrong rejection: 1e300 ×2, e.g. /count = 1e300: unmarshal Wrap: unmarshal NullablePrimitives: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×2, e.g. /count = 1e300: unmarshal Wrap: unmarshal NullablePrimitives: field count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×2, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal NullablePrimitives: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×2, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal NullablePrimitives: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×2, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal NullablePrimitives: field count: 18446744073709551616 is out of range for int
 
 == core/nullableType/nullableType.json
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /MyInlineStringValue = 12345
 
 == core/nullableType/nullableType.json#/$defs/IntegerThing
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: json: cannot unmarshal number 0e99 into Go struct field Plain.value of type int
 json wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: json: cannot unmarshal number 1e300 into Go struct field Plain.value of type int
 json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.value of type int
 json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.value of type int
-json wrong rejection: N.0 ×1, e.g. / = 1.0: unmarshal Wrap: json: cannot unmarshal number 1.0 into Go struct field Plain.value of type int
-json wrong rejection: Ne0 ×1, e.g. / = 1e0: unmarshal Wrap: json: cannot unmarshal number 1e0 into Go struct field Plain.value of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
-yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: field value: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: field value: 18446744073709551616 is out of range for int
 
 == core/nullableType/nullableType.json#/$defs/StringThing
 yaml missing check (silent) type: wrong type ×1, e.g. / = 12345
@@ -1020,16 +1001,14 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == core/primitives/primitives.json
-json wrong rejection: 0e99 ×1, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal Primitives: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal Primitives: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal Primitives: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal Primitives: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /myString = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal Primitives: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal Primitives: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal Primitives: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal Primitives: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal Primitives: field myInteger: 18446744073709551616 is out of range for int
 
 == core/propertyNameEscaping/dashPropertyName.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1037,6 +1016,7 @@ yaml missing check (silent) type: wrong type ×1, e.g. /- = 12345
 
 == core/propertyNameEscaping/dashPropertyNameAdditional.json
 yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×1, e.g. /- = 12345
 
 == core/propertyNameEscaping/propertyNameEscaping.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1213,43 +1193,37 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == elementConstraints/elements/elements.json
-json wrong rejection: 0e99 ×3, e.g. /counts/0 = 0e99: unmarshal Wrap: unmarshal Elements: json: cannot unmarshal number 0e99 into Go struct field Plain.counts of type int
 json wrong rejection: 1e300 ×2, e.g. /loose/0/0 = 1e300: unmarshal Wrap: unmarshal Elements: json: cannot unmarshal number 1e300 into Go struct field Plain.loose of type int
 json wrong rejection: 2^63 ×2, e.g. /loose/0/0 = 9223372036854775808: unmarshal Wrap: unmarshal Elements: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.loose of type int
 json wrong rejection: 2^64 ×2, e.g. /loose/0/0 = 18446744073709551616: unmarshal Wrap: unmarshal Elements: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.loose of type int
-yaml missing check (silent) type: 0.5 ×3, e.g. /counts/0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×4, e.g. /ids/0 = 12345
-yaml wrong rejection: 1e300 ×2, e.g. /loose/0/0 = 1e300: unmarshal Wrap: unmarshal Elements: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×2, e.g. /loose/0/0 = 1e300: unmarshal Wrap: unmarshal Elements: field loose[0][0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×2, e.g. /loose/0/0 = 9223372036854775808: unmarshal Wrap: unmarshal Elements: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×2, e.g. /loose/0/0 = 18446744073709551616: unmarshal Wrap: unmarshal Elements: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×2, e.g. /loose/0/0 = 18446744073709551616: unmarshal Wrap: unmarshal Elements: field loose[0][0]: 18446744073709551616 is out of range for int
 
 == elementConstraints/elements/elements.json#/definitions/ids
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /0 = 12345
 
 == emptyWhenNil/required/required.json
-json wrong rejection: 0e99 ×2, e.g. /ids/0 = 0e99: unmarshal Wrap: unmarshal Required: unmarshal Ids: json: cannot unmarshal number 0e99 into Go value of type int
 json wrong rejection: 1e300 ×2, e.g. /ids/0 = 1e300: unmarshal Wrap: unmarshal Required: unmarshal Ids: json: cannot unmarshal number 1e300 into Go value of type int
 json wrong rejection: 2^63 ×2, e.g. /ids/0 = 9223372036854775808: unmarshal Wrap: unmarshal Required: unmarshal Ids: json: cannot unmarshal number 9223372036854775808 into Go value of type int
 json wrong rejection: 2^64 ×2, e.g. /ids/0 = 18446744073709551616: unmarshal Wrap: unmarshal Required: unmarshal Ids: json: cannot unmarshal number 18446744073709551616 into Go value of type int
-yaml missing check (silent) type: 0.5 ×2, e.g. /ids/0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×7, e.g. /name = 12345
-yaml wrong rejection: 1e300 ×2, e.g. /ids/0 = 1e300: unmarshal Wrap: unmarshal Required: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×2, e.g. /ids/0 = 1e300: unmarshal Wrap: unmarshal Required: unmarshal Ids: field [0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×2, e.g. /ids/0 = 9223372036854775808: unmarshal Wrap: unmarshal Required: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×2, e.g. /ids/0 = 18446744073709551616: unmarshal Wrap: unmarshal Required: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×2, e.g. /ids/0 = 18446744073709551616: unmarshal Wrap: unmarshal Required: unmarshal Ids: field [0]: 18446744073709551616 is out of range for int
 
 == emptyWhenNil/required/required.json#/definitions/ids
-json wrong rejection: 0e99 ×1, e.g. /0 = 0e99: unmarshal Wrap: unmarshal Ids: json: cannot unmarshal number 0e99 into Go value of type int
 json wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal Ids: json: cannot unmarshal number 1e300 into Go value of type int
 json wrong rejection: 2^63 ×1, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal Ids: json: cannot unmarshal number 9223372036854775808 into Go value of type int
 json wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal Ids: json: cannot unmarshal number 18446744073709551616 into Go value of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal Ids: field [0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal Ids: field [0]: 18446744073709551616 is out of range for int
 
 == enumVarnames/enumVarnames.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1317,32 +1291,28 @@ yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: null ×1, e.g. / = null
 
 == extensionTags/extensionTags.json
-json wrong rejection: 0e99 ×1, e.g. /bigId = 0e99: unmarshal Wrap: unmarshal ExtensionTags: json: cannot unmarshal number 0e99 into Go struct field Plain.bigId of type int
 json wrong rejection: 1e300 ×1, e.g. /bigId = 1e300: unmarshal Wrap: unmarshal ExtensionTags: json: cannot unmarshal number 1e300 into Go struct field Plain.bigId of type int
 json wrong rejection: 2^63 ×1, e.g. /bigId = 9223372036854775808: unmarshal Wrap: unmarshal ExtensionTags: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.bigId of type int
 json wrong rejection: 2^64 ×1, e.g. /bigId = 18446744073709551616: unmarshal Wrap: unmarshal ExtensionTags: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.bigId of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /bigId = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×3, e.g. /plain = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /bigId = 1e300: unmarshal Wrap: unmarshal ExtensionTags: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /bigId = 1e300: unmarshal Wrap: unmarshal ExtensionTags: field bigId: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /bigId = 9223372036854775808: unmarshal Wrap: unmarshal ExtensionTags: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /bigId = 18446744073709551616: unmarshal Wrap: unmarshal ExtensionTags: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /bigId = 18446744073709551616: unmarshal Wrap: unmarshal ExtensionTags: field bigId: 18446744073709551616 is out of range for int
 
 == extensionTags/extensionTagsSkipped.json
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×4, e.g. /backtick = 12345
 
 == extraImports/gopkgYAMLv3/gopkgYAMLv3.json
-json wrong rejection: 0e99 ×1, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal GopkgYAMLv3: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal GopkgYAMLv3: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal GopkgYAMLv3: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal GopkgYAMLv3: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /myString = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal GopkgYAMLv3: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal GopkgYAMLv3: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal GopkgYAMLv3: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal GopkgYAMLv3: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal GopkgYAMLv3: field myInteger: 18446744073709551616 is out of range for int
 
 == extraImports/gopkgYAMLv3AdditionalProperties/gopkgYAMLv3AdditionalProperties.json
 json missing check (silent) type: add unknown key ×2, e.g. / = {"bar":"a","foo":"a","zzUnknown":"x"}
@@ -1447,7 +1417,6 @@ json missing check pattern: empty string ×1, e.g. /code = ""
 json missing check required: delete key ×1, e.g. /merged/q deleted
 json missing check type: null ×5, e.g. /choice = null
 json missing check type: wrong type ×1, e.g. /code = 12345
-json wrong rejection: 0e99 ×1, e.g. /limit = 0e99: unmarshal Wrap: unmarshal UncompiledConditionals: json: cannot unmarshal number 0e99 into Go struct field Plain.limit of type int
 json wrong rejection: 1e300 ×1, e.g. /limit = 1e300: unmarshal Wrap: unmarshal UncompiledConditionals: json: cannot unmarshal number 1e300 into Go struct field Plain.limit of type int
 json wrong rejection: 2^63 ×1, e.g. /limit = 9223372036854775808: unmarshal Wrap: unmarshal UncompiledConditionals: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.limit of type int
 json wrong rejection: 2^64 ×1, e.g. /limit = 18446744073709551616: unmarshal Wrap: unmarshal UncompiledConditionals: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.limit of type int
@@ -1455,12 +1424,11 @@ json wrong rejection: wrong type ×1, e.g. /choice/x = 12345: unmarshal Wrap: un
 yaml missing check (no keyword): empty string ×2, e.g. /either = ""
 yaml missing check pattern: empty string ×1, e.g. /code = ""
 yaml missing check required: delete key ×1, e.g. /merged/q deleted
-yaml missing check type: 0.5 ×1, e.g. /limit = 0.5
 yaml missing check type: null ×6, e.g. / = null
 yaml missing check type: wrong type ×5, e.g. /code = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /limit = 1e300: unmarshal Wrap: unmarshal UncompiledConditionals: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /limit = 1e300: unmarshal Wrap: unmarshal UncompiledConditionals: field limit: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /limit = 9223372036854775808: unmarshal Wrap: unmarshal UncompiledConditionals: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /limit = 18446744073709551616: unmarshal Wrap: unmarshal UncompiledConditionals: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /limit = 18446744073709551616: unmarshal Wrap: unmarshal UncompiledConditionals: field limit: 18446744073709551616 is out of range for int
 
 == fidelityWarnings/uncompiledConditionals/uncompiledConditionals.json#/definitions/names
 json missing check (no keyword): empty string ×1, e.g. /0 = ""
@@ -1477,7 +1445,7 @@ yaml missing check type: wrong type ×2, e.g. /color = 12345
 == fidelityWarnings/unenforcedKeywords/unenforcedKeywords.json
 json missing check minProperties: 0 ×2, e.g. /rows/0 = 0
 json missing check minProperties: 0.5 ×1, e.g. /shape/radius = 0.5
-json missing check minProperties: 0e99 ×1, e.g. /shape/radius = 0e99
+json missing check minProperties: 0e99 ×2, e.g. /rows/0 = 0e99
 json missing check minProperties: 1e300 ×1, e.g. /shape/radius = 1e300
 json missing check minProperties: 2^53+1 ×2, e.g. /rows/0 = 9007199254740993
 json missing check minProperties: 2^63 ×1, e.g. /shape/radius = 9223372036854775808
@@ -1500,7 +1468,7 @@ json missing check type: add unknown key ×1, e.g. /custom = {"zzUnknown":"x"}
 json missing check type: delete key ×1, e.g. /custom deleted
 json missing check type: null ×1, e.g. /merged = null
 yaml missing check minProperties: 0 ×2, e.g. /rows/0 = 0
-yaml missing check minProperties: 0.5 ×2, e.g. /rows/0 = 0.5
+yaml missing check minProperties: 0.5 ×1, e.g. /shape/radius = 0.5
 yaml missing check minProperties: 0e99 ×2, e.g. /rows/0 = 0e99
 yaml missing check minProperties: 1e300 ×1, e.g. /shape/radius = 1e300
 yaml missing check minProperties: 2^53+1 ×2, e.g. /rows/0 = 9007199254740993
@@ -1621,38 +1589,128 @@ yaml missing check (silent) type: wrong type ×1, e.g. /host = 12345
 == formatValidationInlineMaps/inlineMaps.json
 yaml missing check (silent) type: null ×1, e.g. / = null
 
+== integralNumbers/bounds/bounds.json
+json wrong rejection: 0 ×1, e.g. /atLeast64 = 0: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+json wrong rejection: 0e99 ×1, e.g. /atLeast64 = 0e99: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+json wrong rejection: 1e300 ×1, e.g. /atLeast64 = 1e300: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number 1e300 into Go struct field Plain.atLeast64 of type int
+json wrong rejection: 2^53+1 ×1, e.g. /atLeast64 = 9007199254740993: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+json wrong rejection: 2^63 ×1, e.g. /atLeast64 = 9223372036854775808: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.atLeast64 of type int
+json wrong rejection: 2^64 ×1, e.g. /atLeast64 = 18446744073709551616: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.atLeast64 of type int
+json wrong rejection: delete key ×1, e.g. /atLeast64 deleted: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+json wrong rejection: negative ×1, e.g. /atLeast64 = -1: unmarshal Wrap: unmarshal Bounds: json: cannot unmarshal number -1000000000000000000000000000000 into Go struct field Plain.none of type int
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml wrong rejection: 0 ×1, e.g. /atLeast64 = 0: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: 0e99 ×1, e.g. /atLeast64 = 0e99: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: 1e300 ×1, e.g. /atLeast64 = 1e300: unmarshal Wrap: unmarshal Bounds: field atLeast64: 1e300 is out of range for int
+yaml wrong rejection: 2^53+1 ×1, e.g. /atLeast64 = 9007199254740993: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /atLeast64 = 9223372036854775808: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: 2^64 ×1, e.g. /atLeast64 = 18446744073709551616: unmarshal Wrap: unmarshal Bounds: field atLeast64: 18446744073709551616 is out of range for int
+yaml wrong rejection: delete key ×1, e.g. /atLeast64 deleted: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+yaml wrong rejection: negative ×1, e.g. /atLeast64 = -1: unmarshal Wrap: unmarshal Bounds: field none: -1000000000000000000000000000000 is out of range for int
+
+== integralNumbers/cycle/cycle.json
+json missing check type: 0 ×2, e.g. /count = 0
+json missing check type: 0e99 ×2, e.g. /count = 0e99
+json missing check type: 2^53+1 ×2, e.g. /count = 9007199254740993
+json missing check type: N.0 ×2, e.g. /count = 1.0
+json missing check type: Ne0 ×2, e.g. /count = 1e0
+json missing check type: add unknown key ×1, e.g. /emit = {"actions":[null],"zzUnknown":"x"}
+json missing check type: delete key ×2, e.g. /count deleted
+json missing check type: duplicate first item ×1, e.g. /emit/actions = [null,null]
+json missing check type: negative ×2, e.g. /count = -1
+json missing check type: null ×4, e.g. / = null
+json missing check type: seed ×1, e.g. seed 0
+yaml missing check type: 0 ×2, e.g. /count = 0
+yaml missing check type: 0e99 ×2, e.g. /count = 0e99
+yaml missing check type: 2^53+1 ×2, e.g. /count = 9007199254740993
+yaml missing check type: N.0 ×2, e.g. /count = 1.0
+yaml missing check type: Ne0 ×2, e.g. /count = 1e0
+yaml missing check type: add unknown key ×1, e.g. /emit = {"actions":[null],"zzUnknown":"x"}
+yaml missing check type: delete key ×2, e.g. /count deleted
+yaml missing check type: duplicate first item ×1, e.g. /emit/actions = [null,null]
+yaml missing check type: negative ×2, e.g. /count = -1
+yaml missing check type: null ×4, e.g. / = null
+yaml missing check type: seed ×1, e.g. seed 0
+
+== integralNumbers/cycle/cycle.json#/definitions/action
+json missing check type: append null ×1, e.g. /emit/actions = [{},null]
+json missing check type: null ×5, e.g. / = null
+json wrong rejection: 1e300 ×2, e.g. /count = 1e300: unmarshal Wrap: unmarshal Action: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
+json wrong rejection: 2^63 ×2, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal Action: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
+json wrong rejection: 2^64 ×2, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Action: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
+json wrong rejection: add unknown key ×1, e.g. /emit/actions/0 = {"zzUnknown":"x"}: unmarshal Wrap: unmarshal Action: unmarshal Emit: decode additional property "zzUnknown" for EmitActionsElem: json: cannot unmarshal string into Go value of type int
+yaml missing check type: append null ×1, e.g. /emit/actions = [{},null]
+yaml missing check type: null ×5, e.g. / = null
+yaml wrong rejection: 1e300 ×2, e.g. /count = 1e300: unmarshal Wrap: unmarshal Action: field count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×2, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal Action: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×2, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Action: field count: 18446744073709551616 is out of range for int
+yaml wrong rejection: add unknown key ×1, e.g. /emit/actions/0 = {"zzUnknown":"x"}: unmarshal Wrap: unmarshal Action: unmarshal Emit: decode additional property "zzUnknown" for EmitActionsElem: yaml: unmarshal errors: line 1: cannot unmarshal !!str `x` into int
+
+== integralNumbers/cycle/cycle.json#/definitions/emit
+json missing check type: append null ×1, e.g. /actions = [{"count":1,"emit":{},"limit":1},null]
+json missing check type: null ×1, e.g. /actions/0 = null
+json wrong rejection: 0.5 ×2, e.g. /actions/0/count = 0.5: unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: json: cannot unmarshal number 0.5 into Go struct field Plain.count of type int
+json wrong rejection: 1e300 ×2, e.g. /actions/0/count = 1e300: unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
+json wrong rejection: 2^63 ×2, e.g. /actions/0/count = 9223372036854775808: unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
+json wrong rejection: 2^64 ×2, e.g. /actions/0/count = 18446744073709551616: unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
+json wrong rejection: add unknown key ×1, e.g. /actions/0 = {"count":1,"emit":{},"limit":1,"zzUnknow…: unmarshal Wrap: unmarshal Emit: decode additional property "zzUnknown" for EmitActionsElem: json: cannot unmarshal string into Go value of type int
+json wrong rejection: wrong type ×3, e.g. /actions/0/count = "12345": unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: json: cannot unmarshal string into Go struct field Plain.count of type int
+yaml missing check type: append null ×1, e.g. /actions = [{"count":1,"emit":{},"limit":1},null]
+yaml missing check type: null ×2, e.g. / = null
+yaml wrong rejection: 0.5 ×2, e.g. /actions/0/count = 0.5: unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: field count: 0.5 is not an integer
+yaml wrong rejection: 1e300 ×2, e.g. /actions/0/count = 1e300: unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: field count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×2, e.g. /actions/0/count = 9223372036854775808: unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×2, e.g. /actions/0/count = 18446744073709551616: unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: field count: 18446744073709551616 is out of range for int
+yaml wrong rejection: add unknown key ×1, e.g. /actions/0 = {"count":1,"emit":{},"limit":1,"zzUnknow…: unmarshal Wrap: unmarshal Emit: decode additional property "zzUnknown" for EmitActionsElem: yaml: unmarshal errors: line 1: cannot unmarshal !!str `x` into int
+yaml wrong rejection: wrong type ×3, e.g. /actions/0/count = "12345": unmarshal Wrap: unmarshal Emit: unmarshal EmitActionsElem: yaml: unmarshal errors: line 1: cannot unmarshal !!str `12345` into int
+
+== integralNumbers/cycle/cycle.json#/definitions/other
+yaml missing check type: null ×1, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. /name = 12345
+
 == integralNumbers/shapes/shapes.json
-json wrong rejection: 0e99 ×9, e.g. /count = 0e99: unmarshal Wrap: unmarshal Shapes: json: cannot unmarshal number 0e99 into Go struct field Plain.count of type int
 json wrong rejection: 1e300 ×10, e.g. /count = 1e300: unmarshal Wrap: unmarshal Shapes: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
 json wrong rejection: 2^63 ×10, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal Shapes: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
 json wrong rejection: 2^64 ×10, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Shapes: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
-yaml missing check (silent) type: 0.5 ×9, e.g. /count = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×10, e.g. /count = 1e300: unmarshal Wrap: unmarshal Shapes: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×10, e.g. /count = 1e300: unmarshal Wrap: unmarshal Shapes: field count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×10, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal Shapes: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×10, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Shapes: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×10, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Shapes: field count: 18446744073709551616 is out of range for int
 
 == integralNumbers/shapes/shapes.json#/definitions/ids
-json wrong rejection: 0e99 ×1, e.g. /0 = 0e99: unmarshal Wrap: unmarshal Ids: json: cannot unmarshal number 0e99 into Go value of type int
 json wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal Ids: json: cannot unmarshal number 1e300 into Go value of type int
 json wrong rejection: 2^63 ×1, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal Ids: json: cannot unmarshal number 9223372036854775808 into Go value of type int
 json wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal Ids: json: cannot unmarshal number 18446744073709551616 into Go value of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal Ids: field [0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal Ids: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal Ids: field [0]: 18446744073709551616 is out of range for int
 
 == integralNumbers/shapes/shapes.json#/definitions/port
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal Port: json: cannot unmarshal number 0e99 into Go value of type Plain
 json wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Port: json: cannot unmarshal number 1e300 into Go value of type Plain
 json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Port: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
 json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Port: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Port: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into Plain
+yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Port: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Port: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
-yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Port: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into Plain
+yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Port: 18446744073709551616 is out of range for int
+
+== integralNumbers/written/written.json
+json wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal Written: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
+json wrong rejection: 2^63 ×3, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal Written: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
+json wrong rejection: 2^64 ×3, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Written: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal Written: field count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×3, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal Written: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×3, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Written: field count: 18446744073709551616 is out of range for int
+
+== integralNumbers/written/written.json#/definitions/nullableCount
+json wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: json: cannot unmarshal number 1e300 into Go struct field Plain.value of type int
+json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.value of type int
+json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.value of type int
+yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: field value: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: field value: 18446744073709551616 is out of range for int
 
 == knownSchema/canonical/canonical.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1680,191 +1738,91 @@ yaml missing check (silent) type: null ×2, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /labels/a = 12345
 
 == minSizedInts/arrays/exact.json
-json wrong rejection: 0 ×1, e.g. /i64/0 = 0: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64/0 = 0e99: unmarshal Wrap: unmarshal Exact: json: cannot unmarshal number 0e99 into Go struct field Plain.i64 of type int
-json wrong rejection: 2^53+1 ×1, e.g. /i64/0 = 9007199254740993: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-json wrong rejection: empty array ×1, e.g. /i64 = []: unmarshal Wrap: field u64[0]: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64/0 = -1: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-yaml missing check (silent) minimum: empty array ×1, e.g. /u64 = []
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64/0 = 0: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64/0 = 0e99: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64/0 = 9007199254740993: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
-yaml wrong rejection: empty array ×1, e.g. /i64 = []: unmarshal Wrap: field u64[0]: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64/0 = -1: unmarshal Wrap: field i64[0]: must be <= -9223372036854775808
 
 == minSizedInts/exactReferences/exact.json
-json wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: unmarshal Exact: unmarshal Bound64: json: cannot unmarshal number 0e99 into Go value of type Plain
-json wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: unmarshal Exact: field Bound64: must be <= -9223372036854775808
 
 == minSizedInts/exactReferences/exact.json#/definitions/bound16
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal Bound16: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactReferences/exact.json#/definitions/bound32
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal Bound32: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactReferences/exact.json#/definitions/bound64
-json wrong rejection: 0 ×1, e.g. / = 0: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal Bound64: json: cannot unmarshal number 0e99 into Go value of type Plain
-json wrong rejection: 2^53+1 ×1, e.g. / = 9007199254740993: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. / = -1: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-yaml missing check (silent) minimum: N.0 ×1, e.g. / = -9223372036854776000.0
-yaml missing check (silent) minimum: Ne0 ×1, e.g. / = -9223372036854776000e0
-yaml missing check (silent) minimum: seed ×1, e.g. seed 0
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. / = 0: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. / = 9007199254740993: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. / = -1: unmarshal Wrap: field Bound64: must be <= -9223372036854775808
 
 == minSizedInts/exactReferences/exact.json#/definitions/bound8
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal Bound8: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactReferences/exact.json#/definitions/uBound16
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal UBound16: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactReferences/exact.json#/definitions/uBound32
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal UBound32: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactReferences/exact.json#/definitions/uBound64
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal UBound64: json: cannot unmarshal number 0e99 into Go value of type Plain
-json wrong rejection: 2^53+1 ×1, e.g. / = 9007199254740993: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
 json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal UBound64: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
-json wrong rejection: N.0 ×1, e.g. / = 0.0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-json wrong rejection: Ne0 ×1, e.g. / = 0e0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-json wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. / = 9007199254740993: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
 yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal UBound64: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
-yaml wrong rejection: N.0 ×1, e.g. / = 0.0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-yaml wrong rejection: Ne0 ×1, e.g. / = 0e0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
-yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: field UBound64: must be <= -9223372036854775808
 
 == minSizedInts/exactReferences/exact.json#/definitions/uBound8
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal UBound8: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/exactSizes/exact.json
-json wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: unmarshal Exact: json: cannot unmarshal number 0e99 into Go struct field Plain.i64 of type int
-json wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be <= -9223372036854775808
 
 == minSizedInts/exactSizesExclusiveBool/exact.json
 skipped: the reference validator can't compile it: compile data/minSizedInts/exactSizesExclusiveBool/exact.json: "file://data/minSizedInts/exactSizesExclusiveBool/exact.json#" is not valid against metaschema: jsonschema validation failed with 'http://json-schema.org/draft-07/schema#'
 
 == minSizedInts/exactSizesExclusiveNum/exact.json
-json wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be < -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: unmarshal Exact: json: cannot unmarshal number 0e99 into Go struct field Plain.i64 of type int
-json wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be < -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be < -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be < -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be < -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be < -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be < -9223372036854775808
 
 == minSizedInts/integerFormatPrecedence/integerFormatPrecedence.json
-json wrong rejection: 0e99 ×3, e.g. /bounded = 0e99: unmarshal Wrap: unmarshal IntegerFormatPrecedence: json: cannot unmarshal number 0e99 into Go struct field Plain.bounded of type int
 json wrong rejection: 1e300 ×1, e.g. /unbounded = 1e300: unmarshal Wrap: unmarshal IntegerFormatPrecedence: json: cannot unmarshal number 1e300 into Go struct field Plain.unbounded of type int
 json wrong rejection: 2^63 ×1, e.g. /unbounded = 9223372036854775808: unmarshal Wrap: unmarshal IntegerFormatPrecedence: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.unbounded of type int
 json wrong rejection: 2^64 ×1, e.g. /unbounded = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatPrecedence: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.unbounded of type int
-yaml missing check (silent) type: 0.5 ×3, e.g. /bounded = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /unbounded = 1e300: unmarshal Wrap: unmarshal IntegerFormatPrecedence: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /unbounded = 1e300: unmarshal Wrap: unmarshal IntegerFormatPrecedence: field unbounded: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /unbounded = 9223372036854775808: unmarshal Wrap: unmarshal IntegerFormatPrecedence: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /unbounded = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatPrecedence: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /unbounded = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatPrecedence: field unbounded: 18446744073709551616 is out of range for int
 
 == minSizedInts/largerSizes/larger.json
 json missing check (silent) required: delete key ×10, e.g. /i16 deleted
-json wrong rejection: 0e99 ×12, e.g. /i16l = 0e99: unmarshal Wrap: unmarshal Larger: json: cannot unmarshal number 0e99 into Go struct field Plain.i16l of type int
 yaml missing check (silent) required: delete key ×10, e.g. /i16 deleted
-yaml missing check (silent) type: 0.5 ×12, e.g. /i16l = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizes/restricted.json
-json wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: unmarshal Restricted: json: cannot unmarshal number 0e99 into Go struct field Plain.i64 of type int
-json wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be <= -9223372036854775808
-json wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be <= -9223372036854775808
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×1, e.g. /i64 = 0: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: 0e99 ×1, e.g. /i64 = 0e99: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: 2^53+1 ×1, e.g. /i64 = 9007199254740993: unmarshal Wrap: field i64: must be <= -9223372036854775808
-yaml wrong rejection: negative ×1, e.g. /i64 = -1: unmarshal Wrap: field i64: must be <= -9223372036854775808
 
 == minSizedInts/restrictedSizesReferences/restricted.json
-json wrong rejection: 0e99 ×9, e.g. /i16l = 0e99: unmarshal Wrap: unmarshal Restricted: unmarshal I16L: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×9, e.g. /i16l = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/i16l
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal I16L: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/i16u
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal I16U: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/i32l
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal I32L: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/i32u
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal I32U: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/i64l
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal I64L: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/i64u
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal I64U: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/u16
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal U16: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/u32
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal U32: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizesReferences/restricted.json#/definitions/u64
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal U64: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == misc/booleanAsSchema/booleanAsSchema.json
@@ -1885,16 +1843,14 @@ skipped: the reference validator can't compile it: compile data/misc/deprecated/
 skipped: the reference validator can't compile it: compile data/misc/deprecated/deprecated.json#/$defs/Point: "file://data/misc/deprecated/deprecated.json#" is not valid against metaschema: jsonschema validation failed with 'https://json-schema.org/draft/2019-09/schema#'
 
 == misc/onlyModels/onlyModels.json
-json wrong rejection: 0e99 ×1, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal OnlyModels: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OnlyModels: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OnlyModels: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OnlyModels: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /myString = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OnlyModels: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OnlyModels: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OnlyModels: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OnlyModels: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OnlyModels: field myInteger: 18446744073709551616 is out of range for int
 
 == misc/specialCharacters/specialCharacters.json
 yaml missing check type: null ×1, e.g. / = null
@@ -1939,16 +1895,14 @@ yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: null ×1, e.g. / = null
 
 == miscWithDefaults/defaultLiterals/defaultLiterals.json#/definitions/Server
-json wrong rejection: 0e99 ×1, e.g. /port = 0e99: unmarshal Wrap: unmarshal Server: json: cannot unmarshal number 0e99 into Go struct field Plain.port of type int
 json wrong rejection: 1e300 ×1, e.g. /port = 1e300: unmarshal Wrap: unmarshal Server: json: cannot unmarshal number 1e300 into Go struct field Plain.port of type int
 json wrong rejection: 2^63 ×1, e.g. /port = 9223372036854775808: unmarshal Wrap: unmarshal Server: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.port of type int
 json wrong rejection: 2^64 ×1, e.g. /port = 18446744073709551616: unmarshal Wrap: unmarshal Server: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.port of type int
-yaml missing check type: 0.5 ×1, e.g. /port = 0.5
 yaml missing check type: null ×1, e.g. / = null
 yaml missing check type: wrong type ×4, e.g. /host_name = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /port = 1e300: unmarshal Wrap: unmarshal Server: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /port = 1e300: unmarshal Wrap: unmarshal Server: field port: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /port = 9223372036854775808: unmarshal Wrap: unmarshal Server: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /port = 18446744073709551616: unmarshal Wrap: unmarshal Server: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /port = 18446744073709551616: unmarshal Wrap: unmarshal Server: field port: 18446744073709551616 is out of range for int
 
 == miscWithDefaults/interfaceListDefault/interfaceListDefault.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -2000,22 +1954,15 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 
 == nameFromTitle/properties/properties.json#/definitions/alpha
 json missing check (silent) type: null ×1, e.g. /beta = null
-json wrong rejection: 0e99 ×2, e.g. /beta/theta = 0e99: unmarshal Wrap: unmarshal Alpha: all validators failed: unmarshal BetaGamma: unmarshal Theta: json: cannot unmarshal number 0e99 into Go value of type Plain unmarshal BetaDelta: unmarshal Theta: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) const: 0.5 ×1, e.g. /beta/theta = 0.5
 yaml missing check (silent) const: wrong type ×2, e.g. /beta/epsilon = 12345
-yaml missing check (silent) type: 0.5 ×1, e.g. /eta/theta = 0.5
 yaml missing check (silent) type: null ×2, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /eta/epsilon = 12345
 
 == nameFromTitle/properties/properties.json#/definitions/beta
-json wrong rejection: 0e99 ×1, e.g. /theta = 0e99: unmarshal Wrap: all validators failed: unmarshal BetaGamma: unmarshal Theta: json: cannot unmarshal number 0e99 into Go value of type Plain unmarshal BetaDelta: unmarshal Theta: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) const: 0.5 ×1, e.g. /theta = 0.5
 yaml missing check (silent) const: wrong type ×2, e.g. /epsilon = 12345
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == nameFromTitle/properties/properties.json#/definitions/eta
-json wrong rejection: 0e99 ×1, e.g. /theta = 0e99: unmarshal Wrap: unmarshal Eta: unmarshal Theta: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. /theta = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /epsilon = 12345
 
@@ -2023,8 +1970,6 @@ yaml missing check (silent) type: wrong type ×1, e.g. /epsilon = 12345
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == nameFromTitle/properties/properties.json#/definitions/theta
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: unmarshal Theta: json: cannot unmarshal number 0e99 into Go value of type Plain
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == nameFromTitle/ref/ref.json
@@ -2045,18 +1990,16 @@ json missing check oneOf: null ×1, e.g. /ambiguous = null
 json missing check required: delete key ×1, e.g. /ambiguous/k deleted
 json missing check type: null ×1, e.g. /ambiguous/k = null
 json missing check type: wrong type ×2, e.g. /ambiguous = "x"
-json wrong rejection: 0e99 ×1, e.g. /inlineObject/id = 0e99: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: json: cannot unmarshal number 0e99 into Go struct field Plain.id of type int
 json wrong rejection: 1e300 ×1, e.g. /inlineObject/id = 1e300: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: json: cannot unmarshal number 1e300 into Go struct field Plain.id of type int
 json wrong rejection: 2^63 ×1, e.g. /inlineObject/id = 9223372036854775808: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.id of type int
 json wrong rejection: 2^64 ×1, e.g. /inlineObject/id = 18446744073709551616: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.id of type int
 yaml missing check oneOf: null ×1, e.g. /ambiguous = null
 yaml missing check required: delete key ×1, e.g. /ambiguous/k deleted
-yaml missing check type: 0.5 ×1, e.g. /inlineObject/id = 0.5
 yaml missing check type: null ×2, e.g. / = null
 yaml missing check type: wrong type ×5, e.g. /ambiguous = "x"
-yaml wrong rejection: 1e300 ×1, e.g. /inlineObject/id = 1e300: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /inlineObject/id = 1e300: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: field id: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /inlineObject/id = 9223372036854775808: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /inlineObject/id = 18446744073709551616: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /inlineObject/id = 18446744073709551616: unmarshal Wrap: unmarshal NullableBranch: unmarshal NullableBranchInlineObject: field id: 18446744073709551616 is out of range for int
 
 == nullableBranch/nullableBranch.json#/definitions/NullablePair
 yaml missing check type: wrong type ×1, e.g. /k = 12345
@@ -2087,52 +2030,44 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) enum: null ×1, e.g. / = null
 
 == omitBoth/omitBoth.json
-json wrong rejection: 0e99 ×1, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal OmitBoth: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitBoth: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OmitBoth: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitBoth: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /myString = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitBoth: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitBoth: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OmitBoth: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitBoth: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitBoth: field myInteger: 18446744073709551616 is out of range for int
 
 == omitEmpty/omitEmpty.json
-json wrong rejection: 0e99 ×1, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal OmitEmpty: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitEmpty: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OmitEmpty: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitEmpty: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /myString = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitEmpty: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitEmpty: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OmitEmpty: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitEmpty: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitEmpty: field myInteger: 18446744073709551616 is out of range for int
 
 == omitNone/omitNone.json
-json wrong rejection: 0e99 ×1, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal OmitNone: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitNone: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OmitNone: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitNone: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /myString = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitNone: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitNone: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OmitNone: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitNone: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitNone: field myInteger: 18446744073709551616 is out of range for int
 
 == omitZero/omitZero.json
-json wrong rejection: 0e99 ×1, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal OmitZero: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitZero: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OmitZero: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitZero: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /myString = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitZero: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal OmitZero: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal OmitZero: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitZero: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal OmitZero: field myInteger: 18446744073709551616 is out of range for int
 
 == oneOfDiscriminated/animal/animal.json
 yaml missing check (silent) type: null ×2, e.g. / = null
@@ -2231,16 +2166,14 @@ json missing check (silent) type: null ×1, e.g. /friend = null
 yaml missing check (silent) type: null ×2, e.g. / = null
 
 == oneOfDiscriminated/strictShape/strictShape.json
-json wrong rejection: 0e99 ×1, e.g. /value/age = 0e99: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: json: cannot unmarshal number 0e99 into Go struct field Plain.age of type int
 json wrong rejection: 1e300 ×1, e.g. /value/age = 1e300: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: json: cannot unmarshal number 1e300 into Go struct field Plain.age of type int
 json wrong rejection: 2^63 ×1, e.g. /value/age = 9223372036854775808: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.age of type int
 json wrong rejection: 2^64 ×1, e.g. /value/age = 18446744073709551616: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.age of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /value/age = 0.5
 yaml missing check (silent) type: null ×2, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /value/name = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /value/age = 1e300: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /value/age = 1e300: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: field age: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /value/age = 9223372036854775808: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /value/age = 18446744073709551616: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /value/age = 18446744073709551616: unmarshal Wrap: unmarshal StrictShape: StrictShapeValue: no oneOf variant matched: unmarshal StrictShapeValueVariant0: field age: 18446744073709551616 is out of range for int
 
 == oneOfDiscriminated/tryEachOverlappingRecursion/tryEachOverlappingRecursion.json
 json missing check required: 5000 characters ×3, e.g. /chain/x = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
@@ -2392,15 +2325,13 @@ yaml missing check (silent) type: null ×2, e.g. / = null
 yaml missing check (silent) type: null ×2, e.g. / = null
 
 == openAPIIntFormats/integerFormat.json
-json wrong rejection: 0e99 ×6, e.g. /boundedWithFormat = 0e99: unmarshal Wrap: unmarshal IntegerFormat: json: cannot unmarshal number 0e99 into Go struct field Plain.boundedWithFormat of type int
 json wrong rejection: 1e300 ×5, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormat: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
 json wrong rejection: 2^63 ×5, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal IntegerFormat: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
 json wrong rejection: 2^64 ×5, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormat: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
-yaml missing check (silent) type: 0.5 ×6, e.g. /boundedWithFormat = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×5, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormat: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×5, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormat: field count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×5, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal IntegerFormat: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×5, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormat: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×5, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormat: field count: 18446744073709551616 is out of range for int
 
 == openAPIIntFormats/integerFormatEnum.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -2415,29 +2346,21 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == openAPIIntFormats/integerFormatPointerDefault.json
-json wrong rejection: 0e99 ×1, e.g. /count = 0e99: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: json: cannot unmarshal number 0e99 into Go struct field Plain.count of type int
 json wrong rejection: 1e300 ×1, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
 json wrong rejection: 2^63 ×1, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
 json wrong rejection: 2^64 ×1, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
-json wrong rejection: N.0 ×1, e.g. /count = 1.0: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: json: cannot unmarshal number 1.0 into Go struct field Plain.count of type int
-json wrong rejection: Ne0 ×1, e.g. /count = 1e0: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: json: cannot unmarshal number 1e0 into Go struct field Plain.count of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /count = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: field count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatPointerDefault: field count: 18446744073709551616 is out of range for int
 
 == openAPIIntFormats/integerFormatPointerDefault.json#/definitions/IntFmtCountThing
-json wrong rejection: 0e99 ×1, e.g. / = 0e99: unmarshal Wrap: json: cannot unmarshal number 0e99 into Go struct field Plain.value of type int
 json wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: json: cannot unmarshal number 1e300 into Go struct field Plain.value of type int
 json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.value of type int
 json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.value of type int
-json wrong rejection: N.0 ×1, e.g. / = 1.0: unmarshal Wrap: json: cannot unmarshal number 1.0 into Go struct field Plain.value of type int
-json wrong rejection: Ne0 ×1, e.g. / = 1e0: unmarshal Wrap: json: cannot unmarshal number 1e0 into Go struct field Plain.value of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. / = 0.5
-yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: field value: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: field value: 18446744073709551616 is out of range for int
 
 == presenceCount/anyOfRequiredOnly/anyOfRequiredOnly.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -2530,26 +2453,22 @@ skipped: compilation failed: root.go:14:5: undefined: A root.go:55:8: undefined:
 skipped: compilation failed: root.go:14:5: undefined: A root.go:55:8: undefined: A
 
 == refWithOverridesPath/schema-base.json
-json wrong rejection: 0e99 ×1, e.g. /0 = 0e99: unmarshal Wrap: unmarshal SchemaBase: json: cannot unmarshal number 0e99 into Go value of type int
 json wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal SchemaBase: json: cannot unmarshal number 1e300 into Go value of type int
 json wrong rejection: 2^63 ×1, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal SchemaBase: json: cannot unmarshal number 9223372036854775808 into Go value of type int
 json wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal SchemaBase: json: cannot unmarshal number 18446744073709551616 into Go value of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal SchemaBase: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal SchemaBase: field [0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal SchemaBase: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal SchemaBase: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal SchemaBase: field [0]: 18446744073709551616 is out of range for int
 
 == refWithOverridesPath/schema-override.json
-json wrong rejection: 0e99 ×4, e.g. /0 = 0e99: unmarshal Wrap: unmarshal SchemaBase: json: cannot unmarshal number 0e99 into Go value of type int
 json wrong rejection: 1e300 ×4, e.g. /0 = 1e300: unmarshal Wrap: unmarshal SchemaBase: json: cannot unmarshal number 1e300 into Go value of type int
 json wrong rejection: 2^63 ×4, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal SchemaBase: json: cannot unmarshal number 9223372036854775808 into Go value of type int
 json wrong rejection: 2^64 ×4, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal SchemaBase: json: cannot unmarshal number 18446744073709551616 into Go value of type int
-yaml missing check (silent) type: 0.5 ×4, e.g. /0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×4, e.g. /0 = 1e300: unmarshal Wrap: unmarshal SchemaBase: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×4, e.g. /0 = 1e300: unmarshal Wrap: unmarshal SchemaBase: field [0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×4, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal SchemaBase: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×4, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal SchemaBase: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×4, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal SchemaBase: field [0]: 18446744073709551616 is out of range for int
 
 == refWithOverridesPath/schema.json
 skipped: the reference validator can't compile it: compile data/refWithOverridesPath/schema.json: failing loading "http://example.com/schemas/schema-override.json": no URLLoader registered for "http://example.com/schemas/schema-override.json"
@@ -2623,27 +2542,23 @@ skipped: generation failed: generate: cannot add struct field: could not generat
 yaml missing check (silent) enum: null ×1, e.g. / = null
 
 == rootComposition/rootOneOfDiscriminator/rootOneOfDiscriminator.json
-json wrong rejection: 0e99 ×1, e.g. /ttl = 0e99: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: json: cannot unmarshal number 0e99 into Go struct field Plain.ttl of type int
 json wrong rejection: 1e300 ×1, e.g. /ttl = 1e300: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: json: cannot unmarshal number 1e300 into Go struct field Plain.ttl of type int
 json wrong rejection: 2^63 ×1, e.g. /ttl = 9223372036854775808: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.ttl of type int
 json wrong rejection: 2^64 ×1, e.g. /ttl = 18446744073709551616: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.ttl of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /ttl = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /ttl = 1e300: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /ttl = 1e300: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: field ttl: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /ttl = 9223372036854775808: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /ttl = 18446744073709551616: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /ttl = 18446744073709551616: unmarshal Wrap: RootOneOfDiscriminator.Ping: unmarshal RootOneOfDiscriminatorPing: field ttl: 18446744073709551616 is out of range for int
 
 == rootComposition/rootOneOfTryEach/rootOneOfTryEach.json
-json wrong rejection: 0e99 ×1, e.g. /age = 0e99: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: json: cannot unmarshal number 0e99 into Go struct field Plain.age of type int
 json wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: json: cannot unmarshal number 1e300 into Go struct field Plain.age of type int
 json wrong rejection: 2^63 ×1, e.g. /age = 9223372036854775808: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.age of type int
 json wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.age of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /age = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /name = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: field age: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /age = 9223372036854775808: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: RootOneOfTryEach: no oneOf variant matched: unmarshal RootOneOfTryEachVariant0: field age: 18446744073709551616 is out of range for int
 
 == rootComposition/rootRef/rootRef.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -2686,7 +2601,7 @@ yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Nillabili
 == schemaExtensions/pointer/pointer.json
 json missing check (silent) type: wrong type ×1, e.g. /durationWithDefault = 12345
 json wrong rejection: 0 ×4, e.g. /intWithDefault = 0: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: 0e99 ×6, e.g. /intWithDefault = 0e99: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
+json wrong rejection: 0e99 ×4, e.g. /intWithDefault = 0e99: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
 json wrong rejection: 1e300 ×6, e.g. /intWithDefault = 1e300: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
 json wrong rejection: 2^53+1 ×4, e.g. /intWithDefault = 9007199254740993: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
 json wrong rejection: 2^63 ×6, e.g. /intWithDefault = 9223372036854775808: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
@@ -2702,14 +2617,13 @@ json wrong rejection: empty string ×6, e.g. /normalDefault = "": unmarshal Wrap
 json wrong rejection: negative ×4, e.g. /intWithDefault = -1: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
 json wrong rejection: off-enum string ×6, e.g. /normalDefault = "zzOffEnum": unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
 json wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-yaml missing check (silent) type: 0.5 ×2, e.g. /requiredIntNonPointer = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml wrong rejection: 0 ×4, e.g. /intWithDefault = 0: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
 yaml wrong rejection: 0e99 ×4, e.g. /intWithDefault = 0e99: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: 1e300 ×6, e.g. /intWithDefault = 1e300: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×6, e.g. /intWithDefault = 1e300: unmarshal Wrap: unmarshal Pointer: field intWithDefault: 1e300 is out of range for int
 yaml wrong rejection: 2^53+1 ×4, e.g. /intWithDefault = 9007199254740993: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
 yaml wrong rejection: 2^63 ×6, e.g. /intWithDefault = 9223372036854775808: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×6, e.g. /intWithDefault = 18446744073709551616: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×6, e.g. /intWithDefault = 18446744073709551616: unmarshal Wrap: unmarshal Pointer: field intWithDefault: 18446744073709551616 is out of range for int
 yaml wrong rejection: 5000 characters ×6, e.g. /normalDefault = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
 yaml wrong rejection: N.0 ×4, e.g. /intWithDefault = 42.0: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
 yaml wrong rejection: Ne0 ×4, e.g. /intWithDefault = 42e0: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
@@ -2740,16 +2654,14 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. / = 12345
 
 == strictAdditionalProperties/addlFalse/addlFalse.json
-json wrong rejection: 0e99 ×1, e.g. /age = 0e99: unmarshal Wrap: unmarshal AddlFalse: json: cannot unmarshal number 0e99 into Go struct field Plain.age of type int
 json wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: unmarshal AddlFalse: json: cannot unmarshal number 1e300 into Go struct field Plain.age of type int
 json wrong rejection: 2^63 ×1, e.g. /age = 9223372036854775808: unmarshal Wrap: unmarshal AddlFalse: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.age of type int
 json wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: unmarshal AddlFalse: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.age of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /age = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×2, e.g. /name = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: unmarshal AddlFalse: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /age = 1e300: unmarshal Wrap: unmarshal AddlFalse: field age: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /age = 9223372036854775808: unmarshal Wrap: unmarshal AddlFalse: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: unmarshal AddlFalse: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /age = 18446744073709551616: unmarshal Wrap: unmarshal AddlFalse: field age: 18446744073709551616 is out of range for int
 
 == strictAdditionalProperties/addlFalseEmpty/addlFalseEmpty.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -2792,31 +2704,27 @@ yaml missing check (silent) type: wrong type ×1, e.g. /name = 12345
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == uniqueItems/items/items.json
-json wrong rejection: 0e99 ×2, e.g. /grid/0/0 = 0e99: unmarshal Wrap: unmarshal Items: json: cannot unmarshal number 0e99 into Go struct field Plain.grid of type int
 json wrong rejection: 1e300 ×2, e.g. /grid/0/0 = 1e300: unmarshal Wrap: unmarshal Items: json: cannot unmarshal number 1e300 into Go struct field Plain.grid of type int
 json wrong rejection: 2^63 ×2, e.g. /grid/0/0 = 9223372036854775808: unmarshal Wrap: unmarshal Items: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.grid of type int
 json wrong rejection: 2^64 ×2, e.g. /grid/0/0 = 18446744073709551616: unmarshal Wrap: unmarshal Items: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.grid of type int
-yaml missing check (silent) type: 0.5 ×2, e.g. /grid/0/0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×3, e.g. /repeats/0 = 12345
-yaml wrong rejection: 1e300 ×2, e.g. /grid/0/0 = 1e300: unmarshal Wrap: unmarshal Items: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×2, e.g. /grid/0/0 = 1e300: unmarshal Wrap: unmarshal Items: field grid[0][0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×2, e.g. /grid/0/0 = 9223372036854775808: unmarshal Wrap: unmarshal Items: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×2, e.g. /grid/0/0 = 18446744073709551616: unmarshal Wrap: unmarshal Items: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×2, e.g. /grid/0/0 = 18446744073709551616: unmarshal Wrap: unmarshal Items: field grid[0][0]: 18446744073709551616 is out of range for int
 
 == uniqueItems/items/items.json#/definitions/set
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /0 = 12345
 
 == useNumber/numbers/numbers.json
-json wrong rejection: 0e99 ×1, e.g. /count = 0e99: unmarshal Wrap: unmarshal Numbers: json: cannot unmarshal number 0e99 into Go struct field Plain.count of type int
 json wrong rejection: 1e300 ×1, e.g. /count = 1e300: unmarshal Wrap: unmarshal Numbers: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
 json wrong rejection: 2^63 ×1, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal Numbers: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
 json wrong rejection: 2^64 ×1, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Numbers: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /count = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /count = 1e300: unmarshal Wrap: unmarshal Numbers: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /count = 1e300: unmarshal Wrap: unmarshal Numbers: field count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal Numbers: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Numbers: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal Numbers: field count: 18446744073709551616 is out of range for int
 
 == validateNullTypes/nullAllowed.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -2862,27 +2770,23 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. / = 12345
 
 == validation/array_defs/array_defs.json
-json wrong rejection: 0e99 ×1, e.g. /myNumbers/0 = 0e99: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: json: cannot unmarshal number 0e99 into Go value of type int
 json wrong rejection: 1e300 ×1, e.g. /myNumbers/0 = 1e300: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: json: cannot unmarshal number 1e300 into Go value of type int
 json wrong rejection: 2^63 ×1, e.g. /myNumbers/0 = 9223372036854775808: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: json: cannot unmarshal number 9223372036854775808 into Go value of type int
 json wrong rejection: 2^64 ×1, e.g. /myNumbers/0 = 18446744073709551616: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: json: cannot unmarshal number 18446744073709551616 into Go value of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /myNumbers/0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×7, e.g. /myInlineTags/0 = 12345
-yaml wrong rejection: 1e300 ×1, e.g. /myNumbers/0 = 1e300: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /myNumbers/0 = 1e300: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: field [0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /myNumbers/0 = 9223372036854775808: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /myNumbers/0 = 18446744073709551616: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /myNumbers/0 = 18446744073709551616: unmarshal Wrap: unmarshal ArrayDefs: unmarshal AtLeastOne: field [0]: 18446744073709551616 is out of range for int
 
 == validation/array_defs/array_defs.json#/$defs/atLeastOne
-json wrong rejection: 0e99 ×1, e.g. /0 = 0e99: unmarshal Wrap: unmarshal AtLeastOne: json: cannot unmarshal number 0e99 into Go value of type int
 json wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal AtLeastOne: json: cannot unmarshal number 1e300 into Go value of type int
 json wrong rejection: 2^63 ×1, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal AtLeastOne: json: cannot unmarshal number 9223372036854775808 into Go value of type int
 json wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal AtLeastOne: json: cannot unmarshal number 18446744073709551616 into Go value of type int
-yaml missing check (silent) type: 0.5 ×1, e.g. /0 = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal AtLeastOne: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×1, e.g. /0 = 1e300: unmarshal Wrap: unmarshal AtLeastOne: field [0]: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /0 = 9223372036854775808: unmarshal Wrap: unmarshal AtLeastOne: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal AtLeastOne: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /0 = 18446744073709551616: unmarshal Wrap: unmarshal AtLeastOne: field [0]: 18446744073709551616 is out of range for int
 
 == validation/array_defs/array_defs.json#/$defs/atMostTwo
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -2907,8 +2811,6 @@ yaml wrong rejection: null ×1, e.g. /myMixedUntypedEnum = null: unmarshal Wrap:
 yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Enum: invalid value (expected one of []interface {}{42, "smurf"}): 42
 
 == validation/exclusiveMaximum/exclusiveMaximum.json
-json wrong rejection: 0e99 ×3, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal ExclusiveMaximum: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×3, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == validation/exclusiveMaximum/exclusiveMaximumOld.json
@@ -2919,23 +2821,21 @@ json wrong rejection: 1e300 ×3, e.g. /myInteger = 1e300: unmarshal Wrap: unmars
 json wrong rejection: 2^63 ×3, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal ExclusiveMinimum: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal ExclusiveMinimum: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×3, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal ExclusiveMinimum: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×3, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal ExclusiveMinimum: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×3, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal ExclusiveMinimum: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal ExclusiveMinimum: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal ExclusiveMinimum: field myInteger: 18446744073709551616 is out of range for int
 
 == validation/exclusiveMinimum/exclusiveMinimumOld.json
 skipped: the reference validator can't compile it: compile data/validation/exclusiveMinimum/exclusiveMinimumOld.json: "file://data/validation/exclusiveMinimum/exclusiveMinimumOld.json#" is not valid against metaschema: jsonschema validation failed with 'http://json-schema.org/draft-07/schema#'
 
 == validation/integerDefault/integerDefault.json
-json wrong rejection: 0e99 ×3, e.g. /count = 0e99: unmarshal Wrap: unmarshal IntegerDefault: json: cannot unmarshal number 0e99 into Go struct field Plain.count of type int
 json wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerDefault: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
 json wrong rejection: 2^63 ×3, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal IntegerDefault: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.count of type int
 json wrong rejection: 2^64 ×3, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerDefault: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.count of type int
-yaml missing check (silent) type: 0.5 ×3, e.g. /count = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerDefault: field count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×3, e.g. /count = 9223372036854775808: unmarshal Wrap: unmarshal IntegerDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×3, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerDefault: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×3, e.g. /count = 18446744073709551616: unmarshal Wrap: unmarshal IntegerDefault: field count: 18446744073709551616 is out of range for int
 
 == validation/maxItems/maxItems.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -2946,8 +2846,6 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×3, e.g. /myNullableString = 12345
 
 == validation/maximum/maximum.json
-json wrong rejection: 0e99 ×3, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal Maximum: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×3, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == validation/minItems/minItems.json
@@ -2965,23 +2863,21 @@ json wrong rejection: 1e300 ×3, e.g. /myInteger = 1e300: unmarshal Wrap: unmars
 json wrong rejection: 2^63 ×3, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal Minimum: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal Minimum: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×3, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal Minimum: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×3, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal Minimum: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×3, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal Minimum: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal Minimum: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal Minimum: field myInteger: 18446744073709551616 is out of range for int
 
 == validation/multipleOf/multipleOf.json
-json wrong rejection: 0e99 ×3, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal MultipleOf: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×6, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal MultipleOf: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^53+1 ×3, e.g. /myNullableNumber = 9007199254740993: unmarshal Wrap: field myNullableNumber: must be a multiple of 0.2
 json wrong rejection: 2^63 ×3, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal MultipleOf: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal MultipleOf: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
 json wrong rejection: negative ×3, e.g. /myNullableNumber = -1: unmarshal Wrap: field myNullableNumber: must be a multiple of 0.2
-yaml missing check (silent) type: 0.5 ×3, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 1e300 ×6, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal MultipleOf: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×6, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal MultipleOf: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^53+1 ×3, e.g. /myNullableNumber = 9007199254740993: unmarshal Wrap: field myNullableNumber: must be a multiple of 0.2
 yaml wrong rejection: 2^63 ×3, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal MultipleOf: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal MultipleOf: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×3, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal MultipleOf: field myInteger: 18446744073709551616 is out of range for int
 yaml wrong rejection: negative ×3, e.g. /myNullableNumber = -1: unmarshal Wrap: field myNullableNumber: must be a multiple of 0.2
 
 == validation/pattern/pattern.json
@@ -3032,16 +2928,14 @@ yaml wrong rejection: off-enum string ×1, e.g. /myReadOnlyRequiredString = "zzO
 yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: field myReadOnlyRequiredString in ReadOnlyAndRequired: read only
 
 == validation/requiredFields/requiredFields.json
-json wrong rejection: 0e99 ×2, e.g. /myInteger = 0e99: unmarshal Wrap: unmarshal RequiredFields: json: cannot unmarshal number 0e99 into Go struct field Plain.myInteger of type int
 json wrong rejection: 1e300 ×2, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal RequiredFields: json: cannot unmarshal number 1e300 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^63 ×2, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal RequiredFields: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.myInteger of type int
 json wrong rejection: 2^64 ×2, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal RequiredFields: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.myInteger of type int
-yaml missing check (silent) type: 0.5 ×2, e.g. /myInteger = 0.5
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×8, e.g. /myString = 12345
-yaml wrong rejection: 1e300 ×2, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal RequiredFields: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1e300` into int
+yaml wrong rejection: 1e300 ×2, e.g. /myInteger = 1e300: unmarshal Wrap: unmarshal RequiredFields: field myInteger: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×2, e.g. /myInteger = 9223372036854775808: unmarshal Wrap: unmarshal RequiredFields: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
-yaml wrong rejection: 2^64 ×2, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal RequiredFields: yaml: unmarshal errors: line 1: cannot unmarshal !!float `1844674...` into int
+yaml wrong rejection: 2^64 ×2, e.g. /myInteger = 18446744073709551616: unmarshal Wrap: unmarshal RequiredFields: field myInteger: 18446744073709551616 is out of range for int
 
 == validation/requiredFields/requiredNullable.json
 yaml missing check (silent) type: null ×1, e.g. / = null

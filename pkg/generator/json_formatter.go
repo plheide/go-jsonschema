@@ -33,17 +33,23 @@ func (jf *jsonFormatter) generate(
 		formatName:   formatJSON,
 		methodSuffix: strings.ToUpper(formatJSON),
 		paramDecl:    "value []byte",
-		decodeCall: func(target string) string {
-			return fmt.Sprintf("%s.Unmarshal(value, &%s)", formatJSON, target)
+		decodeCall: func(source, target string) string {
+			return fmt.Sprintf("%s.Unmarshal(%s, &%s)", formatJSON, source, target)
 		},
+		rawValueType: "json.RawMessage",
+		valueSource: func(*codegen.Emitter) string {
+			return "additional[k]"
+		},
+		integralHelper: output.integralHelper,
+		retries:        true,
 	}
 
 	// The raw map feeds the validators and keeps its float64s; only the
-	// typed decode keeps numbers exact.
+	// typed decodes keep numbers exact.
 	if jf.useNumber {
 		helper := output.numbersHelper(declType.Name)
-		ctx.typedDecodeCall = func(target string) string {
-			return fmt.Sprintf("%s(value, &%s)", helper, target)
+		ctx.typedDecodeCall = func(source, target string) string {
+			return fmt.Sprintf("%s(%s, &%s)", helper, source, target)
 		}
 	}
 
@@ -71,9 +77,10 @@ func (jf *jsonFormatter) enumUnmarshal(
 	wrapInStruct bool,
 ) func(*codegen.Emitter) error {
 	// An integer enum value written 2.0 is retried as in generateUnmarshalBody.
-	var integralHelper string
-	if holdsInteger(enumType) {
+	var integralHelper, integralPaths string
+	if p := integerPaths(enumType, formatJSON); p != nil {
 		integralHelper = output.integralHelper(declType.Name)
+		integralPaths = output.integerPathsVar(declType.Name, p)
 	}
 
 	return func(out *codegen.Emitter) error {
@@ -95,7 +102,8 @@ func (jf *jsonFormatter) enumUnmarshal(
 
 		if integralHelper != "" {
 			out.Printlnf("if err := json.Unmarshal(value, &%s); err != nil {", varName)
-			out.Printlnf("if err = %s(value, &%s, err); err != nil { return err }", integralHelper, varName)
+			out.Printlnf("if err = %s(value, &%s, err, %s); err != nil { return err }",
+				integralHelper, varName, integralPaths)
 			out.Printlnf("}")
 		} else {
 			out.Printlnf("if err := json.Unmarshal(value, &%s); err != nil { return err }", varName)
@@ -128,8 +136,8 @@ func (jf *jsonFormatter) addImport(out *codegen.File, declType *codegen.TypeDecl
 
 	if hasAdditionalPropertiesField(declType) {
 		out.Package.AddImport("reflect", "")
+		out.Package.AddImport("sort", "")
 		out.Package.AddImport("strings", "")
-		out.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
 	}
 }
 

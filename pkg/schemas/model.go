@@ -216,9 +216,18 @@ type Type struct {
 	ExclusiveMinimum *any     `json:"exclusiveMinimum,omitempty"` // Section 5.5. Changed in draft 4.
 	MaxLength        int      `json:"maxLength,omitempty"`        // Section 5.6.
 	MinLength        int      `json:"minLength,omitempty"`        // Section 5.7.
-	Pattern          string   `json:"pattern,omitempty"`          // Section 5.8.
-	AdditionalItems  *Type    `json:"additionalItems,omitempty"`  // Section 5.9.
-	Items            *Type    `json:"items,omitempty"`            // Section 5.9.
+	// MaximumExact, ExclusiveMaximumExact, MinimumExact and
+	// ExclusiveMinimumExact are the numeric bounds as written, as
+	// json.Number, or "" for a bound that is absent or, for an exclusive one,
+	// a draft-04 boolean. The float64 fields round an integer beyond 2^53. Set
+	// by Type's custom UnmarshalJSON.
+	MaximumExact          json.Number `json:"-"`
+	ExclusiveMaximumExact json.Number `json:"-"`
+	MinimumExact          json.Number `json:"-"`
+	ExclusiveMinimumExact json.Number `json:"-"`
+	Pattern               string      `json:"pattern,omitempty"`         // Section 5.8.
+	AdditionalItems       *Type       `json:"additionalItems,omitempty"` // Section 5.9.
+	Items                 *Type       `json:"items,omitempty"`           // Section 5.9.
 	// TupleItems holds the draft-07 tuple form of `items` (an array of
 	// schemas, one per position). The single-schema form stays in Items;
 	// exactly one of the two is ever populated. Not a wire field — it is
@@ -623,8 +632,36 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	*value = Type(obj)
 
 	value.ConstIsSet, value.ConstExact = probeConst(raw)
+	value.MaximumExact, value.ExclusiveMaximumExact, value.MinimumExact, value.ExclusiveMinimumExact = probeBounds(raw)
 
 	return nil
+}
+
+// probeBounds returns the numeric bounds that raw, a schema object, declares,
+// as written. A bound that is absent, a draft-04 boolean or anything else but
+// a number is returned as "".
+func probeBounds(raw []byte) (json.Number, json.Number, json.Number, json.Number) {
+	var probe struct {
+		Maximum          json.RawMessage `json:"maximum"`
+		ExclusiveMaximum json.RawMessage `json:"exclusiveMaximum"`
+		Minimum          json.RawMessage `json:"minimum"`
+		ExclusiveMinimum json.RawMessage `json:"exclusiveMinimum"`
+	}
+
+	if json.Unmarshal(raw, &probe) != nil {
+		return "", "", "", ""
+	}
+
+	number := func(raw json.RawMessage) json.Number {
+		var n json.Number
+		if len(raw) == 0 || raw[0] == '"' || json.Unmarshal(raw, &n) != nil {
+			return ""
+		}
+
+		return n
+	}
+
+	return number(probe.Maximum), number(probe.ExclusiveMaximum), number(probe.Minimum), number(probe.ExclusiveMinimum)
 }
 
 // probeConst probes raw, a schema object, for an explicit "const" key so

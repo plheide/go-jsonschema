@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/integralNumbers/written",
+  "title": "Written",
+  "description": "Only a number that holds an integer where the type holds one is written as that integer: every other value stays as the input writes it.",
+  "type": "object",
+  "properties": {
+    "count": {
+      "type": "integer"
+    },
+    "raw": {
+      "goJSONSchema": { "type": "json.RawMessage", "imports": ["encoding/json"] }
+    },
+    "nullable": {
+      "$ref": "#/definitions/nullableCount"
+    },
+    "holder": {
+      "type": "object",
+      "properties": {
+        "nullable": {
+          "$ref": "#/definitions/nullableCount"
+        }
+      }
+    }
+  },
+  "additionalProperties": {
+    "type": "integer"
+  },
+  "definitions": {
+    "nullableCount": {
+      "type": ["integer", "null"]
+    }
+  }
+}

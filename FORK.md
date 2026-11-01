@@ -41,6 +41,10 @@ Not offered upstream yet:
   * conditionals keyed on a property a nested object holds, and on an absent discriminator an `if` does not require;
   * writing a required array or object left nil as empty, constants for `const` values, and the `--use-number` opt-in;
   * map defaults that compile, and warnings for the keywords no generated code checks;
+* the changes made on `main` for v0.28.0:
+  * decoding from YAML an `integer` written with a fraction or an exponent, refusing one that holds no integer in
+    either format, and writing in a JSON retry only the numbers that hold an integer;
+  * reading an integer's bounds as written, and decoding each value of `AdditionalProperties` on its own;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

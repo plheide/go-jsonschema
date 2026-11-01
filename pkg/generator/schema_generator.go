@@ -720,10 +720,10 @@ func (g *schemaGenerator) propertyValidators(
 	declName string,
 ) []validator {
 	if f.DefaultValue != nil {
-		if f.Name == additionalProperties {
+		if isAdditionalPropertiesField(&f) {
 			g.output.file.Package.AddImport("reflect", "")
+			g.output.file.Package.AddImport("sort", "")
 			g.output.file.Package.AddImport("strings", "")
-			g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
 		}
 
 		dvType := f.Type
@@ -1146,18 +1146,12 @@ func (g *schemaGenerator) structFieldValidators(
 				f.SchemaType.Minimum != nil ||
 				f.SchemaType.ExclusiveMinimum != nil ||
 				f.SchemaType.Const != nil {
-				validators = append(validators, &numericValidator{
-					jsonName:         f.JSONName,
-					fieldName:        f.Name,
-					isNillable:       isNillable,
-					multipleOf:       f.SchemaType.MultipleOf,
-					maximum:          f.SchemaType.Maximum,
-					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
-					minimum:          f.SchemaType.Minimum,
-					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
-					constVal:         preciseConst(f.SchemaType),
-					roundToInt:       strings.Contains(v.Type, "int"),
-				})
+				numeric := newNumericValidator(f, v.Type, isNillable)
+
+				// A bound that every value of the Go type meets needs no check.
+				if numeric.checksSomething() {
+					validators = append(validators, numeric)
+				}
 			}
 
 			if f.SchemaType.MultipleOf != nil && v.Type == float64Type {

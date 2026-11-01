@@ -957,6 +957,13 @@ type numericValidator struct {
 	exclusiveMinimum *any
 	constVal         any
 	roundToInt       bool
+	// goType is the Go type of the value, and the texts are its bounds as
+	// written, which an integer's check reads. See integer_bounds.go.
+	goType               string
+	maximumText          string
+	exclusiveMaximumText string
+	minimumText          string
+	exclusiveMinimumText string
 }
 
 func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
@@ -1005,6 +1012,13 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 			out.Indent(-1)
 			out.Printlnf("}")
 		}
+	}
+
+	if v.roundToInt {
+		v.genIntegerBoundary(out, checkPointer, pointerPrefix, value, name, true)
+		v.genIntegerBoundary(out, checkPointer, pointerPrefix, value, name, false)
+
+		return nil
 	}
 
 	nMin, nMax, nMinExclusive, nMaxExclusive := mathutils.NormalizeBounds(

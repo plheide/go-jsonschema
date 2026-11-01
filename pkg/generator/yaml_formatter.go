@@ -23,9 +23,16 @@ func (yf *yamlFormatter) generate(
 		formatName:   formatYAML,
 		methodSuffix: strings.ToUpper(formatYAML),
 		paramDecl:    "value *yaml.Node",
-		decodeCall: func(target string) string {
-			return fmt.Sprintf("value.Decode(&%s)", target)
+		decodeCall: func(source, target string) string {
+			return fmt.Sprintf("%s.Decode(&%s)", trimAddress(source), target)
 		},
+		rawValueType: "yaml.Node",
+		valueSource: func(out *codegen.Emitter) string {
+			out.Printlnf("node := additional[k]")
+
+			return "&node"
+		},
+		integralHelper: output.integralYAMLHelper,
 	}, output, declType, validators)
 }
 
@@ -43,12 +50,20 @@ func (yf *yamlFormatter) enumMarshal(declType *codegen.TypeDecl) func(*codegen.E
 }
 
 func (yf *yamlFormatter) enumUnmarshal(
-	_ *output,
+	output *output,
 	declType codegen.TypeDecl,
 	enumType codegen.Type,
 	valueConstant *codegen.Var,
 	wrapInStruct bool,
 ) func(*codegen.Emitter) error {
+	// An integer enum value written 2.0 is written as an integer, as in
+	// generateUnmarshalBody.
+	var integralHelper, integralPaths string
+	if p := integerPaths(enumType, formatYAML); p != nil {
+		integralHelper = output.integralYAMLHelper(declType.Name)
+		integralPaths = output.integerPathsVar(declType.Name, p)
+	}
+
 	return func(out *codegen.Emitter) error {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name, strings.ToUpper(formatYAML))
@@ -66,7 +81,13 @@ func (yf *yamlFormatter) enumUnmarshal(
 			varName += ".Value"
 		}
 
-		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varName)
+		if integralHelper != "" {
+			out.Printlnf("if err := %s(value, &%s, %s); err != nil { return err }",
+				integralHelper, varName, integralPaths)
+		} else {
+			out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varName)
+		}
+
 		out.Printlnf("var ok bool")
 		out.Printlnf("for _, expected := range %s {", valueConstant.Name)
 		out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
@@ -93,8 +114,8 @@ func (yf *yamlFormatter) addImport(out *codegen.File, declType *codegen.TypeDecl
 
 	if hasAdditionalPropertiesField(declType) {
 		out.Package.AddImport("reflect", "")
+		out.Package.AddImport("sort", "")
 		out.Package.AddImport("strings", "")
-		out.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
 	}
 }
 
