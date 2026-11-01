@@ -2,6 +2,10 @@
 # Only non-default settings are listed here; everything else uses CR defaults.
 
 reviews:
+  # Review only: the generated goldens would put this branch's PR over the
+  # 100-file limit, so the review leaves them out.
+  path_filters:
+    - "!tests/data/**/*.go"
   auto_review:
     # Auto-review PRs that target non-default base branches too — needed
     # for stacked PRs where intermediate branches target each other
