@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "An allOf written inline inside an allOf merges its branches as the outer allOf merges its own.",
+  "type": "object",
+  "properties": {
+    "deep": {
+      "allOf": [
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "required": ["e"],
+              "properties": {
+                "e": { "type": "string" }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

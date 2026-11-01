@@ -647,7 +647,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		g.generateEmptyWhenNilMarshaler(&decl, g.emptyWhenNilFields(tt))
 
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
-			validators = append(validators, g.anyOfParentValidators(t, tt, decl.Name, scope)...)
+			validators = append(validators, g.anyOfParentValidators(t, tt, decl.Name)...)
 			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
 			validators = append(validators, presenceCountValidators(t, decl.Name)...)
 			g.generateUnmarshaler(&decl, validators)
@@ -2304,13 +2304,6 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	variantNames := make([]string, len(rAnyOf))
 
 	for i, typ := range rAnyOf {
-		// infer type from base if not set
-		if len(typ.Type) == 0 {
-			typ.Type = append(schemas.TypeList{}, t.Type...)
-		}
-
-		typ.SetSubSchemaTypeElem()
-
 		ic, cleanupCycle, cycleErr := g.detectCycle(typ)
 		if cycleErr != nil {
 			return nil, cycleErr
@@ -2324,11 +2317,19 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 			continue
 		}
 
-		if hasNull {
-			typ.Type.Add(schemas.TypeNameNull)
+		// The merge reads the branch with the types it has here. A declared
+		// branch stays its own variant, unless it has no type of its own and
+		// its declaration can have no methods to decode with, as interface{}.
+		rAnyOf[i] = g.anyOfBranch(t, typ, hasNull)
+		variantSchema := rAnyOf[i]
+
+		if decl, declared := g.output.declsBySchema[typ]; declared && (len(typ.Type) > 0 || hasMethods(decl)) {
+			variantSchema = typ
 		}
 
-		variant, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i)))
+		variantSchema.SetSubSchemaTypeElem()
+
+		variant, err := g.generateTypeInline(variantSchema, scope.add(fmt.Sprintf("_%d", i)))
 		if err != nil {
 			return nil, err
 		}
@@ -2338,7 +2339,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		// definition generated inline here, such as a $ref to a string.
 		if named := namedDecl(variant); named != nil {
 			variantNames[i] = named.Name
-		} else if decl, ok := g.output.declsBySchema[typ]; ok {
+		} else if decl, ok := g.output.declsBySchema[variantSchema]; ok {
 			variantNames[i] = decl.Name
 		}
 	}
@@ -2347,8 +2348,6 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return emptyInterfaceTypeVal, nil
 	}
 
-	shared := g.sharedAnyOfProperties(t, rAnyOf)
-
 	anyOfType, err := schemas.AnyOf(rAnyOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge anyOf types: %w", err)
@@ -2356,7 +2355,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 
 	anyOfType.AnyOf = nil
 	g.output.anyOfVariants[anyOfType] = variantNames
-	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t, shared: shared}
+	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t}
 
 	// The merge carries the conditionals and the unchecked keywords of t,
 	// reported with t, and of its branches, reported with each branch's type
@@ -2365,6 +2364,56 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	g.reportedKeywords[anyOfType] = struct{}{}
 
 	return g.generateTypeInline(anyOfType, scope)
+}
+
+// hasMethods reports whether Go lets the type declared by decl have methods,
+// which it doesn't for a pointer or an interface. A declaration still being
+// generated is taken to.
+func hasMethods(decl *codegen.TypeDecl) bool {
+	switch decl.Type.(type) {
+	case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType, codegen.PointerType, *codegen.PointerType:
+		return false
+	}
+
+	return true
+}
+
+// anyOfBranchKey identifies a copy of an anyOf branch with the types types.
+type anyOfBranchKey struct {
+	branch *schemas.Type
+	types  string
+}
+
+// anyOfBranch is branch as a branch of the anyOf on t: branch itself if it has
+// a type and the anyOf allows no null, and otherwise a copy, with t's type if
+// branch has none, and with null if the anyOf allows it. The branch can be a
+// resolved $ref's schema, which other places use as well. An anyOf generated
+// twice gets the same copies both times, so that the types declared for them
+// the first time are found again.
+func (g *schemaGenerator) anyOfBranch(t, branch *schemas.Type, hasNull bool) *schemas.Type {
+	if len(branch.Type) > 0 && !hasNull {
+		return branch
+	}
+
+	types := slices.Clone(branch.Type)
+	if len(types) == 0 {
+		types = slices.Clone(t.Type)
+	}
+
+	if hasNull {
+		types.Add(schemas.TypeNameNull)
+	}
+
+	key := anyOfBranchKey{branch: branch, types: strings.Join(types, ",")}
+	if cp, ok := g.anyOfBranches[key]; ok {
+		return cp
+	}
+
+	cp := *branch
+	cp.Type = types
+	g.anyOfBranches[key] = &cp
+
+	return &cp
 }
 
 func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
@@ -2380,7 +2429,7 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 		}
 	}
 
-	rAllOf, _ := g.resolveRefs(t.AllOf, true)
+	rAllOf, _ := g.resolveRefs(flattenInlineAllOf(t.AllOf), true)
 
 	// A recursive allOf, whose merged type leads back to an allOf with the same
 	// merge, would merge into a fresh copy at every level and never finish: no
@@ -2444,6 +2493,32 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 	defer delete(g.mergingAllOf, key)
 
 	return g.generateTypeInline(allOfType, scope)
+}
+
+// flattenInlineAllOf returns the branches of an allOf with each branch that is
+// itself an allOf, written inline, replaced by its own keywords and its
+// branches, at every depth, so that they merge as the others do. The merge
+// would otherwise keep the inner branches as an allOf of the result, which
+// generateAllOfType drops. A $ref branch is left as it is: its definition
+// merges its own allOf.
+func flattenInlineAllOf(branches []*schemas.Type) []*schemas.Type {
+	flat := make([]*schemas.Type, 0, len(branches))
+
+	for _, b := range branches {
+		if b == nil || b.Ref != "" || len(b.AllOf) == 0 {
+			flat = append(flat, b)
+
+			continue
+		}
+
+		own := *b
+		own.AllOf = nil
+
+		flat = append(flat, &own)
+		flat = append(flat, flattenInlineAllOf(b.AllOf)...)
+	}
+
+	return flat
 }
 
 // allOfMergeKey identifies what an allOf merges into. An allOf of a single
@@ -3002,7 +3077,7 @@ func (g *schemaGenerator) resolveRefs(types []*schemas.Type, withNulls bool) ([]
 			continue
 		}
 
-		if !withNulls && len(resolvedType.Type) == 1 && resolvedType.Type[0] == schemas.TypeNameNull {
+		if !withNulls && admitsOnlyNull(resolvedType) {
 			hasNulls = true
 
 			continue
@@ -3012,6 +3087,16 @@ func (g *schemaGenerator) resolveRefs(types []*schemas.Type, withNulls bool) ([]
 	}
 
 	return resolvedTypes, hasNulls
+}
+
+// admitsOnlyNull reports whether t admits null and nothing else: its type is
+// null alone, or it has no type and its enum or its const is null alone.
+func admitsOnlyNull(t *schemas.Type) bool {
+	if len(t.Type) > 0 {
+		return len(t.Type) == 1 && t.Type[0] == schemas.TypeNameNull
+	}
+
+	return (len(t.Enum) == 1 && t.Enum[0] == nil) || (t.ConstIsSet && t.Const == nil)
 }
 
 func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {

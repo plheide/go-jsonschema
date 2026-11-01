@@ -190,11 +190,19 @@ func (j *Parent) UnmarshalJSON(value []byte) error {
 		}
 		plain = retry
 	}
+	for i1 := range plain.Codes {
+		if utf8.RuneCountInString(string(plain.Codes[i1])) < 2 {
+			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("%s[%d]", "codes", i1), 2)
+		}
+	}
 	if plain.Kind != "x" {
 		return fmt.Errorf("field %s: must be equal to %s", "kind", "x")
 	}
 	if plain.N != nil && 1 > *plain.N {
 		return fmt.Errorf("field %s: must be >= %v", "n", 1)
+	}
+	if plain.S != nil && utf8.RuneCountInString(string(*plain.S)) < 2 {
+		return fmt.Errorf("field %s length: must be >= %d", "s", 2)
 	}
 	for i1 := range plain.Tags {
 		if utf8.RuneCountInString(string(plain.Tags[i1])) < 1 {
@@ -249,11 +257,19 @@ func (j *Parent) UnmarshalYAML(value *yaml.Node) error {
 	if err := unmarshalIntegral_Parent_yaml(value, &plain, integerPaths_Parent); err != nil {
 		return fmt.Errorf("unmarshal Parent: %w", err)
 	}
+	for i1 := range plain.Codes {
+		if utf8.RuneCountInString(string(plain.Codes[i1])) < 2 {
+			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("%s[%d]", "codes", i1), 2)
+		}
+	}
 	if plain.Kind != "x" {
 		return fmt.Errorf("field %s: must be equal to %s", "kind", "x")
 	}
 	if plain.N != nil && 1 > *plain.N {
 		return fmt.Errorf("field %s: must be >= %v", "n", 1)
+	}
+	if plain.S != nil && utf8.RuneCountInString(string(*plain.S)) < 2 {
+		return fmt.Errorf("field %s length: must be >= %d", "s", 2)
 	}
 	for i1 := range plain.Tags {
 		if utf8.RuneCountInString(string(plain.Tags[i1])) < 1 {

@@ -147,6 +147,82 @@ func TestRootSchemaAcceptsBoolean(t *testing.T) {
 	}
 }
 
+// TestAnyOfKeepsUnlikeValues covers an anyOf whose parent and branch hold JSON
+// values of different kinds in one place, an object and a string, in an
+// extension and in a default. The merge keeps the parent's.
+func TestAnyOfKeepsUnlikeValues(t *testing.T) {
+	t.Parallel()
+
+	object := map[string]any{"a": 1.0}
+	parent := &schemas.Type{
+		Type:       schemas.TypeList{schemas.TypeNameObject},
+		Default:    object,
+		Extensions: map[string]any{"x-meta": object},
+		Properties: map[string]*schemas.Type{"p": {Type: schemas.TypeList{schemas.TypeNameString}}},
+	}
+	branch := &schemas.Type{
+		Default:    "text",
+		Extensions: map[string]any{"x-meta": "text"},
+		Properties: map[string]*schemas.Type{"q": {Type: schemas.TypeList{schemas.TypeNameString}}},
+	}
+
+	merged, err := schemas.AnyOf([]*schemas.Type{branch}, parent)
+	if err != nil {
+		t.Fatalf("AnyOf: %v", err)
+	}
+
+	if !reflect.DeepEqual(merged.Default, object) || !reflect.DeepEqual(merged.Extensions["x-meta"], object) {
+		t.Errorf("default = %#v, x-meta = %#v, want the parent's %#v", merged.Default, merged.Extensions["x-meta"], object)
+	}
+}
+
+// TestAnyOfSchemasHoldingThemselves covers an anyOf over schemas that hold
+// themselves, in their items and in a property, as the merge of a recursive
+// allOf can leave them. The merge ends, and writes into neither.
+func TestAnyOfSchemasHoldingThemselves(t *testing.T) {
+	t.Parallel()
+
+	holding := func(required, description string) *schemas.Type {
+		s := &schemas.Type{Required: []string{required}, Description: description}
+		s.Items = s
+		s.Properties = map[string]*schemas.Type{"p": s}
+
+		return s
+	}
+
+	object := func(items *schemas.Type, properties map[string]*schemas.Type) *schemas.Type {
+		return &schemas.Type{Type: schemas.TypeList{schemas.TypeNameObject}, Items: items, Properties: properties}
+	}
+
+	a, b := holding("x", ""), holding("y", "b")
+
+	merged, err := schemas.AnyOf(
+		[]*schemas.Type{
+			object(a, map[string]*schemas.Type{"p": b, "q": a}),
+			object(b, map[string]*schemas.Type{"q": b}),
+		},
+		object(nil, map[string]*schemas.Type{"p": a}),
+	)
+	if err != nil {
+		t.Fatalf("AnyOf: %v", err)
+	}
+
+	for _, s := range []*schemas.Type{a, b} {
+		if s.Items != s || len(s.Properties) != 1 || s.Properties["p"] != s || len(s.Required) != 1 {
+			t.Errorf("merge wrote into %p: items %p, properties %v, required %v", s, s.Items, s.Properties, s.Required)
+		}
+	}
+
+	if a.Description != "" {
+		t.Errorf("merge wrote description %q into a", a.Description)
+	}
+
+	if items := merged.Items; items == a || items.Items != items || items.Description != "b" {
+		t.Errorf("items = %p, holding %p, described as %q; want a copy of a that holds itself, described as b's",
+			items, items.Items, items.Description)
+	}
+}
+
 // TestRootSchemaRejectsNullItems covers `items: null` at the root. A null never
 // reaches a decoder hook, so only the pre-processing Type does can reject it.
 func TestRootSchemaRejectsNullItems(t *testing.T) {

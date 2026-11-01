@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	testAnyOfDeclared "github.com/plheide/go-jsonschema/tests/data/anyOfParent/declaredProperty"
+	testAnyOfNested "github.com/plheide/go-jsonschema/tests/data/anyOfParent/nested"
 	testAnyOfParent "github.com/plheide/go-jsonschema/tests/data/anyOfParent/parent"
 )
 
@@ -35,14 +37,41 @@ func TestAnyOfParent(t *testing.T) {
 		})
 	})
 
-	// Merging the branches writes the first one's maxLength into s, so s's
-	// own minLength is no longer the parent's alone, and is reported, as are
-	// the keywords of the items of codes.
+	// A property that a branch declares as well keeps the parent's keywords
+	// in the merge, so the struct checks them, and reports nothing unchecked.
 	t.Run("shared property", func(t *testing.T) {
 		t.Parallel()
 
+		checkDecode[testAnyOfParent.Parent](t, []decodeCase{
+			{`{"kind": "x", "a": "abc", "both": true, "s": "a"}`, "field s length: must be >= 2"},
+			{`{"kind": "x", "a": "abc", "both": true, "codes": ["a"]}`, "field codes[0] length: must be >= 2"},
+		})
+
 		joined := strings.Join(generateWithWarnerCapture(t, "./data/anyOfParent/parent/parent.json"), "\n")
-		assert.Contains(t, joined, "schema fidelity: type Parent does not enforce all it declares: "+
-			"the keywords of properties an anyOf branch declares as well: codes (items.minLength); s (minLength)")
+		assert.NotContains(t, joined, "an anyOf branch declares as well")
+	})
+
+	// What one branch requires in a property that the parent declares binds
+	// only where that branch matches.
+	t.Run("nested", func(t *testing.T) {
+		t.Parallel()
+
+		checkDecode[testAnyOfNested.Nested](t, []decodeCase{
+			{`{"kind": "x", "b": "y", "meta": {}}`, ""},
+			{`{"kind": "x", "a": "y", "meta": {"m": "z"}}`, ""},
+			{`{"kind": "x", "b": "y", "s": "a"}`, "field s length: must be >= 2"},
+		})
+	})
+
+	// A property that the object declares through a definition, and that
+	// the branches narrow, has the definition's type and its enum.
+	t.Run("declared property", func(t *testing.T) {
+		t.Parallel()
+
+		checkDecode[testAnyOfDeclared.DeclaredProperty](t, []decodeCase{
+			{`{"thing": {"type": "a"}}`, ""},
+			{`{"thing": {"type": "c"}}`, ""},
+			{`{"thing": {"type": "d"}}`, "invalid value"},
+		})
 	})
 }
