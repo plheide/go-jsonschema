@@ -48,7 +48,8 @@ Not offered upstream yet:
   * reading counts written `2.0` and checking zero caps, merging an `allOf` inside an `allOf`, checking an integer's
     fractional `multipleOf`, two-type unions at the root and in definitions, boolean root schemas, and an `anyOf`
     merge that changes none of the schemas it reads;
-  * checking `required` names that no property declares;
+  * checking `required` names that no property declares, and code that compiles for a default of a named pointer
+    type;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

@@ -17,9 +17,9 @@ import (
 
 // TestDefaultLiterals decodes a document without keys into a type whose
 // defaults are written as literals of their fields' Go types: a named map, a
-// struct found field by field through JSON names, with pointer, nested struct
-// and list fields, and a list of structs. The defaults no value of the
-// field's type can hold were left out, so those fields stay at zero.
+// struct found field by field through JSON names, with pointer, named pointer,
+// nested struct and list fields, and a list of structs. The defaults no value
+// of the field's type can hold were left out, so those fields stay at zero.
 func TestDefaultLiterals(t *testing.T) {
 	t.Parallel()
 
@@ -50,6 +50,11 @@ func TestDefaultLiterals(t *testing.T) {
 			assert.Nil(t, v.Servers[0].Port)
 			require.NotNil(t, v.Servers[1].Port)
 			assert.Equal(t, 1, *v.Servers[1].Port)
+
+			// LineLength is `type LineLength *int`.
+			require.NotNil(t, v.Formatter.LineLength)
+			assert.Equal(t, 80, *v.Formatter.LineLength)
+			assert.Nil(t, v.UnlimitedFormatter.LineLength)
 
 			// The largest float64 below 2^63 fits an int; 2^63 itself does not.
 			assert.Equal(t, 9223372036854774784, v.Big)
