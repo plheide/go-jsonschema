@@ -12,8 +12,8 @@ import "strings"
 import "time"
 
 // Defaults written as literals of their fields' Go types: struct fields found by
-// their JSON names, nested pointers, maps and lists. A default no value of its
-// field's type can hold is left out with a warning.
+// their JSON names, nested pointers, named pointers, maps and lists. A default no
+// value of its field's type can hold is left out with a warning.
 type DefaultLiterals struct {
 	// Big corresponds to the JSON schema field "big".
 	Big int `json:"big,omitempty,omitzero" yaml:"big,omitempty" mapstructure:"big,omitempty"`
@@ -26,6 +26,9 @@ type DefaultLiterals struct {
 
 	// Enabled corresponds to the JSON schema field "enabled".
 	Enabled bool `json:"enabled,omitempty,omitzero" yaml:"enabled,omitempty" mapstructure:"enabled,omitempty"`
+
+	// Formatter corresponds to the JSON schema field "formatter".
+	Formatter Formatter `json:"formatter,omitempty,omitzero" yaml:"formatter,omitempty" mapstructure:"formatter,omitempty"`
 
 	// Huge corresponds to the JSON schema field "huge".
 	Huge int `json:"huge,omitempty,omitzero" yaml:"huge,omitempty" mapstructure:"huge,omitempty"`
@@ -53,6 +56,9 @@ type DefaultLiterals struct {
 
 	// UnknownKeyServer corresponds to the JSON schema field "unknownKeyServer".
 	UnknownKeyServer Server `json:"unknownKeyServer,omitempty,omitzero" yaml:"unknownKeyServer,omitempty" mapstructure:"unknownKeyServer,omitempty"`
+
+	// UnlimitedFormatter corresponds to the JSON schema field "unlimitedFormatter".
+	UnlimitedFormatter Formatter `json:"unlimitedFormatter,omitempty,omitzero" yaml:"unlimitedFormatter,omitempty" mapstructure:"unlimitedFormatter,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -73,6 +79,11 @@ func (j *DefaultLiterals) UnmarshalJSON(value []byte) error {
 	if v, ok := raw["big"]; !ok || v == nil {
 		plain.Big = 9223372036854774784
 	}
+	if v, ok := raw["formatter"]; !ok || v == nil {
+		plain.Formatter = Formatter{
+			LineLength: func() *int { var v int = 80; return &v }(),
+		}
+	}
 	if v, ok := raw["labels"]; !ok || v == nil {
 		plain.Labels = Labels{
 			"team": "core",
@@ -102,6 +113,11 @@ func (j *DefaultLiterals) UnmarshalJSON(value []byte) error {
 				HostName: "b",
 				Port:     func() *int { var v int = 1; return &v }(),
 			},
+		}
+	}
+	if v, ok := raw["unlimitedFormatter"]; !ok || v == nil {
+		plain.UnlimitedFormatter = Formatter{
+			LineLength: nil,
 		}
 	}
 	*j = DefaultLiterals(plain)
@@ -122,6 +138,11 @@ func (j *DefaultLiterals) UnmarshalYAML(value *yaml.Node) error {
 	if v, ok := raw["big"]; !ok || v == nil {
 		plain.Big = 9223372036854774784
 	}
+	if v, ok := raw["formatter"]; !ok || v == nil {
+		plain.Formatter = Formatter{
+			LineLength: func() *int { var v int = 80; return &v }(),
+		}
+	}
 	if v, ok := raw["labels"]; !ok || v == nil {
 		plain.Labels = Labels{
 			"team": "core",
@@ -153,11 +174,49 @@ func (j *DefaultLiterals) UnmarshalYAML(value *yaml.Node) error {
 			},
 		}
 	}
+	if v, ok := raw["unlimitedFormatter"]; !ok || v == nil {
+		plain.UnlimitedFormatter = Formatter{
+			LineLength: nil,
+		}
+	}
 	*j = DefaultLiterals(plain)
 	return nil
 }
 
+type Formatter struct {
+	// LineLength corresponds to the JSON schema field "line-length".
+	LineLength LineLength `json:"line-length,omitempty,omitzero" yaml:"line-length,omitempty" mapstructure:"line-length,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Formatter) UnmarshalJSON(value []byte) error {
+	type Plain Formatter
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		var retry Plain
+		if err = unmarshalIntegral_Server(value, &retry, err, integerPaths_Formatter); err != nil {
+			return fmt.Errorf("unmarshal Formatter: %w", err)
+		}
+		plain = retry
+	}
+	*j = Formatter(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Formatter) UnmarshalYAML(value *yaml.Node) error {
+	type Plain Formatter
+	var plain Plain
+	if err := unmarshalIntegral_Server_yaml(value, &plain, integerPaths_Formatter); err != nil {
+		return fmt.Errorf("unmarshal Formatter: %w", err)
+	}
+	*j = Formatter(plain)
+	return nil
+}
+
 type Labels map[string]string
+
+type LineLength *int
 
 type Server struct {
 	// Aliases corresponds to the JSON schema field "aliases".
@@ -225,6 +284,10 @@ var integerPaths_DefaultLiterals = &unmarshalIntegral_Server_path{fields: map[st
 	"big":   {kind: "int"},
 	"count": {kind: "int"},
 	"huge":  {kind: "int"},
+}}
+
+var integerPaths_Formatter = &unmarshalIntegral_Server_path{fields: map[string]*unmarshalIntegral_Server_path{
+	"line-length": {kind: "int"},
 }}
 
 var integerPaths_Server = &unmarshalIntegral_Server_path{fields: map[string]*unmarshalIntegral_Server_path{

@@ -44,6 +44,13 @@ func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger
 		}
 	}
 
+	g.warnDropped(scope, trigger, dropped)
+}
+
+// warnDropped warns that the type scope names falls back to interface{} due to
+// trigger, and so checks none of dropped. It says nothing when nothing is
+// dropped.
+func (g *schemaGenerator) warnDropped(scope nameScope, trigger string, dropped []string) {
 	if len(dropped) == 0 {
 		return
 	}
@@ -58,6 +65,70 @@ func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger
 	}
 
 	g.warner(msg)
+}
+
+// warnUntyped warns, once for t, when t falls back to interface{} for having
+// no type, though it declares keywords that a value of some type is checked
+// against, such as minLength, items or required. Its const and enum are
+// checked as they are, and a format is only checked under FormatValidation.
+func (g *schemaGenerator) warnUntyped(t *schemas.Type, scope nameScope) {
+	if g.config.OnlyModels {
+		return
+	}
+
+	if _, reported := g.reportedUntyped[t]; reported {
+		return
+	}
+
+	g.reportedUntyped[t] = struct{}{}
+
+	g.warnDropped(scope, "no type", untypedKeywords(t, g.config.FormatValidation))
+}
+
+// warnUntypedRoot warns when the root gets no type at all, having none and
+// nothing else to generate from, though it declares keywords that then go
+// unchecked.
+func (g *schemaGenerator) warnUntypedRoot(root *schemas.Type) {
+	if g.config.OnlyModels {
+		return
+	}
+
+	dropped := untypedKeywords(root, g.config.FormatValidation)
+
+	if conditional, has := findConditional(root, ownConditional); has {
+		dropped = append(dropped, conditional)
+	}
+
+	dropped = append(dropped, unenforcedKeywords(root)...)
+
+	if len(dropped) > 0 {
+		g.warner(fmt.Sprintf("schema fidelity: root of %s does not enforce all it declares: with no type, %s not checked",
+			g.schemaFileName, strings.Join(dropped, ", ")))
+	}
+}
+
+// untypedKeywords lists the keywords of t that only a value of some type is
+// checked against, in the terms that warnFallback names them by.
+func untypedKeywords(t *schemas.Type, formats FormatValidationConfig) []string {
+	var keywords []string
+
+	add := func(present bool, keyword string) {
+		if present {
+			keywords = append(keywords, keyword)
+		}
+	}
+
+	add(len(t.Required) > 0, "required")
+	add(t.Format != "" && formats.shouldValidate(t.Format), "format: "+t.Format)
+	add(t.Pattern != "", "pattern")
+	add(t.MinLength != 0 || t.HasMaxLength(), "string length constraint")
+	add(t.Minimum != nil || t.Maximum != nil || t.ExclusiveMinimum != nil || t.ExclusiveMaximum != nil ||
+		t.MultipleOf != nil, "numeric constraint")
+	add(t.MinItems != 0 || t.HasMaxItems() || t.UniqueItems, "array constraint")
+	add(constrains(t.Items) || len(t.TupleItems) > 0, "items")
+	add(len(t.TupleItems) > 0 && constrains(t.AdditionalItems), "additionalItems")
+
+	return keywords
 }
 
 // warnNotEnforced emits a structured warning when a type keeps its shape but
@@ -606,11 +677,16 @@ func compositionFallbackTrigger(t *schemas.Type) string {
 	return ""
 }
 
-// warnCompositionFallback emits a fidelity warning when a composition degrades
-// to interface{}. No-op for non-compositions, and — via warnFallback — for
-// schemas that declare nothing worth losing.
-func (g *schemaGenerator) warnCompositionFallback(t *schemas.Type, scope nameScope) {
+// warnUntypedFallback emits a fidelity warning when a schema without a type
+// degrades to interface{}: a composition, through warnFallback, or any other
+// schema, through warnUntyped. Neither says anything for a schema that declares
+// nothing worth losing.
+func (g *schemaGenerator) warnUntypedFallback(t *schemas.Type, scope nameScope) {
 	if trigger := compositionFallbackTrigger(t); trigger != "" {
 		g.warnFallback(t, scope, trigger)
+
+		return
 	}
+
+	g.warnUntyped(t, scope)
 }

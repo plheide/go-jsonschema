@@ -129,6 +129,12 @@ func namedLiteral(value any, nt *codegen.NamedType, numbers bool) (string, bool)
 		return primitiveLiteral(value, dt.Type)
 	case *codegen.PrimitiveType:
 		return primitiveLiteral(value, dt.Type)
+	case codegen.PointerType:
+		// A named pointer, such as `type LineLength *int` for a nullable
+		// definition, holds the address of an unnamed one's value.
+		return pointerLiteral(value, dt.Type, numbers)
+	case *codegen.PointerType:
+		return pointerLiteral(value, dt.Type, numbers)
 	}
 
 	// No declaration from another package to look into: a type such as

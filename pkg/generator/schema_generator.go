@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -105,6 +106,8 @@ func (g *schemaGenerator) generateRootType() error {
 		if isFalseSchema(root) {
 			g.warner(fmt.Sprintf("schema fidelity: root of %s does not enforce all it declares: %s",
 				g.schemaFileName, ownConditionalReason(root)))
+		} else {
+			g.warnUntypedRoot(root)
 		}
 
 		return nil
@@ -264,6 +267,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		if len(def.Type) == 0 {
 			// Minor hack to make definitions default to being objects.
 			def.Type = schemas.TypeList{schemas.TypeNameObject}
+			g.objectByDefault[def] = struct{}{}
 		}
 	}
 
@@ -647,10 +651,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		g.generateEmptyWhenNilMarshaler(&decl, g.emptyWhenNilFields(tt))
 
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
-			validators = append(validators, g.anyOfParentValidators(t, tt, decl.Name)...)
-			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
-			validators = append(validators, presenceCountValidators(t, decl.Name)...)
-			g.generateUnmarshaler(&decl, validators)
+			g.generateUnmarshaler(&decl, g.anyOfStructValidators(t, tt, decl.Name))
 
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
@@ -854,7 +855,7 @@ func (g *schemaGenerator) nullTypeValidators(
 	}
 
 	if container {
-		if !schemaExcludesNull(t) {
+		if !g.declaresNoNull(t) {
 			return nil
 		}
 
@@ -907,7 +908,7 @@ func (g *schemaGenerator) nonNullValueValidatorFor(t *schemas.Type, declName str
 		return nil
 	}
 
-	excludesNull := schemaExcludesNull(t)
+	excludesNull := g.declaresNoNull(t)
 	forbidden := g.nullForbiddenLevels(t)
 
 	if !excludesNull && len(forbidden) == 0 {
@@ -979,21 +980,74 @@ const maxNullCheckRefHops = 16
 // `{"type": "string"}` looks like a schema that constrains nothing and no check
 // is emitted, while the same type written inline gets one.
 //
-// Resolved by walking this schema's definitions rather than through
-// resolveRef, which generates the referenced type as a side effect. A
-// reference this cannot follow — into another document, or to a definition
-// that is not there — keeps the previous answer rather than forcing one.
+// Resolved by walking the definitions rather than through resolveRef, which
+// generates the referenced type as a side effect. A reference into another
+// document is followed there, and a reference that document holds is read in
+// it. A reference this cannot follow, such as one to a definition that is not
+// there, keeps the previous answer rather than forcing one.
 func (g *schemaGenerator) schemaExcludesNullResolved(t *schemas.Type) bool {
+	doc, docFile := g.schema, g.schemaFileName
+
 	for hops := 0; t != nil && t.Ref != "" && hops < maxNullCheckRefHops; hops++ {
-		resolved := g.localRefTarget(t)
-		if resolved == nil {
+		var ok bool
+
+		if t, doc, docFile, ok = g.refTargetIn(t, doc, docFile); !ok {
 			return false
 		}
+	}
 
-		t = resolved
+	return g.declaresNoNull(t)
+}
+
+// declaresNoNull is schemaExcludesNull for a schema whose type may be the
+// object type that a root of a file a `$ref` names whole was given for want of
+// one, which does not count.
+func (g *schemaGenerator) declaresNoNull(t *schemas.Type) bool {
+	if _, guessed := g.objectByDefault[t]; guessed {
+		return false
 	}
 
 	return schemaExcludesNull(t)
+}
+
+// refTargetIn returns the schema that t's `$ref`, read in the document doc of
+// file docFile, points at, with the document and the file it is in, or false
+// when it cannot be followed. It loads another document the way generating
+// the `$ref` does, and generates nothing.
+func (g *schemaGenerator) refTargetIn(
+	t *schemas.Type,
+	doc *schemas.Schema,
+	docFile string,
+) (*schemas.Type, *schemas.Schema, string, bool) {
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, nil, "", false
+	}
+
+	if fileName != "" {
+		loaded, err := g.loader.Load(fileName, docFile)
+		if err != nil {
+			return nil, nil, "", false
+		}
+
+		qualified, err := schemas.QualifiedFileName(fileName, docFile, g.config.ResolveExtensions)
+		if err != nil {
+			return nil, nil, "", false
+		}
+
+		doc, docFile = loaded, qualified
+	}
+
+	if defName == "" {
+		return (*schemas.Type)(doc.ObjectAsType), doc, docFile, true
+	}
+
+	def, err := resolveRefPath(doc.Definitions, defName)
+	if err != nil {
+		return nil, nil, "", false
+	}
+
+	return def, doc, docFile, true
 }
 
 // localRefTarget returns the schema a same-document `$ref` points at, or nil
@@ -1186,6 +1240,8 @@ func (g *schemaGenerator) structFieldValidators(
 				})
 			}
 		}
+
+		validators = append(validators, g.primitiveCompositionValidators(f, v.Type, isNillable)...)
 
 	case *codegen.ArrayType:
 		// Only the field's own bounds: those of a nested array are its own,
@@ -1485,7 +1541,10 @@ func (g *schemaGenerator) defaultValidatorFor(
 }
 
 func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators []validator) {
-	if g.config.OnlyModels {
+	// Go lets a pointer or an interface type have no methods, so a type
+	// declared as one, such as a nullable definition's `type K *string`,
+	// decodes as what it is declared as.
+	if g.config.OnlyModels || !hasMethods(decl) {
 		return
 	}
 
@@ -1688,8 +1747,9 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	// still fails rather than becoming an unchecked interface{}.
 	//
 	// An anyOf that is a presence count has nothing to merge: the struct for
-	// t checks it.
-	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) {
+	// t checks it. Nor has a primitive composition, which keeps its type and is
+	// checked as a value of it.
+	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) && !isPrimitiveComposition(t) {
 		dt, err := g.generateAnyOfType(t, scope)
 		if err != nil {
 			if slices.Contains(t.Type, schemas.TypeNameObject) {
@@ -1767,7 +1827,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		// A composition with no top-level `type` lands here — determineTypeName
 		// reports "null" for it. This is the additionalProperties-positioned
 		// fallback; warn before degrading so the loss is visible.
-		g.warnCompositionFallback(t, scope)
+		g.warnUntypedFallback(t, scope)
 
 		return emptyInterfaceTypeVal, nil
 
@@ -1821,7 +1881,7 @@ func (g *schemaGenerator) primitiveType(t *schemas.Type, name string, isNillable
 	}
 
 	if dcg, ok := cg.(codegen.DurationType); ok {
-		g.output.file.Package.AddImport("time", "")
+		g.output.file.Package.AddImport(importPathPkgTypes, "")
 
 		return dcg, nil
 	}
@@ -1967,6 +2027,8 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		}
 	}
 
+	appendUndeclaredRequired(&structType, t)
+
 	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) {
 		return g.generateAnyOfType(t, scope)
 	}
@@ -2090,7 +2152,19 @@ func (g *schemaGenerator) addStructField(
 		uniqueNames[fieldName] = 1
 	}
 
-	comment := prop.Description
+	// A struct merged from an anyOf can keep a property's schema undocumented
+	// where a branch documents it.
+	comment, deprecated := prop.Description, prop.Deprecated
+	if a, ok := t.PropertyAnnotation(name); ok {
+		if comment == "" {
+			comment = a.Description
+		}
+
+		if !deprecated.Marked {
+			deprecated = a.Deprecated
+		}
+	}
+
 	if comment == "" {
 		comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.", fieldName, name)
 	}
@@ -2106,7 +2180,7 @@ func (g *schemaGenerator) addStructField(
 
 	structField := codegen.StructField{
 		Name:         fieldName,
-		Comment:      withDeprecation(comment, prop),
+		Comment:      withDeprecationOf(comment, deprecated),
 		JSONName:     name,
 		SchemaType:   prop,
 		Tags:         g.generateStructFieldTags(name, extraTags, isRequired),
@@ -2258,6 +2332,17 @@ func (g *schemaGenerator) appendStructRequiredJSONFields(
 	}
 }
 
+// appendUndeclaredRequired adds to the required fields of structType each name
+// in t's required that no property declares. No field holds it, but an
+// instance must carry it all the same, so its presence is checked as well.
+func appendUndeclaredRequired(structType *codegen.StructType, t *schemas.Type) {
+	for _, name := range t.Required {
+		if _, declared := t.Properties[name]; !declared && !slices.Contains(structType.RequiredJSONFields, name) {
+			structType.RequiredJSONFields = append(structType.RequiredJSONFields, name)
+		}
+	}
+}
+
 func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if len(t.AnyOf) == 0 {
 		return nil, errEmptyInAnyOf
@@ -2303,6 +2388,8 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 
 	variantNames := make([]string, len(rAnyOf))
 
+	var admitAll []string
+
 	for i, typ := range rAnyOf {
 		ic, cleanupCycle, cycleErr := g.detectCycle(typ)
 		if cycleErr != nil {
@@ -2342,6 +2429,10 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		} else if decl, ok := g.output.declsBySchema[variantSchema]; ok {
 			variantNames[i] = decl.Name
 		}
+
+		if admitsEveryValue(variant) {
+			admitAll = append(admitAll, strconv.Itoa(i))
+		}
 	}
 
 	if isCycle {
@@ -2355,7 +2446,19 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 
 	anyOfType.AnyOf = nil
 	g.output.anyOfVariants[anyOfType] = variantNames
-	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t}
+	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t, admitsAll: len(admitAll) > 0}
+
+	// A branch generated as interface{}, such as a $ref to a oneOf that is not
+	// compiled, has no type to decode into, and admits every value, so the
+	// anyOf does too.
+	if len(admitAll) > 0 && !g.config.OnlyModels {
+		which := "branch " + admitAll[0] + " is interface{}, which admits"
+		if len(admitAll) > 1 {
+			which = "branches " + strings.Join(admitAll, ", ") + " are interface{}, which admit"
+		}
+
+		g.warnNotEnforced(scope, "anyOf "+which+" every value, so the anyOf is not checked")
+	}
 
 	// The merge carries the conditionals and the unchecked keywords of t,
 	// reported with t, and of its branches, reported with each branch's type
@@ -2376,6 +2479,24 @@ func hasMethods(decl *codegen.TypeDecl) bool {
 	}
 
 	return true
+}
+
+// admitsEveryValue reports whether t, a generated type, holds any value:
+// interface{}, or a type declared as interface{}.
+func admitsEveryValue(t codegen.Type) bool {
+	switch t.(type) {
+	case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
+		return true
+	}
+
+	if decl := namedDecl(t); decl != nil {
+		switch decl.Type.(type) {
+		case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
+			return true
+		}
+	}
+
+	return false
 }
 
 // anyOfBranchKey identifies a copy of an anyOf branch with the types types.
@@ -2708,6 +2829,37 @@ func (g *schemaGenerator) generateInlineComposition(t *schemas.Type, scope nameS
 	return nil, false, nil
 }
 
+// generateInlineCompositionOrWrapper generates t inline as the composition it
+// is, or as the wrapper or holder declared for it, if that decides its type.
+// handled reports whether it does.
+func (g *schemaGenerator) generateInlineCompositionOrWrapper(
+	t *schemas.Type,
+	scope nameScope,
+) (codegen.Type, bool, error) {
+	// A primitive composition keeps its type, and is checked as a value of it.
+	// A branch of an anyOf is generated as before.
+	if isPrimitiveComposition(t) && !t.IsSubSchemaTypeElem() {
+		return nil, false, nil
+	}
+
+	if dt, handled, err := g.generateInlineComposition(t, scope); handled {
+		return dt, true, err
+	}
+
+	// Composition forms that emit a named wrapper or holder must be routed to
+	// generateDeclaredType before generateTypeInline's `len(t.Type) == 0`
+	// bail-out, since they carry no top-level `type` and would otherwise be
+	// emitted as interface{}. Collected in one predicate so this function keeps
+	// a single branch for the whole family.
+	if g.needsDeclaredType(t) {
+		dt, err := g.generateDeclaredType(t, scope)
+
+		return dt, true, err
+	}
+
+	return nil, false, nil
+}
+
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
@@ -2727,21 +2879,12 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		g.warnUncompiledConditional(t, scope, true)
 		g.warnUnenforcedKeywords(t, scope)
 
-		if dt, handled, err := g.generateInlineComposition(t, scope); handled {
+		if dt, handled, err := g.generateInlineCompositionOrWrapper(t, scope); handled {
 			return dt, err
 		}
 
-		// Composition forms that emit a named wrapper or holder must be
-		// routed to generateDeclaredType before the `len(t.Type) == 0`
-		// bail-out below, since they carry no top-level `type` and would
-		// otherwise be emitted as interface{}. Collected in one predicate so
-		// this function keeps a single branch for the whole family.
-		if g.needsDeclaredType(t) {
-			return g.generateDeclaredType(t, scope)
-		}
-
 		if len(t.Type) == 0 {
-			g.warnCompositionFallback(t, scope)
+			g.warnUntypedFallback(t, scope)
 
 			return codegen.EmptyInterfaceType{}, nil
 		}

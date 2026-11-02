@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Required names that no property declares, which an instance must carry all the same: b in the struct itself, y in a struct merged from an allOf, and one and two in the branches of an anyOf.",
+  "type": "object",
+  "properties": {
+    "a": { "type": "string" },
+    "merged": {
+      "type": "object",
+      "allOf": [{ "properties": { "x": { "type": "string" } } }, { "required": ["y"] }]
+    },
+    "either": {
+      "type": "object",
+      "properties": { "kind": { "type": "string" } },
+      "anyOf": [
+        { "properties": { "kind": { "const": "one" } }, "required": ["kind", "one"] },
+        { "properties": { "kind": { "const": "two" } }, "required": ["kind", "two"] }
+      ]
+    }
+  },
+  "required": ["a", "b"]
+}

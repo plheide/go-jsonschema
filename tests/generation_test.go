@@ -68,6 +68,18 @@ func TestValidateNullTypes(t *testing.T) {
 	testExamples(t, cfg, "./data/validateNullTypes")
 }
 
+// TestValidateNullTypesCrossFile covers --validate-null-types on properties
+// whose $ref points into another file, whose schemas the main file's golden
+// also holds.
+func TestValidateNullTypesCrossFile(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.ValidateNullTypes = true
+
+	testExampleFile(t, cfg, "./data/nullTypesCrossFile/crossFile.json")
+}
+
 func TestOmitEmpty(t *testing.T) {
 	t.Parallel()
 

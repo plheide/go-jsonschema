@@ -54,6 +54,21 @@ func (j *Larger) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["u64"]; raw != nil && !ok {
 		return fmt.Errorf("field u64 in Larger: required")
 	}
+	if _, ok := raw["i8"]; raw != nil && !ok {
+		return fmt.Errorf("field i8 in Larger: required")
+	}
+	if _, ok := raw["i16"]; raw != nil && !ok {
+		return fmt.Errorf("field i16 in Larger: required")
+	}
+	if _, ok := raw["i32"]; raw != nil && !ok {
+		return fmt.Errorf("field i32 in Larger: required")
+	}
+	if _, ok := raw["i64"]; raw != nil && !ok {
+		return fmt.Errorf("field i64 in Larger: required")
+	}
+	if _, ok := raw["u8"]; raw != nil && !ok {
+		return fmt.Errorf("field u8 in Larger: required")
+	}
 	type Plain Larger
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -126,6 +141,21 @@ func (j *Larger) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["u64"]; raw != nil && !ok {
 		return fmt.Errorf("field u64 in Larger: required")
+	}
+	if _, ok := raw["i8"]; raw != nil && !ok {
+		return fmt.Errorf("field i8 in Larger: required")
+	}
+	if _, ok := raw["i16"]; raw != nil && !ok {
+		return fmt.Errorf("field i16 in Larger: required")
+	}
+	if _, ok := raw["i32"]; raw != nil && !ok {
+		return fmt.Errorf("field i32 in Larger: required")
+	}
+	if _, ok := raw["i64"]; raw != nil && !ok {
+		return fmt.Errorf("field i64 in Larger: required")
+	}
+	if _, ok := raw["u8"]; raw != nil && !ok {
+		return fmt.Errorf("field u8 in Larger: required")
 	}
 	type Plain Larger
 	var plain Plain

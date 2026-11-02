@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Schemas with no type, which become interface{}, with keywords that only a value of some type is checked against. Each is reported once. A const is checked all the same, and a format only under format validation.",
+  "type": "object",
+  "properties": {
+    "word": { "minLength": 1, "pattern": "^a", "format": "email" },
+    "count": { "minimum": 0, "multipleOf": 2 },
+    "pair": { "items": [{ "type": "string" }], "additionalItems": false, "minItems": 1 },
+    "fixed": { "const": "a" },
+    "free": { "description": "Nothing to check." },
+    "short": { "$ref": "#/definitions/short" },
+    "pick": {
+      "anyOf": [
+        { "type": "object", "properties": { "name": { "maxLength": 3, "required": ["first"] } } },
+        { "type": "object", "properties": { "id": { "type": "integer" } } }
+      ]
+    }
+  },
+  "definitions": {
+    "short": { "maxLength": 3 }
+  }
+}

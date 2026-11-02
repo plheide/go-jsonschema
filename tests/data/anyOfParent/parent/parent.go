@@ -59,6 +59,9 @@ func (j *Parent_0) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["a"]; raw != nil && !ok {
 		return fmt.Errorf("field a in Parent_0: required")
 	}
+	if _, ok := raw["both"]; raw != nil && !ok {
+		return fmt.Errorf("field both in Parent_0: required")
+	}
 	type Plain Parent_0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -79,6 +82,9 @@ func (j *Parent_0) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["a"]; raw != nil && !ok {
 		return fmt.Errorf("field a in Parent_0: required")
+	}
+	if _, ok := raw["both"]; raw != nil && !ok {
+		return fmt.Errorf("field both in Parent_0: required")
 	}
 	type Plain Parent_0
 	var plain Plain
@@ -106,6 +112,9 @@ func (j *Parent_1) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["b"]; raw != nil && !ok {
 		return fmt.Errorf("field b in Parent_1: required")
 	}
+	if _, ok := raw["both"]; raw != nil && !ok {
+		return fmt.Errorf("field both in Parent_1: required")
+	}
 	type Plain Parent_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -123,6 +132,9 @@ func (j *Parent_1) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["b"]; raw != nil && !ok {
 		return fmt.Errorf("field b in Parent_1: required")
+	}
+	if _, ok := raw["both"]; raw != nil && !ok {
+		return fmt.Errorf("field both in Parent_1: required")
 	}
 	type Plain Parent_1
 	var plain Plain

@@ -388,9 +388,9 @@ func (t NamedType) Generate(out *Emitter) error {
 	return nil
 }
 
-// DurationType exists to provide special handling when validating durations.
-// Having a dedicated type for durations allows the validator to
-// differentiate between durations and other types.
+// DurationType is the type of a string of format `duration`, types.Duration,
+// which holds an ISO 8601 duration. Having a dedicated type for durations
+// allows the validator to differentiate between durations and other types.
 type DurationType struct{}
 
 func (t DurationType) GetName() string {
@@ -402,7 +402,7 @@ func (t DurationType) IsNillable() bool {
 }
 
 func (t DurationType) Generate(out *Emitter) error {
-	out.Printf("time.Duration")
+	out.Printf("types.Duration")
 
 	return nil
 }

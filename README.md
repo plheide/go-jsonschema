@@ -136,6 +136,7 @@ types:
 
 * `SerializableDate`
 * `SerializableTime`
+* `Duration`, for `format: duration`
 
 These types are needed because there is no native type provided by Go which
 properly handles them.
@@ -185,22 +186,25 @@ upstream's:
 | --- | --- |
 | `format` | `--validate-formats`, described [below](#opt-in-format-validation) |
 | `additionalProperties: false` | `--strict-additional-properties=respect-schema`, described [below](#opt-in-additionalproperties-false-enforcement) |
-| `null` where `type` excludes it | `--validate-null-types`. It checks properties, the elements of arrays, and declared types that are not objects. In YAML a document that is only `null` is not checked, since yaml.v3 does not pass one to `UnmarshalYAML`. |
+| `null` where `type` excludes it | `--validate-null-types`. It checks properties, the elements of arrays, and declared types that are not objects, also where a `$ref` points into another file. In YAML a document that is only `null` is not checked, since yaml.v3 does not pass one to `UnmarshalYAML`. |
 
 ### Fidelity warnings
 
 When generated code doesn't check something a schema declares, the generator says so on stderr, once for each type:
 
 * `schema fidelity: type X falls back to interface{} due to <reason>; declared but not enforced: <keywords>` means
-  the type became `interface{}`.
+  the type became `interface{}`. The reason `no type` means the schema has no `type` and is neither a composition nor
+  an object with properties, so its keywords, such as `pattern`, `minimum` or `required`, are checked on no value.
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
-  `oneOf`, an `if`/`then`/`else`, a `not` or a `false` schema. A reason such as `minProperties, propertyNames not
-  checked` names keywords that no generated code checks: `contains` (with `minContains` and `maxContains`),
-  `dependentRequired` and `dependentSchemas` (draft 07's `dependencies` counts as these), `maxProperties`,
-  `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and `unevaluatedProperties`. A keyword
-  whose subschemas admit every value, such as `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
+  `oneOf`, an `anyOf` with a branch that is `interface{}`, an `if`/`then`/`else`, a `not` or a `false` schema. A
+  reason such as `minProperties, propertyNames not checked` names keywords that no generated code checks: `contains`
+  (with `minContains` and `maxContains`), `dependentRequired` and `dependentSchemas` (draft 07's `dependencies`
+  counts as these), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and
+  `unevaluatedProperties`. A keyword whose subschemas admit every value, such as `"patternProperties": {"^x-": {}}`,
+  checks nothing and is not reported.
 * `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
-  value meets. Nothing is generated for it.
+  value meets, or has no `type` and keywords that are checked only on a value of some type. Nothing is generated
+  for it.
 
 ### Options for names, types and tags
 
@@ -224,6 +228,8 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 | Any other `oneOf` of objects | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches |
 | `oneOf` or `anyOf` of a `$ref`, an object or an array, and `{"type": "null"}` | `interface{}` for a `oneOf`, a copy of the schema for an `anyOf` | A pointer to the schema's own type |
 | `anyOf` of an object with properties and a primitive or an array | The first branch's type: a primitive such as `*string`, which rejects every object, or a struct, which rejects the primitive | `interface{}`, with a fidelity warning |
+| An `anyOf` on a `string`, a number or a `boolean` whose branches only check its values, such as `{"type": "string", "anyOf": [{"enum": ["a", "b"]}, {"pattern": "^x-"}]}` | `interface{}`, and a type for each `enum` branch, which no field uses | The type, such as `*string` |
+| `format: duration` | `time.Duration`, which `encoding/json` reads only from a number of nanoseconds, so a document that gives an ISO 8601 duration is rejected | `types.Duration`, read and written as an ISO 8601 duration such as `PT1H30M`. JSON can also give a number of nanoseconds, and YAML a duration in Go's syntax, such as `1h30m`, as for a `time.Duration` |
 | An enum listing `null` beside values of one type, such as `"enum": ["a", "b", null]` | A struct holding an `interface{}` | A pointer to an enum of that type |
 | An enum with `x-enum-varnames: ["Low", "High"]` | Constants named after the type and the value, such as `FooLevelLo` | `Low` and `High` |
 | `oneOf`, `anyOf`, `allOf` or `enum` at the root | No root type | The root type |
@@ -252,6 +258,13 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 * A `const` on a schema that declares no type, whose value is an `interface{}`.
 * A struct merged from an `anyOf` checks the keywords of the object the `anyOf` is declared on: the properties it
   requires, or every branch requires, and those of its own properties. Upstream checked only the branches.
+* A name in `required` that no property declares is checked: the object must have the key. Upstream checked only the
+  names of the properties a schema declares.
+* An `anyOf` or a `oneOf` on a `string`, a number or a `boolean` whose branches only check its values, with `const`,
+  `enum`, `pattern`, a length, a bound or `multipleOf`, is checked: a value must match at least one branch of the
+  `anyOf`, and exactly one branch of the `oneOf`. Upstream checked no branch of either. A branch with a `format` that
+  only a field's Go type checks, such as `date-time`, or with a `pattern` that Go's regexp cannot compile, leaves the
+  composition unchecked, with a warning.
 
 ### Other differences
 
@@ -293,6 +306,9 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   generate. A branch that is a `$ref` to a definition without a `type`, declared as `interface{}`, is decoded as the
   type the `anyOf` declares, where upstream's code for it did not compile. A branch that admits only `null`, such as
   `{"enum": [null]}`, is the `anyOf`'s `null`, as `{"type": "null"}` is.
+* A definition declared as a pointer type, such as `type Key *string` for `"type": ["string", "null"]`, has no
+  `UnmarshalJSON` where an `anyOf` refers to it, since Go allows no methods on a pointer type. Upstream's code for it
+  did not compile.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
   Upstream generated a tag that decodes nothing.
 * A `null` where a schema belongs, such as an entry of `allOf`, a property or a definition, stops generation with an
@@ -332,7 +348,7 @@ schema without a `type`: 28 of the 1,482 schemas in SchemaStore's catalog do. Th
 classes:
 
 * **Keywords on a schema without a `type`.** Such a schema becomes `interface{}`, or no type at all, and nothing
-  checks its keywords. This class holds most of the silent missing checks.
+  checks its keywords. The generator warns about them.
 * **Objects without `type: object`.** A schema with `properties` but no `type` becomes a struct, so it rejects the
   non-objects that the suite lets through.
 * **YAML.** yaml.v3 reads some documents differently from JSON. It decodes a number or a boolean into a string as its

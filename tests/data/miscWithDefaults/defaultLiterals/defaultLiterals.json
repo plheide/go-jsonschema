@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "Defaults written as literals of their fields' Go types: struct fields found by their JSON names, nested pointers, maps and lists. A default no value of its field's type can hold is left out with a warning.",
+  "description": "Defaults written as literals of their fields' Go types: struct fields found by their JSON names, nested pointers, named pointers, maps and lists. A default no value of its field's type can hold is left out with a warning.",
   "type": "object",
   "properties": {
     "enabled": { "type": "boolean", "default": "true" },
@@ -28,10 +28,14 @@
       "default": [{ "host_name": "a" }, { "host_name": "b", "port": 1 }]
     },
     "mismatchedServer": { "$ref": "#/definitions/Server", "default": { "host_name": "x", "port": "80" } },
-    "unknownKeyServer": { "$ref": "#/definitions/Server", "default": { "host_name": "x", "colour": "red" } }
+    "unknownKeyServer": { "$ref": "#/definitions/Server", "default": { "host_name": "x", "colour": "red" } },
+    "formatter": { "$ref": "#/definitions/Formatter", "default": { "line-length": 80 } },
+    "unlimitedFormatter": { "$ref": "#/definitions/Formatter", "default": { "line-length": null } }
   },
   "definitions": {
     "Labels": { "type": "object", "additionalProperties": { "type": "string" } },
+    "LineLength": { "type": ["integer", "null"] },
+    "Formatter": { "type": "object", "properties": { "line-length": { "$ref": "#/definitions/LineLength" } } },
     "Server": {
       "type": "object",
       "properties": {

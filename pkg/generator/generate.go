@@ -56,6 +56,14 @@ type Generator struct {
 	// reportedKeywords holds the schemas whose unchecked keywords have been
 	// reported, so they are not reported a second time.
 	reportedKeywords map[*schemas.Type]struct{}
+	// reportedUntyped holds the schemas that warnUntyped has reported as
+	// falling back to interface{} for having no type.
+	reportedUntyped map[*schemas.Type]struct{}
+	// objectByDefault holds the roots of files that a `$ref` names whole and
+	// that declare no type, which generateReferencedType gives the type
+	// object. That type is a guess, which the null checks do not go by: such
+	// a root may admit null, as an anyOf with a null branch does.
+	objectByDefault map[*schemas.Type]struct{}
 	// reportedDiscriminators holds the conditional-discriminator declines
 	// reported for a schema, which detection, run from more than one place,
 	// would otherwise repeat.
@@ -128,6 +136,8 @@ func New(config Config) (*Generator, error) {
 		resolvingRefs:          map[*schemas.Type]struct{}{},
 		reportedConditionals:   map[*schemas.Type]struct{}{},
 		reportedKeywords:       map[*schemas.Type]struct{}{},
+		reportedUntyped:        map[*schemas.Type]struct{}{},
+		objectByDefault:        map[*schemas.Type]struct{}{},
 		reportedDiscriminators: map[discriminatorDecline]struct{}{},
 		declaring:              map[*schemas.Type]struct{}{},
 		outputs:                map[string]*output{},

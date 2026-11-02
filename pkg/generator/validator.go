@@ -80,6 +80,7 @@ var (
 	_ validator = new(elementsValidator)
 	_ validator = new(untypedConstValidator)
 	_ validator = new(uniqueItemsValidator)
+	_ validator = new(primitiveCompositionValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
@@ -613,9 +614,9 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter, form
 		tmpEmitter.Printlnf("}")
 
 		if v.isPointer {
-			tmpEmitter.Printlnf(`%s.%s = &%s`, varNamePlainStruct, v.fieldName, defaultValue)
+			tmpEmitter.Printlnf(`%s.%s = &types.Duration{Duration: %s}`, varNamePlainStruct, v.fieldName, defaultValue)
 		} else {
-			tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+			tmpEmitter.Printlnf(`%s.%s = types.Duration{Duration: %s}`, varNamePlainStruct, v.fieldName, defaultValue)
 		}
 
 		return tmpEmitter.String(), nil
@@ -756,6 +757,7 @@ func (v *defaultValidator) desc() *validatorDesc {
 			packages = []packageImport{
 				{qualifiedName: "fmt"},
 				{qualifiedName: "time"},
+				{qualifiedName: importPathPkgTypes},
 			}
 		}
 	}

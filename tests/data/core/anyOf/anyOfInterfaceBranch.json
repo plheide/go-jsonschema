@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "An anyOf of an object and a $ref to a definition generated as interface{}, a oneOf the generator does not compile. That branch admits every value, so the anyOf holds for every value, and nothing decodes into a type the branch does not have.",
+  "type": "object",
+  "properties": { "filter": { "$ref": "#/definitions/filter" } },
+  "definitions": {
+    "filter": {
+      "anyOf": [
+        { "type": "object", "properties": { "header": { "type": "string" } }, "required": ["header"] },
+        { "$ref": "#/definitions/body" }
+      ]
+    },
+    "body": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "body": { "const": "json" }, "query": { "type": "string" } },
+          "required": ["body", "query"]
+        }
+      ]
+    }
+  }
+}

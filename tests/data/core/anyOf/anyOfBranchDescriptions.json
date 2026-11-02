@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "An anyOf whose branches document properties where the schema that the merged struct keeps for them, so that its declared type is reused, does not: a property of the parent's that the merge leaves as it is, a $ref, and a property that two branches declare, of which only the second documents it.",
+  "type": "object",
+  "definitions": { "id": { "type": "string" } },
+  "properties": {
+    "mode": { "type": "string" },
+    "ref": { "$ref": "#/definitions/id" }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "mode": { "description": "How to run.", "deprecated": "Use ref instead." },
+        "shared": { "type": "integer" }
+      }
+    },
+    {
+      "properties": {
+        "ref": { "description": "The id." },
+        "shared": { "type": "integer", "description": "Shared by both branches." }
+      }
+    }
+  ]
+}

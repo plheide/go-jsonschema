@@ -7,10 +7,11 @@ import (
 	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
 
-// The keywords a presence count checks.
+// The composition keywords that a count of matching branches checks: a
+// presence count, and a primitive composition.
 const (
-	presenceOneOf = "oneOf"
-	presenceAnyOf = "anyOf"
+	keywordOneOf = "oneOf"
+	keywordAnyOf = "anyOf"
 )
 
 // presenceCountValidator checks a oneOf or anyOf whose branches list only
@@ -71,7 +72,7 @@ func (v *presenceCountValidator) generate(out *codegen.Emitter, _ string) error 
 
 	// A null decodes to a nil raw map, which the required checks let
 	// through, and so does the count.
-	if v.keyword == presenceOneOf {
+	if v.keyword == keywordOneOf {
 		out.Printlnf("if %s != nil && %s != 1 {", varNameRawMap, counter)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("%s: exactly one of %s must be present, got %%d", %s)`,
@@ -127,11 +128,11 @@ func presenceCountValidators(t *schemas.Type, declName string) []validator {
 	var validators []validator
 
 	if sets, ok := presenceBranches(t, t.OneOf); ok {
-		validators = append(validators, &presenceCountValidator{declName, presenceOneOf, sets})
+		validators = append(validators, &presenceCountValidator{declName, keywordOneOf, sets})
 	}
 
 	if sets, ok := presenceBranches(t, t.AnyOf); ok {
-		validators = append(validators, &presenceCountValidator{declName, presenceAnyOf, sets})
+		validators = append(validators, &presenceCountValidator{declName, keywordAnyOf, sets})
 	}
 
 	return validators

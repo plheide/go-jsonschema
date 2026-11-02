@@ -10,6 +10,26 @@ import (
 // branch's type makes them.
 type anyOfParent struct {
 	schema *schemas.Type
+	// admitsAll tells whether a branch admits every value, as one generated
+	// as interface{} does, so that the anyOf holds for every value.
+	admitsAll bool
+}
+
+// anyOfStructValidators returns the checks of a struct merged from an anyOf:
+// those it owes the parent, the anyOf's own, unless a branch admits every
+// value, and a count of the branches that only list required.
+func (g *schemaGenerator) anyOfStructValidators(
+	t *schemas.Type,
+	tt *codegen.StructType,
+	declName string,
+) []validator {
+	validators := g.anyOfParentValidators(t, tt, declName)
+
+	if !g.output.anyOfParents[t].admitsAll {
+		validators = append(validators, newAnyOfValidator(declName, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
+	}
+
+	return append(validators, presenceCountValidators(t, declName)...)
 }
 
 // anyOfParentValidators returns the checks that a struct merged from an anyOf
