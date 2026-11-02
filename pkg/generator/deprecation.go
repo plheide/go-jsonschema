@@ -12,10 +12,20 @@ const deprecationPrefix = "Deprecated: "
 
 // withDeprecation returns comment, the doc comment of a type or field generated
 // from t, with a "Deprecated:" paragraph added when t's deprecated keyword
-// marks it. The paragraph is the keyword's text when it is a string. A comment
-// that has such a paragraph already is kept as it is.
+// marks it, as withDeprecationOf does.
 func withDeprecation(comment string, t *schemas.Type) string {
-	if t == nil || !t.Deprecated.Marked {
+	if t == nil {
+		return comment
+	}
+
+	return withDeprecationOf(comment, t.Deprecated)
+}
+
+// withDeprecationOf returns comment with a "Deprecated:" paragraph added when
+// the deprecated keyword d marks it. The paragraph is the keyword's text when
+// it is a string. A comment that has such a paragraph already is kept as it is.
+func withDeprecationOf(comment string, d schemas.Deprecation) string {
+	if !d.Marked {
 		return comment
 	}
 
@@ -26,7 +36,7 @@ func withDeprecation(comment string, t *schemas.Type) string {
 	}
 
 	paragraph := deprecationPrefix + "The JSON schema marks this as deprecated."
-	if message := strings.TrimSpace(t.Deprecated.Message); message != "" {
+	if message := strings.TrimSpace(d.Message); message != "" {
 		paragraph = deprecationPrefix + strings.TrimPrefix(message, deprecationPrefix)
 	}
 

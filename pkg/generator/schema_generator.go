@@ -2152,7 +2152,19 @@ func (g *schemaGenerator) addStructField(
 		uniqueNames[fieldName] = 1
 	}
 
-	comment := prop.Description
+	// A struct merged from an anyOf can keep a property's schema undocumented
+	// where a branch documents it.
+	comment, deprecated := prop.Description, prop.Deprecated
+	if a, ok := t.PropertyAnnotation(name); ok {
+		if comment == "" {
+			comment = a.Description
+		}
+
+		if !deprecated.Marked {
+			deprecated = a.Deprecated
+		}
+	}
+
 	if comment == "" {
 		comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.", fieldName, name)
 	}
@@ -2168,7 +2180,7 @@ func (g *schemaGenerator) addStructField(
 
 	structField := codegen.StructField{
 		Name:         fieldName,
-		Comment:      withDeprecation(comment, prop),
+		Comment:      withDeprecationOf(comment, deprecated),
 		JSONName:     name,
 		SchemaType:   prop,
 		Tags:         g.generateStructFieldTags(name, extraTags, isRequired),

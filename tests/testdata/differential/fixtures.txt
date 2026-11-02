@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 600 (344 fixtures, 256 definitions), 25 skipped; documents: 15548
-json: 14509 agree, 610 missing checks (100 silent), 429 wrong rejections, 0 panics
-yaml: 13910 agree, 1191 missing checks (501 silent), 447 wrong rejections, 0 panics
+schemas: 602 (345 fixtures, 257 definitions), 25 skipped; documents: 15585
+json: 14543 agree, 610 missing checks (100 silent), 432 wrong rejections, 0 panics
+yaml: 13941 agree, 1194 missing checks (504 silent), 450 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -458,6 +458,18 @@ yaml missing check (silent) type: wrong type ×1, e.g. /name = 12345
 == core/anyOf/anyOf.ref.json#/definitions/Policy
 json wrong rejection: wrong type ×1, e.g. /name = 12345: unmarshal Wrap: unmarshal Policy: json: cannot unmarshal number into Go struct field Plain.name of type string
 yaml missing check (silent) type: null ×1, e.g. / = null
+
+== core/anyOf/anyOfBranchDescriptions.json
+json wrong rejection: 1e300 ×1, e.g. /shared = 1e300: unmarshal Wrap: all validators failed: unmarshal AnyOfBranchDescriptions_0: json: cannot unmarshal number 1e300 into Go struct field Plain.shared of type int unmarshal AnyOfBranchDescriptions_1: json: cannot unmarshal number 1e300 into Go struct field Plain.shared of type int
+json wrong rejection: 2^63 ×1, e.g. /shared = 9223372036854775808: unmarshal Wrap: all validators failed: unmarshal AnyOfBranchDescriptions_0: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.shared of type int unmarshal AnyOfBranchDescriptions_1: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.shared of type int
+json wrong rejection: 2^64 ×1, e.g. /shared = 18446744073709551616: unmarshal Wrap: all validators failed: unmarshal AnyOfBranchDescriptions_0: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.shared of type int unmarshal AnyOfBranchDescriptions_1: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.shared of type int
+yaml missing check (silent) type: wrong type ×2, e.g. /mode = 12345
+yaml wrong rejection: 1e300 ×1, e.g. /shared = 1e300: unmarshal Wrap: all validators failed: unmarshal AnyOfBranchDescriptions_0: field shared: 1e300 is out of range for int unmarshal AnyOfBranchDescriptions_1: field shared: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /shared = 9223372036854775808: unmarshal Wrap: all validators failed: unmarshal AnyOfBranchDescriptions_0: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int unmarshal AnyOfBranchDescriptions_1: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /shared = 18446744073709551616: unmarshal Wrap: all validators failed: unmarshal AnyOfBranchDescriptions_0: field shared: 18446744073709551616 is out of range for int unmarshal AnyOfBranchDescriptions_1: field shared: 18446744073709551616 is out of range for int
+
+== core/anyOf/anyOfBranchDescriptions.json#/definitions/id
+yaml missing check (silent) type: wrong type ×1, e.g. / = 12345
 
 == core/anyOf/anyOfInterfaceBranch.json
 json missing check required: delete key ×1, e.g. /filter/header deleted

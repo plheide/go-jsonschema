@@ -340,8 +340,34 @@ type Type struct {
 	subSchemasCount   int           `json:"-"`
 	subSchemaTypeElem bool          `json:"-"`
 
+	// propertyAnnotations holds, for the struct an anyOf merges into, what a
+	// branch documents of a property whose schema the merge keeps as it is;
+	// see PropertyAnnotation.
+	propertyAnnotations map[string]PropertyAnnotation
+
 	// Flags.
 	Dereferenced bool `json:"-"` // Marks that his type has been dereferenced.
+}
+
+// PropertyAnnotation is the description and the deprecation that a branch of
+// an anyOf gives one of the properties of the struct that the anyOf merges
+// into.
+type PropertyAnnotation struct {
+	Description string
+	Deprecated  Deprecation
+}
+
+// PropertyAnnotation returns what a branch of the anyOf that value is merged
+// from documents of its property name, where the schema the merge keeps for
+// the property documents nothing: the first description and the first
+// deprecation that the branches give it. The merge keeps a property's schema
+// as it is where it changes nothing else in it, so that the type declared for
+// that schema is the property's type, and its branches' annotations would be
+// lost otherwise.
+func (value *Type) PropertyAnnotation(name string) (PropertyAnnotation, bool) {
+	a, ok := value.propertyAnnotations[name]
+
+	return a, ok
 }
 
 func (value *Type) IsEmptyObject() bool {
@@ -876,6 +902,7 @@ func AnyOf(types []*Type, baseType *Type) (*Type, error) {
 
 	if properties := anyOfProperties(types, baseType); len(properties) > 0 {
 		typ.Properties = properties
+		typ.propertyAnnotations = branchAnnotations(types, properties)
 	}
 
 	typ.Required = mergeRequiredUnion(types, baseType)
@@ -904,6 +931,40 @@ func anyOfProperties(types []*Type, baseType *Type) map[string]*Type {
 	}
 
 	return properties
+}
+
+// branchAnnotations returns what the first of types that does so documents of
+// each of properties, the properties of the struct that an anyOf of types
+// merges into, where the schema kept for it documents nothing; see
+// Type.PropertyAnnotation.
+func branchAnnotations(types []*Type, properties map[string]*Type) map[string]PropertyAnnotation {
+	var annotations map[string]PropertyAnnotation
+
+	for name, p := range properties {
+		var a PropertyAnnotation
+
+		for _, d := range declarations(types, name) {
+			if p.Description == "" && a.Description == "" {
+				a.Description = d.Description
+			}
+
+			if !p.Deprecated.Marked && !a.Deprecated.Marked {
+				a.Deprecated = d.Deprecated
+			}
+		}
+
+		if a.Description == "" && !a.Deprecated.Marked {
+			continue
+		}
+
+		if annotations == nil {
+			annotations = map[string]PropertyAnnotation{}
+		}
+
+		annotations[name] = a
+	}
+
+	return annotations
 }
 
 // anyOfProperty returns the schema of a property that the parent of an anyOf
