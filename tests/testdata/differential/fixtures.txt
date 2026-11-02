@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 582 (336 fixtures, 246 definitions), 25 skipped; documents: 15083
-json: 13996 agree, 604 missing checks (134 silent), 483 wrong rejections, 0 panics
-yaml: 12926 agree, 1662 missing checks (913 silent), 495 wrong rejections, 0 panics
+schemas: 583 (337 fixtures, 246 definitions), 25 skipped; documents: 15145
+json: 14068 agree, 594 missing checks (124 silent), 483 wrong rejections, 0 panics
+yaml: 12996 agree, 1654 missing checks (905 silent), 495 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/allOf/allOf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -1866,8 +1866,6 @@ yaml wrong rejection: 2^63 ×1, e.g. /unbounded = 9223372036854775808: unmarshal
 yaml wrong rejection: 2^64 ×1, e.g. /unbounded = 18446744073709551616: unmarshal Wrap: unmarshal IntegerFormatPrecedence: field unbounded: 18446744073709551616 is out of range for int
 
 == minSizedInts/largerSizes/larger.json
-json missing check (silent) required: delete key ×10, e.g. /i16 deleted
-yaml missing check (silent) required: delete key ×10, e.g. /i16 deleted
 yaml missing check (silent) type: null ×1, e.g. / = null
 
 == minSizedInts/restrictedSizes/restricted.json
@@ -3045,6 +3043,10 @@ yaml wrong rejection: 2^64 ×2, e.g. /myInteger = 18446744073709551616: unmarsha
 == validation/requiredFields/requiredNullable.json
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×3, e.g. /myNullableString = 12345
+
+== validation/requiredFields/requiredUndeclared.json
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×1, e.g. /a = 12345
 
 == validation/typeMultiple/typeMultiple.json
 yaml missing check (silent) type: null ×1, e.g. / = null

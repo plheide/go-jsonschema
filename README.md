@@ -252,6 +252,8 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 * A `const` on a schema that declares no type, whose value is an `interface{}`.
 * A struct merged from an `anyOf` checks the keywords of the object the `anyOf` is declared on: the properties it
   requires, or every branch requires, and those of its own properties. Upstream checked only the branches.
+* A name in `required` that no property declares is checked: the object must have the key. Upstream checked only the
+  names of the properties a schema declares.
 
 ### Other differences
 

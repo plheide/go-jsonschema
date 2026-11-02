@@ -1967,6 +1967,8 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		}
 	}
 
+	appendUndeclaredRequired(&structType, t)
+
 	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) {
 		return g.generateAnyOfType(t, scope)
 	}
@@ -2255,6 +2257,17 @@ func (g *schemaGenerator) appendStructRequiredJSONFields(
 ) {
 	if isRequired {
 		structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
+	}
+}
+
+// appendUndeclaredRequired adds to the required fields of structType each name
+// in t's required that no property declares. No field holds it, but an
+// instance must carry it all the same, so its presence is checked as well.
+func appendUndeclaredRequired(structType *codegen.StructType, t *schemas.Type) {
+	for _, name := range t.Required {
+		if _, declared := t.Properties[name]; !declared && !slices.Contains(structType.RequiredJSONFields, name) {
+			structType.RequiredJSONFields = append(structType.RequiredJSONFields, name)
+		}
 	}
 }
 
