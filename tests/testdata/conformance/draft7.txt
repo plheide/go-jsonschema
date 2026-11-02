@@ -7,35 +7,44 @@ A missing check accepts a document the suite marks invalid, and a wrong rejectio
 it marks valid. A missing check is silent when its case has no generator warning.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-json: 629 agree, 228 missing checks (148 silent), 16 wrong rejections, 0 panics, 56 not run
-yaml: 610 agree, 247 missing checks (166 silent), 16 wrong rejections, 0 panics, 56 not run
-cases: 23 generation failures, 0 compilation failures, 48 with warnings
+json: 629 agree, 228 missing checks (32 silent), 16 wrong rejections, 0 panics, 56 not run
+yaml: 610 agree, 247 missing checks (51 silent), 16 wrong rejections, 0 panics, 56 not run
+cases: 23 generation failures, 0 compilation failures, 133 with warnings
 
 == additionalItems.json
 
 -- additionalItems as schema
-json missing check (silent): additional items do not match schema
-yaml missing check (silent): additional items do not match schema
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items, additionalItems not checked
+json missing check: additional items do not match schema
+yaml missing check: additional items do not match schema
 
 -- when items is schema, additionalItems does nothing
-json missing check (silent): invalid with a array of mixed types
-yaml missing check (silent): invalid with a array of mixed types
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+json missing check: invalid with a array of mixed types
+yaml missing check: invalid with a array of mixed types
 
 -- array of items with no additionalItems permitted
-json missing check (silent): additional items are not permitted
-yaml missing check (silent): additional items are not permitted
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items, additionalItems not checked
+json missing check: additional items are not permitted
+yaml missing check: additional items are not permitted
+
+-- additionalItems are allowed by default
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
 
 -- additionalItems does not look in applicators, invalid case
-json missing check (silent): items defined in allOf are not examined
-yaml missing check (silent): items defined in allOf are not examined
+warning: schema fidelity: type Root falls back to interface{} due to no type; declared but not enforced: items, additionalItems
+json missing check: items defined in allOf are not examined
+yaml missing check: items defined in allOf are not examined
 
 -- items validation adjusts the starting index for additionalItems
-json missing check (silent): wrong type of second item
-yaml missing check (silent): wrong type of second item
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items, additionalItems not checked
+json missing check: wrong type of second item
+yaml missing check: wrong type of second item
 
 -- additionalItems with heterogeneous array
-json missing check (silent): heterogeneous invalid instance
-yaml missing check (silent): heterogeneous invalid instance
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items, additionalItems not checked
+json missing check: heterogeneous invalid instance
+yaml missing check: heterogeneous invalid instance
 
 == additionalProperties.json
 
@@ -61,8 +70,9 @@ yaml missing check (silent): properties defined in allOf are not examined
 == allOf.json
 
 -- allOf simple types
-json missing check (silent): mismatch one
-yaml missing check (silent): mismatch one
+warning: schema fidelity: type Root falls back to interface{} due to no type; declared but not enforced: numeric constraint; affected configuration: numeric validator
+json missing check: mismatch one
+yaml missing check: mismatch one
 
 -- allOf with boolean schemas, some false
 warning: schema fidelity: type Root does not enforce all it declares: false schema not compiled, so any value passes (in allOf branch)
@@ -88,6 +98,8 @@ yaml missing check (silent): anything non-null is invalid
 
 -- allOf combined with anyOf, oneOf
 warning: schema fidelity: type Root does not enforce all it declares: anyOf branch 0 is interface{}, which admits every value, so the anyOf is not checked
+warning: schema fidelity: type Root falls back to interface{} due to no type; declared but not enforced: numeric constraint; affected configuration: numeric validator
+warning: schema fidelity: type Root_0 falls back to interface{} due to no type; declared but not enforced: numeric constraint; affected configuration: numeric validator
 json missing check: allOf: false, anyOf: false, oneOf: false
 yaml missing check: allOf: false, anyOf: false, oneOf: false
 json missing check: allOf: false, anyOf: false, oneOf: true
@@ -107,6 +119,7 @@ yaml missing check: allOf: true, anyOf: true, oneOf: false
 
 -- anyOf
 warning: schema fidelity: type Root does not enforce all it declares: anyOf branch 1 is interface{}, which admits every value, so the anyOf is not checked
+warning: schema fidelity: type Root_1 falls back to interface{} due to no type; declared but not enforced: numeric constraint; affected configuration: numeric validator
 json missing check: neither anyOf valid
 yaml missing check: neither anyOf valid
 
@@ -205,36 +218,45 @@ yaml missing check (silent): {"a": 1.0} is invalid
 == contains.json
 
 -- contains keyword validation
-json missing check (silent): array without items matching schema is invalid
-yaml missing check (silent): array without items matching schema is invalid
-json missing check (silent): empty array is invalid
-yaml missing check (silent): empty array is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, contains not checked
+json missing check: array without items matching schema is invalid
+yaml missing check: array without items matching schema is invalid
+json missing check: empty array is invalid
+yaml missing check: empty array is invalid
 
 -- contains keyword with const keyword
-json missing check (silent): array without item 5 is invalid
-yaml missing check (silent): array without item 5 is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, contains not checked
+json missing check: array without item 5 is invalid
+yaml missing check: array without item 5 is invalid
 
 -- contains keyword with boolean schema true
-json missing check (silent): empty array is invalid
-yaml missing check (silent): empty array is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, contains not checked
+json missing check: empty array is invalid
+yaml missing check: empty array is invalid
 
 -- contains keyword with boolean schema false
-json missing check (silent): any non-empty array is invalid
-yaml missing check (silent): any non-empty array is invalid
-json missing check (silent): empty array is invalid
-yaml missing check (silent): empty array is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, contains not checked
+json missing check: any non-empty array is invalid
+yaml missing check: any non-empty array is invalid
+json missing check: empty array is invalid
+yaml missing check: empty array is invalid
 
 -- items + contains
-json missing check (silent): matches items, does not match contains
-yaml missing check (silent): matches items, does not match contains
-json missing check (silent): does not match items, matches contains
-yaml missing check (silent): does not match items, matches contains
-json missing check (silent): matches neither items nor contains
-yaml missing check (silent): matches neither items nor contains
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items, contains not checked
+json missing check: matches items, does not match contains
+yaml missing check: matches items, does not match contains
+json missing check: does not match items, matches contains
+yaml missing check: does not match items, matches contains
+json missing check: matches neither items nor contains
+yaml missing check: matches neither items nor contains
 
 -- contains with false if subschema
-json missing check (silent): empty array is invalid
-yaml missing check (silent): empty array is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, contains not checked
+json missing check: empty array is invalid
+yaml missing check: empty array is invalid
+
+-- contains with null instance elements
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, contains not checked
 
 == default.json
 
@@ -257,40 +279,48 @@ generation failed: generate: cannot add struct field: could not generate type wi
 == dependencies.json
 
 -- dependencies
-json missing check (silent): missing dependency
-yaml missing check (silent): missing dependency
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentRequired not checked
+json missing check: missing dependency
+yaml missing check: missing dependency
+
+-- dependencies with empty array
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentRequired not checked
 
 -- multiple dependencies
-json missing check (silent): missing dependency
-yaml missing check (silent): missing dependency
-json missing check (silent): missing other dependency
-yaml missing check (silent): missing other dependency
-json missing check (silent): missing both dependencies
-yaml missing check (silent): missing both dependencies
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentRequired not checked
+json missing check: missing dependency
+yaml missing check: missing dependency
+json missing check: missing other dependency
+yaml missing check: missing other dependency
+json missing check: missing both dependencies
+yaml missing check: missing both dependencies
 
 -- multiple dependencies subschema
-json missing check (silent): wrong type
-yaml missing check (silent): wrong type
-json missing check (silent): wrong type other
-yaml missing check (silent): wrong type other
-json missing check (silent): wrong type both
-yaml missing check (silent): wrong type both
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentSchemas not checked
+json missing check: wrong type
+yaml missing check: wrong type
+json missing check: wrong type other
+yaml missing check: wrong type other
+json missing check: wrong type both
+yaml missing check: wrong type both
 
 -- dependencies with boolean subschemas
-json missing check (silent): object with property having schema false is invalid
-yaml missing check (silent): object with property having schema false is invalid
-json missing check (silent): object with both properties is invalid
-yaml missing check (silent): object with both properties is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentSchemas not checked
+json missing check: object with property having schema false is invalid
+yaml missing check: object with property having schema false is invalid
+json missing check: object with both properties is invalid
+yaml missing check: object with both properties is invalid
 
 -- dependencies with escaped characters
-json missing check (silent): invalid object 1
-yaml missing check (silent): invalid object 1
-json missing check (silent): invalid object 2
-yaml missing check (silent): invalid object 2
-json missing check (silent): invalid object 3
-yaml missing check (silent): invalid object 3
-json missing check (silent): invalid object 4
-yaml missing check (silent): invalid object 4
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentRequired, dependentSchemas not checked
+json missing check: invalid object 1
+yaml missing check: invalid object 1
+json missing check: invalid object 2
+yaml missing check: invalid object 2
+json missing check: invalid object 3
+yaml missing check: invalid object 3
+json missing check: invalid object 4
+yaml missing check: invalid object 4
 
 -- dependent subschema incompatible with root
 warning: schema fidelity: type Root does not enforce all it declares: dependentSchemas not checked
@@ -327,77 +357,97 @@ generation failed: generate: enum has non-primitive value [1]
 == exclusiveMaximum.json
 
 -- exclusiveMaximum validation
-json missing check (silent): boundary point is invalid
-yaml missing check (silent): boundary point is invalid
-json missing check (silent): above the exclusiveMaximum is invalid
-yaml missing check (silent): above the exclusiveMaximum is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: boundary point is invalid
+yaml missing check: boundary point is invalid
+json missing check: above the exclusiveMaximum is invalid
+yaml missing check: above the exclusiveMaximum is invalid
 
 == exclusiveMinimum.json
 
 -- exclusiveMinimum validation
-json missing check (silent): boundary point is invalid
-yaml missing check (silent): boundary point is invalid
-json missing check (silent): below the exclusiveMinimum is invalid
-yaml missing check (silent): below the exclusiveMinimum is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: boundary point is invalid
+yaml missing check: boundary point is invalid
+json missing check: below the exclusiveMinimum is invalid
+yaml missing check: below the exclusiveMinimum is invalid
 
 == if-then-else.json
 
+-- ignore then without if
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+
+-- ignore else without if
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+
 -- if and then without else
-json missing check (silent): invalid through then
-yaml missing check (silent): invalid through then
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+json missing check: invalid through then
+yaml missing check: invalid through then
 
 -- if and else without then
-json missing check (silent): invalid through else
-yaml missing check (silent): invalid through else
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+json missing check: invalid through else
+yaml missing check: invalid through else
 
 -- validate against correct branch, then vs else
-json missing check (silent): invalid through then
-yaml missing check (silent): invalid through then
-json missing check (silent): invalid through else
-yaml missing check (silent): invalid through else
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+json missing check: invalid through then
+yaml missing check: invalid through then
+json missing check: invalid through else
+yaml missing check: invalid through else
 
 -- non-interference across combined schemas
 warning: schema fidelity: type Root does not enforce all it declares: if/then/else not compiled (in allOf branch)
 
 -- if with boolean schema true
-json missing check (silent): boolean schema true in if always chooses the then path (invalid)
-yaml missing check (silent): boolean schema true in if always chooses the then path (invalid)
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+json missing check: boolean schema true in if always chooses the then path (invalid)
+yaml missing check: boolean schema true in if always chooses the then path (invalid)
 
 -- if with boolean schema false
-json missing check (silent): boolean schema false in if always chooses the else path (invalid)
-yaml missing check (silent): boolean schema false in if always chooses the else path (invalid)
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+json missing check: boolean schema false in if always chooses the else path (invalid)
+yaml missing check: boolean schema false in if always chooses the else path (invalid)
 
 -- if appears at the end when serialized (keyword processing sequence)
-json missing check (silent): no redirects to then and fails
-yaml missing check (silent): no redirects to then and fails
-json missing check (silent): invalid redirects to else and fails
-yaml missing check (silent): invalid redirects to else and fails
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+json missing check: no redirects to then and fails
+yaml missing check: no redirects to then and fails
+json missing check: invalid redirects to else and fails
+yaml missing check: invalid redirects to else and fails
 
 -- then: false fails when condition matches
-json missing check (silent): matches if → then=false → invalid
-yaml missing check (silent): matches if → then=false → invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+json missing check: matches if → then=false → invalid
+yaml missing check: matches if → then=false → invalid
 
 -- else: false fails when condition does not match
-json missing check (silent): does not match if → else executes → invalid
-yaml missing check (silent): does not match if → else executes → invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, if/then/else not checked
+json missing check: does not match if → else executes → invalid
+yaml missing check: does not match if → else executes → invalid
 
 == items.json
 
 -- a schema given for items
-json missing check (silent): wrong type of items
-yaml missing check (silent): wrong type of items
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+json missing check: wrong type of items
+yaml missing check: wrong type of items
 
 -- an array of schemas for items
-json missing check (silent): wrong types
-yaml missing check (silent): wrong types
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+json missing check: wrong types
+yaml missing check: wrong types
 
 -- items with boolean schema (false)
-json missing check (silent): any non-empty array is invalid
-yaml missing check (silent): any non-empty array is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+json missing check: any non-empty array is invalid
+yaml missing check: any non-empty array is invalid
 
 -- items with boolean schemas
-json missing check (silent): array with two items is invalid
-yaml missing check (silent): array with two items is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+json missing check: array with two items is invalid
+yaml missing check: array with two items is invalid
 
 -- items and subitems
 warning: Array Item uses a tuple for items that does not describe a single element type; positional types are not modelled and it will be represented as an untyped array
@@ -410,123 +460,152 @@ yaml missing check: wrong item
 json missing check: wrong sub-item
 yaml missing check: wrong sub-item
 
+-- single-form items with null instance elements
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+
+-- array-form items with null instance elements
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+
 == maxItems.json
 
 -- maxItems validation
-json missing check (silent): too long is invalid
-yaml missing check (silent): too long is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, array constraint not checked
+json missing check: too long is invalid
+yaml missing check: too long is invalid
 
 -- maxItems validation with a decimal
-json missing check (silent): too long is invalid
-yaml missing check (silent): too long is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, array constraint not checked
+json missing check: too long is invalid
+yaml missing check: too long is invalid
 
 == maxLength.json
 
 -- maxLength validation
-json missing check (silent): too long is invalid
-yaml missing check (silent): too long is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, string length constraint not checked
+json missing check: too long is invalid
+yaml missing check: too long is invalid
 yaml wrong rejection: two graphemes is long enough: yaml: found invalid Unicode character escape code
 
 -- maxLength validation with a decimal
-json missing check (silent): too long is invalid
-yaml missing check (silent): too long is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, string length constraint not checked
+json missing check: too long is invalid
+yaml missing check: too long is invalid
 
 == maxProperties.json
 
 -- maxProperties validation
-json missing check (silent): too long is invalid
-yaml missing check (silent): too long is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, maxProperties not checked
+json missing check: too long is invalid
+yaml missing check: too long is invalid
 
 -- maxProperties validation with a decimal
-json missing check (silent): too long is invalid
-yaml missing check (silent): too long is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, maxProperties not checked
+json missing check: too long is invalid
+yaml missing check: too long is invalid
 
 -- maxProperties = 0 means the object is empty
-json missing check (silent): one property is invalid
-yaml missing check (silent): one property is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, maxProperties not checked
+json missing check: one property is invalid
+yaml missing check: one property is invalid
 
 == maximum.json
 
 -- maximum validation
-json missing check (silent): above the maximum is invalid
-yaml missing check (silent): above the maximum is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: above the maximum is invalid
+yaml missing check: above the maximum is invalid
 
 -- maximum validation with unsigned integer
-json missing check (silent): above the maximum is invalid
-yaml missing check (silent): above the maximum is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: above the maximum is invalid
+yaml missing check: above the maximum is invalid
 
 == minItems.json
 
 -- minItems validation
-json missing check (silent): too short is invalid
-yaml missing check (silent): too short is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, array constraint not checked
+json missing check: too short is invalid
+yaml missing check: too short is invalid
 
 -- minItems validation with a decimal
-json missing check (silent): too short is invalid
-yaml missing check (silent): too short is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, array constraint not checked
+json missing check: too short is invalid
+yaml missing check: too short is invalid
 
 == minLength.json
 
 -- minLength validation
-json missing check (silent): too short is invalid
-yaml missing check (silent): too short is invalid
-json missing check (silent): one grapheme is not long enough
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, string length constraint not checked
+json missing check: too short is invalid
+yaml missing check: too short is invalid
+json missing check: one grapheme is not long enough
 
 -- minLength validation with a decimal
-json missing check (silent): too short is invalid
-yaml missing check (silent): too short is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, string length constraint not checked
+json missing check: too short is invalid
+yaml missing check: too short is invalid
 
 == minProperties.json
 
 -- minProperties validation
-json missing check (silent): too short is invalid
-yaml missing check (silent): too short is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, minProperties not checked
+json missing check: too short is invalid
+yaml missing check: too short is invalid
 
 -- minProperties validation with a decimal
-json missing check (silent): too short is invalid
-yaml missing check (silent): too short is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, minProperties not checked
+json missing check: too short is invalid
+yaml missing check: too short is invalid
 
 == minimum.json
 
 -- minimum validation
-json missing check (silent): below the minimum is invalid
-yaml missing check (silent): below the minimum is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: below the minimum is invalid
+yaml missing check: below the minimum is invalid
 
 -- minimum validation with signed integer
-json missing check (silent): float below the minimum is invalid
-yaml missing check (silent): float below the minimum is invalid
-json missing check (silent): int below the minimum is invalid
-yaml missing check (silent): int below the minimum is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: float below the minimum is invalid
+yaml missing check: float below the minimum is invalid
+json missing check: int below the minimum is invalid
+yaml missing check: int below the minimum is invalid
 
 == multipleOf.json
 
 -- by int
-json missing check (silent): int by int fail
-yaml missing check (silent): int by int fail
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: int by int fail
+yaml missing check: int by int fail
 
 -- by number
-json missing check (silent): 35 is not multiple of 1.5
-yaml missing check (silent): 35 is not multiple of 1.5
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: 35 is not multiple of 1.5
+yaml missing check: 35 is not multiple of 1.5
 
 -- by small number
-json missing check (silent): 0.00751 is not multiple of 0.0001
-yaml missing check (silent): 0.00751 is not multiple of 0.0001
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, numeric constraint not checked
+json missing check: 0.00751 is not multiple of 0.0001
+yaml missing check: 0.00751 is not multiple of 0.0001
 
 == not.json
 
 -- not
-json missing check (silent): disallowed
-yaml missing check (silent): disallowed
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, "not" not checked
+json missing check: disallowed
+yaml missing check: disallowed
 
 -- not multiple types
-json missing check (silent): mismatch
-yaml missing check (silent): mismatch
-json missing check (silent): other mismatch
-yaml missing check (silent): other mismatch
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, "not" not checked
+json missing check: mismatch
+yaml missing check: mismatch
+json missing check: other mismatch
+yaml missing check: other mismatch
 
 -- not more complex schema
-json missing check (silent): mismatch
-yaml missing check (silent): mismatch
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, "not" not checked
+json missing check: mismatch
+yaml missing check: mismatch
 
 -- forbidden property
 warning: schema fidelity: type RootFoo does not enforce all it declares: false schema not compiled, so any value passes
@@ -574,6 +653,12 @@ json missing check: array is invalid
 yaml missing check: array is invalid
 json missing check: empty array is invalid
 yaml missing check: empty array is invalid
+
+-- allow everything with boolean schema false
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, "not" not checked
+
+-- double negation
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, "not" not checked
 
 == oneOf.json
 
@@ -627,38 +712,49 @@ yaml missing check (silent): anything non-null is invalid
 == pattern.json
 
 -- pattern validation
-json missing check (silent): a non-matching pattern is invalid
-yaml missing check (silent): a non-matching pattern is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, pattern not checked
+json missing check: a non-matching pattern is invalid
+yaml missing check: a non-matching pattern is invalid
+
+-- pattern is not anchored
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, pattern not checked
 
 == patternProperties.json
 
 -- patternProperties validates properties matching a regex
-json missing check (silent): a single invalid match is invalid
-yaml missing check (silent): a single invalid match is invalid
-json missing check (silent): multiple invalid matches is invalid
-yaml missing check (silent): multiple invalid matches is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, patternProperties not checked
+json missing check: a single invalid match is invalid
+yaml missing check: a single invalid match is invalid
+json missing check: multiple invalid matches is invalid
+yaml missing check: multiple invalid matches is invalid
 
 -- multiple simultaneous patternProperties are validated
-json missing check (silent): an invalid due to one is invalid
-yaml missing check (silent): an invalid due to one is invalid
-json missing check (silent): an invalid due to the other is invalid
-yaml missing check (silent): an invalid due to the other is invalid
-json missing check (silent): an invalid due to both is invalid
-yaml missing check (silent): an invalid due to both is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, patternProperties not checked
+json missing check: an invalid due to one is invalid
+yaml missing check: an invalid due to one is invalid
+json missing check: an invalid due to the other is invalid
+yaml missing check: an invalid due to the other is invalid
+json missing check: an invalid due to both is invalid
+yaml missing check: an invalid due to both is invalid
 
 -- regexes are not anchored by default and are case sensitive
-json missing check (silent): recognized members are accounted for
-yaml missing check (silent): recognized members are accounted for
-json missing check (silent): regexes are case sensitive, 2
-yaml missing check (silent): regexes are case sensitive, 2
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, patternProperties not checked
+json missing check: recognized members are accounted for
+yaml missing check: recognized members are accounted for
+json missing check: regexes are case sensitive, 2
+yaml missing check: regexes are case sensitive, 2
 
 -- patternProperties with boolean schemas
-json missing check (silent): object with property matching schema false is invalid
-yaml missing check (silent): object with property matching schema false is invalid
-json missing check (silent): object with both properties is invalid
-yaml missing check (silent): object with both properties is invalid
-json missing check (silent): object with a property matching both true and false is invalid
-yaml missing check (silent): object with a property matching both true and false is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, patternProperties not checked
+json missing check: object with property matching schema false is invalid
+yaml missing check: object with property matching schema false is invalid
+json missing check: object with both properties is invalid
+yaml missing check: object with both properties is invalid
+json missing check: object with a property matching both true and false is invalid
+yaml missing check: object with a property matching both true and false is invalid
+
+-- patternProperties with null valued instance properties
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, patternProperties not checked
 
 == properties.json
 
@@ -695,24 +791,29 @@ yaml missing check (silent): toString not valid
 == propertyNames.json
 
 -- propertyNames validation
-json missing check (silent): some property names invalid
-yaml missing check (silent): some property names invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, propertyNames not checked
+json missing check: some property names invalid
+yaml missing check: some property names invalid
 
 -- propertyNames validation with pattern
-json missing check (silent): non-matching property name is invalid
-yaml missing check (silent): non-matching property name is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, propertyNames not checked
+json missing check: non-matching property name is invalid
+yaml missing check: non-matching property name is invalid
 
 -- propertyNames with boolean schema false
-json missing check (silent): object with any properties is invalid
-yaml missing check (silent): object with any properties is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, propertyNames not checked
+json missing check: object with any properties is invalid
+yaml missing check: object with any properties is invalid
 
 -- propertyNames with const
-json missing check (silent): object with any other property is invalid
-yaml missing check (silent): object with any other property is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, propertyNames not checked
+json missing check: object with any other property is invalid
+yaml missing check: object with any other property is invalid
 
 -- propertyNames with enum
-json missing check (silent): object with any other property is invalid
-yaml missing check (silent): object with any other property is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, propertyNames not checked
+json missing check: object with any other property is invalid
+yaml missing check: object with any other property is invalid
 
 == ref.json
 
@@ -723,8 +824,9 @@ generation failed: generate: cannot add struct field: could not generate type wi
 generation failed: generate: cannot add struct field: could not generate type with scope 'RootBar': cannot generate referenced type: value must point to definition within file: '#/properties/foo'
 
 -- relative pointer ref to array
-json missing check (silent): mismatch array
-yaml missing check (silent): mismatch array
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+json missing check: mismatch array
+yaml missing check: mismatch array
 
 -- nested refs
 warning: schema fidelity: type Root falls back to interface{} due to allOf merge produced empty result; declared but not enforced: $ref #/definitions/c
@@ -853,8 +955,9 @@ yaml missing check: non-number is invalid
 == refRemote.json
 
 -- base URI change
-json missing check (silent): base URI change ref invalid
-yaml missing check (silent): base URI change ref invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
+json missing check: base URI change ref invalid
+yaml missing check: base URI change ref invalid
 
 -- base URI change - change folder
 generation failed: generate: could not follow $ref "folderInteger.json" to file "folderInteger.json": cannot load schema failed to load schema "folderInteger.json": cannot resolve schema "folderInteger.json"
@@ -894,18 +997,20 @@ json wrong rejection: ignores boolean: unmarshal raw Root: json: cannot unmarsha
 yaml wrong rejection: ignores boolean: unmarshal raw Root: yaml: unmarshal errors: line 1: cannot unmarshal !!bool `true` into map[string]interface {}
 
 -- required with escaped characters
-json missing check (silent): object with some properties missing is invalid
-yaml missing check (silent): object with some properties missing is invalid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, required not checked
+json missing check: object with some properties missing is invalid
+yaml missing check: object with some properties missing is invalid
 
 -- required properties whose names are Javascript object property names
-json missing check (silent): none of the properties mentioned
-yaml missing check (silent): none of the properties mentioned
-json missing check (silent): __proto__ present
-yaml missing check (silent): __proto__ present
-json missing check (silent): toString present
-yaml missing check (silent): toString present
-json missing check (silent): constructor present
-yaml missing check (silent): constructor present
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, required not checked
+json missing check: none of the properties mentioned
+yaml missing check: none of the properties mentioned
+json missing check: __proto__ present
+yaml missing check: __proto__ present
+json missing check: toString present
+yaml missing check: toString present
+json missing check: constructor present
+yaml missing check: constructor present
 
 == type.json
 
@@ -985,47 +1090,54 @@ yaml missing check: string is invalid
 == uniqueItems.json
 
 -- uniqueItems validation
-json missing check (silent): non-unique array of integers is invalid
-yaml missing check (silent): non-unique array of integers is invalid
-json missing check (silent): non-unique array of more than two integers is invalid
-yaml missing check (silent): non-unique array of more than two integers is invalid
-json missing check (silent): numbers are unique if mathematically unequal
-yaml missing check (silent): numbers are unique if mathematically unequal
-json missing check (silent): non-unique array of strings is invalid
-yaml missing check (silent): non-unique array of strings is invalid
-json missing check (silent): non-unique array of objects is invalid
-yaml missing check (silent): non-unique array of objects is invalid
-json missing check (silent): property order of array of objects is ignored
-yaml missing check (silent): property order of array of objects is ignored
-json missing check (silent): non-unique array of nested objects is invalid
-yaml missing check (silent): non-unique array of nested objects is invalid
-json missing check (silent): non-unique array of arrays is invalid
-yaml missing check (silent): non-unique array of arrays is invalid
-json missing check (silent): non-unique array of more than two arrays is invalid
-yaml missing check (silent): non-unique array of more than two arrays is invalid
-json missing check (silent): non-unique heterogeneous types are invalid
-yaml missing check (silent): non-unique heterogeneous types are invalid
-json missing check (silent): objects are non-unique despite key order
-yaml missing check (silent): objects are non-unique despite key order
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, array constraint not checked
+json missing check: non-unique array of integers is invalid
+yaml missing check: non-unique array of integers is invalid
+json missing check: non-unique array of more than two integers is invalid
+yaml missing check: non-unique array of more than two integers is invalid
+json missing check: numbers are unique if mathematically unequal
+yaml missing check: numbers are unique if mathematically unequal
+json missing check: non-unique array of strings is invalid
+yaml missing check: non-unique array of strings is invalid
+json missing check: non-unique array of objects is invalid
+yaml missing check: non-unique array of objects is invalid
+json missing check: property order of array of objects is ignored
+yaml missing check: property order of array of objects is ignored
+json missing check: non-unique array of nested objects is invalid
+yaml missing check: non-unique array of nested objects is invalid
+json missing check: non-unique array of arrays is invalid
+yaml missing check: non-unique array of arrays is invalid
+json missing check: non-unique array of more than two arrays is invalid
+yaml missing check: non-unique array of more than two arrays is invalid
+json missing check: non-unique heterogeneous types are invalid
+yaml missing check: non-unique heterogeneous types are invalid
+json missing check: objects are non-unique despite key order
+yaml missing check: objects are non-unique despite key order
 
 -- uniqueItems with an array of items
-json missing check (silent): [false, false] from items array is not valid
-yaml missing check (silent): [false, false] from items array is not valid
-json missing check (silent): [true, true] from items array is not valid
-yaml missing check (silent): [true, true] from items array is not valid
-json missing check (silent): non-unique array extended from [false, true] is not valid
-yaml missing check (silent): non-unique array extended from [false, true] is not valid
-json missing check (silent): non-unique array extended from [true, false] is not valid
-yaml missing check (silent): non-unique array extended from [true, false] is not valid
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, array constraint, items not checked
+json missing check: [false, false] from items array is not valid
+yaml missing check: [false, false] from items array is not valid
+json missing check: [true, true] from items array is not valid
+yaml missing check: [true, true] from items array is not valid
+json missing check: non-unique array extended from [false, true] is not valid
+yaml missing check: non-unique array extended from [false, true] is not valid
+json missing check: non-unique array extended from [true, false] is not valid
+yaml missing check: non-unique array extended from [true, false] is not valid
 
 -- uniqueItems with an array of items and additionalItems=false
-json missing check (silent): [false, false] from items array is not valid
-yaml missing check (silent): [false, false] from items array is not valid
-json missing check (silent): [true, true] from items array is not valid
-yaml missing check (silent): [true, true] from items array is not valid
-json missing check (silent): extra items are invalid even if unique
-yaml missing check (silent): extra items are invalid even if unique
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, array constraint, items, additionalItems not checked
+json missing check: [false, false] from items array is not valid
+yaml missing check: [false, false] from items array is not valid
+json missing check: [true, true] from items array is not valid
+yaml missing check: [true, true] from items array is not valid
+json missing check: extra items are invalid even if unique
+yaml missing check: extra items are invalid even if unique
+
+-- uniqueItems=false with an array of items
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items not checked
 
 -- uniqueItems=false with an array of items and additionalItems=false
-json missing check (silent): extra items are invalid even if unique
-yaml missing check (silent): extra items are invalid even if unique
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, items, additionalItems not checked
+json missing check: extra items are invalid even if unique
+yaml missing check: extra items are invalid even if unique

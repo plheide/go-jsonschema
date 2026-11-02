@@ -192,7 +192,8 @@ upstream's:
 When generated code doesn't check something a schema declares, the generator says so on stderr, once for each type:
 
 * `schema fidelity: type X falls back to interface{} due to <reason>; declared but not enforced: <keywords>` means
-  the type became `interface{}`.
+  the type became `interface{}`. The reason `no type` means the schema has no `type` and is neither a composition nor
+  an object with properties, so its keywords, such as `pattern`, `minimum` or `required`, are checked on no value.
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
   `oneOf`, an `anyOf` with a branch that is `interface{}`, an `if`/`then`/`else`, a `not` or a `false` schema. A
   reason such as `minProperties, propertyNames not checked` names keywords that no generated code checks: `contains`
@@ -201,7 +202,8 @@ When generated code doesn't check something a schema declares, the generator say
   `unevaluatedProperties`. A keyword whose subschemas admit every value, such as `"patternProperties": {"^x-": {}}`,
   checks nothing and is not reported.
 * `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
-  value meets. Nothing is generated for it.
+  value meets, or has no `type` and keywords that are checked only on a value of some type. Nothing is generated
+  for it.
 
 ### Options for names, types and tags
 
@@ -338,7 +340,7 @@ schema without a `type`: 28 of the 1,482 schemas in SchemaStore's catalog do. Th
 classes:
 
 * **Keywords on a schema without a `type`.** Such a schema becomes `interface{}`, or no type at all, and nothing
-  checks its keywords. This class holds most of the silent missing checks.
+  checks its keywords. The generator warns about them.
 * **Objects without `type: object`.** A schema with `properties` but no `type` becomes a struct, so it rejects the
   non-objects that the suite lets through.
 * **YAML.** yaml.v3 reads some documents differently from JSON. It decodes a number or a boolean into a string as its

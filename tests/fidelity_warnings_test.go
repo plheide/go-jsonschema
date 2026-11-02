@@ -379,6 +379,37 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		fidelityWarnings := filterFidelityWarnings(warnings)
 		assert.Empty(t, fidelityWarnings, "expected no fidelity warnings for an open schema, got: %v", fidelityWarnings)
 	})
+
+	t.Run("keywords on a schema with no type are reported once where it becomes interface{}", func(t *testing.T) {
+		t.Parallel()
+
+		const schema = "./data/fidelityWarnings/untypedKeywords/untypedKeywords.json"
+
+		word := func(dropped, affected string) string {
+			return "schema fidelity: type UntypedKeywordsWord falls back to interface{} due to no type; " +
+				"declared but not enforced: " + dropped + "; affected configuration: " + affected
+		}
+
+		assert.ElementsMatch(t, []string{
+			"schema fidelity: type Short falls back to interface{} due to no type; " +
+				"declared but not enforced: string length constraint; affected configuration: string validator",
+			"schema fidelity: type UntypedKeywordsCount falls back to interface{} due to no type; " +
+				"declared but not enforced: numeric constraint; affected configuration: numeric validator",
+			"schema fidelity: type UntypedKeywordsPair falls back to interface{} due to no type; " +
+				"declared but not enforced: array constraint, items, additionalItems; affected configuration: array validator",
+			"schema fidelity: type UntypedKeywordsPick_0Name falls back to interface{} due to no type; " +
+				"declared but not enforced: required, string length constraint; " +
+				"affected configuration: required-field check, string validator",
+			word("pattern, string length constraint", "string validator"),
+		}, filterFidelityWarnings(generateWithWarnerCapture(t, schema)))
+
+		// A format is checked only under format validation, and only then lost.
+		cfg := basicConfig
+		cfg.FormatValidation = generator.FormatValidationConfig{Enabled: true}
+
+		assert.Contains(t, filterFidelityWarnings(generateWithConfigAndWarnerCapture(t, cfg, schema)),
+			word("format: email, pattern, string length constraint", "Config.FormatValidation, string validator"))
+	})
 }
 
 // generateWithWarnerCapture runs the generator on a single schema with a

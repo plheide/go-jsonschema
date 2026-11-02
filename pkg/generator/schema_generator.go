@@ -106,6 +106,8 @@ func (g *schemaGenerator) generateRootType() error {
 		if isFalseSchema(root) {
 			g.warner(fmt.Sprintf("schema fidelity: root of %s does not enforce all it declares: %s",
 				g.schemaFileName, ownConditionalReason(root)))
+		} else {
+			g.warnUntypedRoot(root)
 		}
 
 		return nil
@@ -1768,7 +1770,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		// A composition with no top-level `type` lands here — determineTypeName
 		// reports "null" for it. This is the additionalProperties-positioned
 		// fallback; warn before degrading so the loss is visible.
-		g.warnCompositionFallback(t, scope)
+		g.warnUntypedFallback(t, scope)
 
 		return emptyInterfaceTypeVal, nil
 
@@ -2791,7 +2793,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.Type) == 0 {
-			g.warnCompositionFallback(t, scope)
+			g.warnUntypedFallback(t, scope)
 
 			return codegen.EmptyInterfaceType{}, nil
 		}
