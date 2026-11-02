@@ -194,11 +194,12 @@ When generated code doesn't check something a schema declares, the generator say
 * `schema fidelity: type X falls back to interface{} due to <reason>; declared but not enforced: <keywords>` means
   the type became `interface{}`.
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
-  `oneOf`, an `if`/`then`/`else`, a `not` or a `false` schema. A reason such as `minProperties, propertyNames not
-  checked` names keywords that no generated code checks: `contains` (with `minContains` and `maxContains`),
-  `dependentRequired` and `dependentSchemas` (draft 07's `dependencies` counts as these), `maxProperties`,
-  `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and `unevaluatedProperties`. A keyword
-  whose subschemas admit every value, such as `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
+  `oneOf`, an `anyOf` with a branch that is `interface{}`, an `if`/`then`/`else`, a `not` or a `false` schema. A
+  reason such as `minProperties, propertyNames not checked` names keywords that no generated code checks: `contains`
+  (with `minContains` and `maxContains`), `dependentRequired` and `dependentSchemas` (draft 07's `dependencies`
+  counts as these), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and
+  `unevaluatedProperties`. A keyword whose subschemas admit every value, such as `"patternProperties": {"^x-": {}}`,
+  checks nothing and is not reported.
 * `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
   value meets. Nothing is generated for it.
 
@@ -295,6 +296,9 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   generate. A branch that is a `$ref` to a definition without a `type`, declared as `interface{}`, is decoded as the
   type the `anyOf` declares, where upstream's code for it did not compile. A branch that admits only `null`, such as
   `{"enum": [null]}`, is the `anyOf`'s `null`, as `{"type": "null"}` is.
+* A definition declared as a pointer type, such as `type Key *string` for `"type": ["string", "null"]`, has no
+  `UnmarshalJSON` where an `anyOf` refers to it, since Go allows no methods on a pointer type. Upstream's code for it
+  did not compile.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
   Upstream generated a tag that decodes nothing.
 * A `null` where a schema belongs, such as an entry of `allOf`, a property or a definition, stops generation with an

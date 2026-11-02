@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 585 (337 fixtures, 248 definitions), 25 skipped; documents: 15203
-json: 14120 agree, 594 missing checks (124 silent), 489 wrong rejections, 0 panics
-yaml: 13047 agree, 1655 missing checks (905 silent), 501 wrong rejections, 0 panics
+schemas: 590 (339 fixtures, 251 definitions), 25 skipped; documents: 15261
+json: 14160 agree, 612 missing checks (124 silent), 489 wrong rejections, 0 panics
+yaml: 13082 agree, 1678 missing checks (905 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/allOf/allOf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -81,17 +81,17 @@ yaml missing check (silent) type: null ×1, e.g. / = null
 
 == collisionStrategy/rememberedDefinition.schema.json#/definitions/step_condition
 json wrong rejection: wrong type ×1, e.g. /never = "true": unmarshal Wrap: unmarshal StepCondition: json: cannot unmarshal string into Go struct field Plain.never of type bool
-yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check type: null ×1, e.g. / = null
 yaml wrong rejection: wrong type ×1, e.g. /never = "true": unmarshal Wrap: unmarshal StepCondition: yaml: unmarshal errors: line 1: cannot unmarshal !!str `true` into bool
 
 == collisionStrategy/rememberedDefinition.schema.json#/definitions/step_condition_predicate
-yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check type: null ×1, e.g. / = null
 
 == collisionStrategy/rememberedDefinition.schema.json#/definitions/workflow_step
-json missing check (silent) type: null ×1, e.g. /when = null
+json missing check type: null ×1, e.g. /when = null
 json wrong rejection: null ×1, e.g. / = null: unmarshal Wrap: WorkflowStep: must not be null
 json wrong rejection: wrong type ×2, e.g. / = "x": unmarshal Wrap: unmarshal raw WorkflowStep: json: cannot unmarshal string into Go value of type map[string]interface {}
-yaml missing check (silent) type: null ×1, e.g. /when = null
+yaml missing check type: null ×1, e.g. /when = null
 yaml wrong rejection: wrong type ×2, e.g. / = "x": unmarshal Wrap: unmarshal raw WorkflowStep: yaml: unmarshal errors: line 1: cannot unmarshal !!str `x` into map[string]interface {}
 
 == collisionStrategy/sameNameA.schema.json
@@ -631,6 +631,42 @@ yaml missing check (silent) type: wrong type ×1, e.g. /name = 12345
 json wrong rejection: wrong type ×1, e.g. /name = 12345: unmarshal Wrap: unmarshal Policy: json: cannot unmarshal number into Go struct field Plain.name of type string
 yaml missing check (silent) type: null ×1, e.g. / = null
 
+== core/anyOf/anyOfInterfaceBranch.json
+json missing check required: delete key ×1, e.g. /filter/header deleted
+json missing check required: null ×1, e.g. /filter/header = null
+json missing check type: null ×1, e.g. /filter = null
+yaml missing check required: delete key ×1, e.g. /filter/header deleted
+yaml missing check required: null ×1, e.g. /filter/header = null
+yaml missing check required: wrong type ×1, e.g. /filter/header = 12345
+yaml missing check type: null ×2, e.g. / = null
+
+== core/anyOf/anyOfInterfaceBranch.json#/definitions/body
+json missing check const: 5000 characters ×1, e.g. /body = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check const: empty string ×1, e.g. /body = ""
+json missing check const: null ×1, e.g. /body = null
+json missing check const: off-enum string ×1, e.g. /body = "zzOffEnum"
+json missing check const: wrong type ×1, e.g. /body = 12345
+json missing check required: delete key ×2, e.g. /body deleted
+json missing check type: null ×2, e.g. / = null
+json missing check type: wrong type ×2, e.g. / = "x"
+yaml missing check const: 5000 characters ×1, e.g. /body = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check const: empty string ×1, e.g. /body = ""
+yaml missing check const: null ×1, e.g. /body = null
+yaml missing check const: off-enum string ×1, e.g. /body = "zzOffEnum"
+yaml missing check const: wrong type ×1, e.g. /body = 12345
+yaml missing check required: delete key ×2, e.g. /body deleted
+yaml missing check type: null ×2, e.g. / = null
+yaml missing check type: wrong type ×2, e.g. / = "x"
+
+== core/anyOf/anyOfInterfaceBranch.json#/definitions/filter
+json missing check required: delete key ×1, e.g. /header deleted
+json missing check required: null ×1, e.g. /header = null
+json missing check type: null ×1, e.g. / = null
+yaml missing check required: delete key ×1, e.g. /header deleted
+yaml missing check required: null ×1, e.g. /header = null
+yaml missing check required: wrong type ×1, e.g. /header = 12345
+yaml missing check type: null ×1, e.g. / = null
+
 == core/anyOf/anyOfMixedWithDefault.json
 json missing check type: null ×2, e.g. /extensions = null
 json missing check type: wrong type ×1, e.g. /extensions/name = 12345
@@ -685,6 +721,14 @@ yaml missing check (silent) format: 5000 characters ×1, e.g. /eventTime = "aaaa
 yaml missing check (silent) format: empty string ×1, e.g. /eventTime = ""
 yaml missing check (silent) format: off-enum string ×1, e.g. /eventTime = "zzOffEnum"
 yaml missing check (silent) type: null ×1, e.g. / = null
+
+== core/anyOf/anyOfNullableRef.json
+json missing check (silent) type: wrong type ×1, e.g. /key = 12345
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×1, e.g. /key = 12345
+
+== core/anyOf/anyOfNullableRef.json#/definitions/key
+yaml missing check (silent) type: wrong type ×1, e.g. / = 12345
 
 == core/anyOf/anyOfPrimitiveFirst.json
 json missing check const: 5000 characters ×1, e.g. /listed/0 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…

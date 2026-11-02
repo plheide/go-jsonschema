@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -647,10 +648,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		g.generateEmptyWhenNilMarshaler(&decl, g.emptyWhenNilFields(tt))
 
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
-			validators = append(validators, g.anyOfParentValidators(t, tt, decl.Name)...)
-			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
-			validators = append(validators, presenceCountValidators(t, decl.Name)...)
-			g.generateUnmarshaler(&decl, validators)
+			g.generateUnmarshaler(&decl, g.anyOfStructValidators(t, tt, decl.Name))
 
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
@@ -1485,7 +1483,10 @@ func (g *schemaGenerator) defaultValidatorFor(
 }
 
 func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators []validator) {
-	if g.config.OnlyModels {
+	// Go lets a pointer or an interface type have no methods, so a type
+	// declared as one, such as a nullable definition's `type K *string`,
+	// decodes as what it is declared as.
+	if g.config.OnlyModels || !hasMethods(decl) {
 		return
 	}
 
@@ -2316,6 +2317,8 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 
 	variantNames := make([]string, len(rAnyOf))
 
+	var admitAll []string
+
 	for i, typ := range rAnyOf {
 		ic, cleanupCycle, cycleErr := g.detectCycle(typ)
 		if cycleErr != nil {
@@ -2355,6 +2358,10 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		} else if decl, ok := g.output.declsBySchema[variantSchema]; ok {
 			variantNames[i] = decl.Name
 		}
+
+		if admitsEveryValue(variant) {
+			admitAll = append(admitAll, strconv.Itoa(i))
+		}
 	}
 
 	if isCycle {
@@ -2368,7 +2375,19 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 
 	anyOfType.AnyOf = nil
 	g.output.anyOfVariants[anyOfType] = variantNames
-	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t}
+	g.output.anyOfParents[anyOfType] = anyOfParent{schema: t, admitsAll: len(admitAll) > 0}
+
+	// A branch generated as interface{}, such as a $ref to a oneOf that is not
+	// compiled, has no type to decode into, and admits every value, so the
+	// anyOf does too.
+	if len(admitAll) > 0 && !g.config.OnlyModels {
+		which := "branch " + admitAll[0] + " is interface{}, which admits"
+		if len(admitAll) > 1 {
+			which = "branches " + strings.Join(admitAll, ", ") + " are interface{}, which admit"
+		}
+
+		g.warnNotEnforced(scope, "anyOf "+which+" every value, so the anyOf is not checked")
+	}
 
 	// The merge carries the conditionals and the unchecked keywords of t,
 	// reported with t, and of its branches, reported with each branch's type
@@ -2389,6 +2408,24 @@ func hasMethods(decl *codegen.TypeDecl) bool {
 	}
 
 	return true
+}
+
+// admitsEveryValue reports whether t, a generated type, holds any value:
+// interface{}, or a type declared as interface{}.
+func admitsEveryValue(t codegen.Type) bool {
+	switch t.(type) {
+	case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
+		return true
+	}
+
+	if decl := namedDecl(t); decl != nil {
+		switch decl.Type.(type) {
+		case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
+			return true
+		}
+	}
+
+	return false
 }
 
 // anyOfBranchKey identifies a copy of an anyOf branch with the types types.

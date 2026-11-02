@@ -7,9 +7,9 @@ A missing check accepts a document the suite marks invalid, and a wrong rejectio
 it marks valid. A missing check is silent when its case has no generator warning.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-json: 629 agree, 228 missing checks (156 silent), 16 wrong rejections, 0 panics, 56 not run
-yaml: 610 agree, 247 missing checks (174 silent), 16 wrong rejections, 0 panics, 56 not run
-cases: 23 generation failures, 0 compilation failures, 44 with warnings
+json: 629 agree, 228 missing checks (148 silent), 16 wrong rejections, 0 panics, 56 not run
+yaml: 610 agree, 247 missing checks (166 silent), 16 wrong rejections, 0 panics, 56 not run
+cases: 23 generation failures, 0 compilation failures, 48 with warnings
 
 == additionalItems.json
 
@@ -87,26 +87,28 @@ json missing check (silent): anything non-null is invalid
 yaml missing check (silent): anything non-null is invalid
 
 -- allOf combined with anyOf, oneOf
-json missing check (silent): allOf: false, anyOf: false, oneOf: false
-yaml missing check (silent): allOf: false, anyOf: false, oneOf: false
-json missing check (silent): allOf: false, anyOf: false, oneOf: true
-yaml missing check (silent): allOf: false, anyOf: false, oneOf: true
-json missing check (silent): allOf: false, anyOf: true, oneOf: false
-yaml missing check (silent): allOf: false, anyOf: true, oneOf: false
-json missing check (silent): allOf: false, anyOf: true, oneOf: true
-yaml missing check (silent): allOf: false, anyOf: true, oneOf: true
-json missing check (silent): allOf: true, anyOf: false, oneOf: false
-yaml missing check (silent): allOf: true, anyOf: false, oneOf: false
-json missing check (silent): allOf: true, anyOf: false, oneOf: true
-yaml missing check (silent): allOf: true, anyOf: false, oneOf: true
-json missing check (silent): allOf: true, anyOf: true, oneOf: false
-yaml missing check (silent): allOf: true, anyOf: true, oneOf: false
+warning: schema fidelity: type Root does not enforce all it declares: anyOf branch 0 is interface{}, which admits every value, so the anyOf is not checked
+json missing check: allOf: false, anyOf: false, oneOf: false
+yaml missing check: allOf: false, anyOf: false, oneOf: false
+json missing check: allOf: false, anyOf: false, oneOf: true
+yaml missing check: allOf: false, anyOf: false, oneOf: true
+json missing check: allOf: false, anyOf: true, oneOf: false
+yaml missing check: allOf: false, anyOf: true, oneOf: false
+json missing check: allOf: false, anyOf: true, oneOf: true
+yaml missing check: allOf: false, anyOf: true, oneOf: true
+json missing check: allOf: true, anyOf: false, oneOf: false
+yaml missing check: allOf: true, anyOf: false, oneOf: false
+json missing check: allOf: true, anyOf: false, oneOf: true
+yaml missing check: allOf: true, anyOf: false, oneOf: true
+json missing check: allOf: true, anyOf: true, oneOf: false
+yaml missing check: allOf: true, anyOf: true, oneOf: false
 
 == anyOf.json
 
 -- anyOf
-json missing check (silent): neither anyOf valid
-yaml missing check (silent): neither anyOf valid
+warning: schema fidelity: type Root does not enforce all it declares: anyOf branch 1 is interface{}, which admits every value, so the anyOf is not checked
+json missing check: neither anyOf valid
+yaml missing check: neither anyOf valid
 
 -- anyOf with base schema
 json missing check (silent): mismatch base schema
@@ -114,14 +116,22 @@ yaml missing check (silent): mismatch base schema
 json missing check (silent): both anyOf invalid
 yaml missing check (silent): both anyOf invalid
 
+-- anyOf with boolean schemas, all true
+warning: schema fidelity: type Root does not enforce all it declares: anyOf branches 0, 1 are interface{}, which admit every value, so the anyOf is not checked
+
 -- anyOf with boolean schemas, some true
+warning: schema fidelity: type Root does not enforce all it declares: anyOf branches 0, 1 are interface{}, which admit every value, so the anyOf is not checked
 warning: schema fidelity: type Root_1 does not enforce all it declares: false schema not compiled, so any value passes
 
 -- anyOf with boolean schemas, all false
+warning: schema fidelity: type Root does not enforce all it declares: anyOf branches 0, 1 are interface{}, which admit every value, so the anyOf is not checked
 warning: schema fidelity: type Root_0 does not enforce all it declares: false schema not compiled, so any value passes
 warning: schema fidelity: type Root_1 does not enforce all it declares: false schema not compiled, so any value passes
 json missing check: any value is invalid
 yaml missing check: any value is invalid
+
+-- anyOf with one empty schema
+warning: schema fidelity: type Root does not enforce all it declares: anyOf branch 1 is interface{}, which admits every value, so the anyOf is not checked
 
 -- nested anyOf, to check validation semantics
 warning: anyOf generation failed for {[Root] false}; falling back to interface{}: could not merge anyOf types: types list is empty

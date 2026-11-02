@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "An anyOf of a $ref to a nullable string definition and null, on a property with a keyword of its own. The definition is declared as a pointer, `type Key *string`, and Go lets a pointer type have no methods.",
+  "type": "object",
+  "properties": {
+    "key": { "anyOf": [{ "$ref": "#/definitions/key" }, { "type": "null" }], "x-plan": "free" }
+  },
+  "definitions": {
+    "key": { "type": ["string", "null"] }
+  }
+}

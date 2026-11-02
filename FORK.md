@@ -49,7 +49,7 @@ Not offered upstream yet:
     fractional `multipleOf`, two-type unions at the root and in definitions, boolean root schemas, and an `anyOf`
     merge that changes none of the schemas it reads;
   * checking `required` names that no property declares, and code that compiles for a default of a named pointer
-    type;
+    type and for an `anyOf` with a branch declared as a pointer or `interface{}`;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);
