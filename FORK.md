@@ -52,6 +52,7 @@ Not offered upstream yet:
     values, warnings for the keywords of a schema with no `type`, and code that compiles for a default of a named
     pointer type and for an `anyOf` with a branch declared as a pointer or `interface{}`;
   * `types.Duration` for `format: duration`, read and written as an ISO 8601 duration;
+  * the `--validate-null-types` checks of a property whose `$ref` points into another file;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

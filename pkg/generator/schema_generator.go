@@ -267,6 +267,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		if len(def.Type) == 0 {
 			// Minor hack to make definitions default to being objects.
 			def.Type = schemas.TypeList{schemas.TypeNameObject}
+			g.objectByDefault[def] = struct{}{}
 		}
 	}
 
@@ -854,7 +855,7 @@ func (g *schemaGenerator) nullTypeValidators(
 	}
 
 	if container {
-		if !schemaExcludesNull(t) {
+		if !g.declaresNoNull(t) {
 			return nil
 		}
 
@@ -907,7 +908,7 @@ func (g *schemaGenerator) nonNullValueValidatorFor(t *schemas.Type, declName str
 		return nil
 	}
 
-	excludesNull := schemaExcludesNull(t)
+	excludesNull := g.declaresNoNull(t)
 	forbidden := g.nullForbiddenLevels(t)
 
 	if !excludesNull && len(forbidden) == 0 {
@@ -979,21 +980,74 @@ const maxNullCheckRefHops = 16
 // `{"type": "string"}` looks like a schema that constrains nothing and no check
 // is emitted, while the same type written inline gets one.
 //
-// Resolved by walking this schema's definitions rather than through
-// resolveRef, which generates the referenced type as a side effect. A
-// reference this cannot follow — into another document, or to a definition
-// that is not there — keeps the previous answer rather than forcing one.
+// Resolved by walking the definitions rather than through resolveRef, which
+// generates the referenced type as a side effect. A reference into another
+// document is followed there, and a reference that document holds is read in
+// it. A reference this cannot follow, such as one to a definition that is not
+// there, keeps the previous answer rather than forcing one.
 func (g *schemaGenerator) schemaExcludesNullResolved(t *schemas.Type) bool {
+	doc, docFile := g.schema, g.schemaFileName
+
 	for hops := 0; t != nil && t.Ref != "" && hops < maxNullCheckRefHops; hops++ {
-		resolved := g.localRefTarget(t)
-		if resolved == nil {
+		var ok bool
+
+		if t, doc, docFile, ok = g.refTargetIn(t, doc, docFile); !ok {
 			return false
 		}
+	}
 
-		t = resolved
+	return g.declaresNoNull(t)
+}
+
+// declaresNoNull is schemaExcludesNull for a schema whose type may be the
+// object type that a root of a file a `$ref` names whole was given for want of
+// one, which does not count.
+func (g *schemaGenerator) declaresNoNull(t *schemas.Type) bool {
+	if _, guessed := g.objectByDefault[t]; guessed {
+		return false
 	}
 
 	return schemaExcludesNull(t)
+}
+
+// refTargetIn returns the schema that t's `$ref`, read in the document doc of
+// file docFile, points at, with the document and the file it is in, or false
+// when it cannot be followed. It loads another document the way generating
+// the `$ref` does, and generates nothing.
+func (g *schemaGenerator) refTargetIn(
+	t *schemas.Type,
+	doc *schemas.Schema,
+	docFile string,
+) (*schemas.Type, *schemas.Schema, string, bool) {
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, nil, "", false
+	}
+
+	if fileName != "" {
+		loaded, err := g.loader.Load(fileName, docFile)
+		if err != nil {
+			return nil, nil, "", false
+		}
+
+		qualified, err := schemas.QualifiedFileName(fileName, docFile, g.config.ResolveExtensions)
+		if err != nil {
+			return nil, nil, "", false
+		}
+
+		doc, docFile = loaded, qualified
+	}
+
+	if defName == "" {
+		return (*schemas.Type)(doc.ObjectAsType), doc, docFile, true
+	}
+
+	def, err := resolveRefPath(doc.Definitions, defName)
+	if err != nil {
+		return nil, nil, "", false
+	}
+
+	return def, doc, docFile, true
 }
 
 // localRefTarget returns the schema a same-document `$ref` points at, or nil
