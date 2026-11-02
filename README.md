@@ -227,6 +227,7 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 | Any other `oneOf` of objects | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches |
 | `oneOf` or `anyOf` of a `$ref`, an object or an array, and `{"type": "null"}` | `interface{}` for a `oneOf`, a copy of the schema for an `anyOf` | A pointer to the schema's own type |
 | `anyOf` of an object with properties and a primitive or an array | The first branch's type: a primitive such as `*string`, which rejects every object, or a struct, which rejects the primitive | `interface{}`, with a fidelity warning |
+| An `anyOf` on a `string`, a number or a `boolean` whose branches only check its values, such as `{"type": "string", "anyOf": [{"enum": ["a", "b"]}, {"pattern": "^x-"}]}` | `interface{}`, and a type for each `enum` branch, which no field uses | The type, such as `*string` |
 | An enum listing `null` beside values of one type, such as `"enum": ["a", "b", null]` | A struct holding an `interface{}` | A pointer to an enum of that type |
 | An enum with `x-enum-varnames: ["Low", "High"]` | Constants named after the type and the value, such as `FooLevelLo` | `Low` and `High` |
 | `oneOf`, `anyOf`, `allOf` or `enum` at the root | No root type | The root type |
@@ -257,6 +258,11 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   requires, or every branch requires, and those of its own properties. Upstream checked only the branches.
 * A name in `required` that no property declares is checked: the object must have the key. Upstream checked only the
   names of the properties a schema declares.
+* An `anyOf` or a `oneOf` on a `string`, a number or a `boolean` whose branches only check its values, with `const`,
+  `enum`, `pattern`, a length, a bound or `multipleOf`, is checked: a value must match at least one branch of the
+  `anyOf`, and exactly one branch of the `oneOf`. Upstream checked no branch of either. A branch with a `format` that
+  only a field's Go type checks, such as `date-time`, or with a `pattern` that Go's regexp cannot compile, leaves the
+  composition unchecked, with a warning.
 
 ### Other differences
 

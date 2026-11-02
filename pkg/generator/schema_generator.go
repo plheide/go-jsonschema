@@ -1187,6 +1187,8 @@ func (g *schemaGenerator) structFieldValidators(
 			}
 		}
 
+		validators = append(validators, g.primitiveCompositionValidators(f, v.Type, isNillable)...)
+
 	case *codegen.ArrayType:
 		// Only the field's own bounds: those of a nested array are its own,
 		// which the element walk checks.
@@ -1691,8 +1693,9 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	// still fails rather than becoming an unchecked interface{}.
 	//
 	// An anyOf that is a presence count has nothing to merge: the struct for
-	// t checks it.
-	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) {
+	// t checks it. Nor has a primitive composition, which keeps its type and is
+	// checked as a value of it.
+	if len(t.AnyOf) > 0 && !isPresenceAnyOf(t) && !isPrimitiveComposition(t) {
 		dt, err := g.generateAnyOfType(t, scope)
 		if err != nil {
 			if slices.Contains(t.Type, schemas.TypeNameObject) {
@@ -2760,6 +2763,37 @@ func (g *schemaGenerator) generateInlineComposition(t *schemas.Type, scope nameS
 	return nil, false, nil
 }
 
+// generateInlineCompositionOrWrapper generates t inline as the composition it
+// is, or as the wrapper or holder declared for it, if that decides its type.
+// handled reports whether it does.
+func (g *schemaGenerator) generateInlineCompositionOrWrapper(
+	t *schemas.Type,
+	scope nameScope,
+) (codegen.Type, bool, error) {
+	// A primitive composition keeps its type, and is checked as a value of it.
+	// A branch of an anyOf is generated as before.
+	if isPrimitiveComposition(t) && !t.IsSubSchemaTypeElem() {
+		return nil, false, nil
+	}
+
+	if dt, handled, err := g.generateInlineComposition(t, scope); handled {
+		return dt, true, err
+	}
+
+	// Composition forms that emit a named wrapper or holder must be routed to
+	// generateDeclaredType before generateTypeInline's `len(t.Type) == 0`
+	// bail-out, since they carry no top-level `type` and would otherwise be
+	// emitted as interface{}. Collected in one predicate so this function keeps
+	// a single branch for the whole family.
+	if g.needsDeclaredType(t) {
+		dt, err := g.generateDeclaredType(t, scope)
+
+		return dt, true, err
+	}
+
+	return nil, false, nil
+}
+
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
@@ -2779,17 +2813,8 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		g.warnUncompiledConditional(t, scope, true)
 		g.warnUnenforcedKeywords(t, scope)
 
-		if dt, handled, err := g.generateInlineComposition(t, scope); handled {
+		if dt, handled, err := g.generateInlineCompositionOrWrapper(t, scope); handled {
 			return dt, err
-		}
-
-		// Composition forms that emit a named wrapper or holder must be
-		// routed to generateDeclaredType before the `len(t.Type) == 0`
-		// bail-out below, since they carry no top-level `type` and would
-		// otherwise be emitted as interface{}. Collected in one predicate so
-		// this function keeps a single branch for the whole family.
-		if g.needsDeclaredType(t) {
-			return g.generateDeclaredType(t, scope)
 		}
 
 		if len(t.Type) == 0 {

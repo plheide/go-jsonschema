@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 592 (340 fixtures, 252 definitions), 25 skipped; documents: 15328
-json: 14211 agree, 628 missing checks (112 silent), 489 wrong rejections, 0 panics
-yaml: 13132 agree, 1695 missing checks (876 silent), 501 wrong rejections, 0 panics
+schemas: 594 (341 fixtures, 253 definitions), 25 skipped; documents: 15453
+json: 14336 agree, 628 missing checks (112 silent), 489 wrong rejections, 0 panics
+yaml: 13255 agree, 1697 missing checks (878 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/allOf/allOf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -3086,6 +3086,12 @@ skipped: the reference validator can't compile it: compile data/validation/patte
 
 == validation/patternUnsupported/patternUnsupported.json#/definitions/RepeatedCode
 skipped: the reference validator can't compile it: compile data/validation/patternUnsupported/patternUnsupported.json#/definitions/RepeatedCode: "file://data/validation/patternUnsupported/patternUnsupported.json#" is not valid against metaschema: jsonschema validation failed with 'http://json-schema.org/draft-07/schema#'
+
+== validation/primitiveComposition/primitiveComposition.json
+yaml missing check (silent) type: null ×1, e.g. / = null
+
+== validation/primitiveComposition/primitiveComposition.json#/definitions/level
+yaml missing check (silent) type: null ×1, e.g. / = null
 
 == validation/primitive_defs/primitive_defs.json
 yaml missing check (silent) type: null ×1, e.g. / = null

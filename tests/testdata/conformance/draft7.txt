@@ -7,8 +7,8 @@ A missing check accepts a document the suite marks invalid, and a wrong rejectio
 it marks valid. A missing check is silent when its case has no generator warning.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-json: 629 agree, 228 missing checks (32 silent), 16 wrong rejections, 0 panics, 56 not run
-yaml: 610 agree, 247 missing checks (51 silent), 16 wrong rejections, 0 panics, 56 not run
+json: 632 agree, 225 missing checks (29 silent), 16 wrong rejections, 0 panics, 56 not run
+yaml: 612 agree, 245 missing checks (49 silent), 16 wrong rejections, 0 panics, 56 not run
 cases: 23 generation failures, 0 compilation failures, 133 with warnings
 
 == additionalItems.json
@@ -124,10 +124,7 @@ json missing check: neither anyOf valid
 yaml missing check: neither anyOf valid
 
 -- anyOf with base schema
-json missing check (silent): mismatch base schema
 yaml missing check (silent): mismatch base schema
-json missing check (silent): both anyOf invalid
-yaml missing check (silent): both anyOf invalid
 
 -- anyOf with boolean schemas, all true
 warning: schema fidelity: type Root does not enforce all it declares: anyOf branches 0, 1 are interface{}, which admit every value, so the anyOf is not checked
@@ -671,8 +668,6 @@ yaml missing check: neither oneOf valid
 
 -- oneOf with base schema
 yaml missing check (silent): mismatch base schema
-json missing check (silent): both oneOf valid
-yaml missing check (silent): both oneOf valid
 
 -- oneOf with boolean schemas, all true
 json missing check (silent): any value is invalid

@@ -80,6 +80,7 @@ var (
 	_ validator = new(elementsValidator)
 	_ validator = new(untypedConstValidator)
 	_ validator = new(uniqueItemsValidator)
+	_ validator = new(primitiveCompositionValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
