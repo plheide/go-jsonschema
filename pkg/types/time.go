@@ -19,7 +19,7 @@ func (t SerializableTime) MarshalJSON() ([]byte, error) {
 
 func (t *SerializableTime) UnmarshalJSON(data []byte) error {
 	stringifiedData := string(data)
-	if stringifiedData == "null" {
+	if stringifiedData == jsonNull {
 		return nil
 	}
 

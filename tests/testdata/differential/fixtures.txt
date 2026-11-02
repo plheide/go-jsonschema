@@ -7,8 +7,8 @@ check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
 schemas: 594 (341 fixtures, 253 definitions), 25 skipped; documents: 15453
-json: 14336 agree, 628 missing checks (112 silent), 489 wrong rejections, 0 panics
-yaml: 13255 agree, 1697 missing checks (878 silent), 501 wrong rejections, 0 panics
+json: 14393 agree, 630 missing checks (114 silent), 430 wrong rejections, 0 panics
+yaml: 13308 agree, 1703 missing checks (884 silent), 442 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/allOf/allOf.json
 yaml missing check (silent) type: null ×1, e.g. / = null
@@ -903,13 +903,8 @@ yaml missing check required: wrong type ×4, e.g. /credit-card = 12345
 yaml missing check type: null ×1, e.g. / = null
 
 == core/duration/duration.json
-json wrong rejection: add unknown key ×2, e.g. / = {"myObject":{"withDefault":"PT20S","with…: unmarshal Wrap: unmarshal Duration: unmarshal DurationMyObject: json: cannot unmarshal string into Go struct field Plain.withDefault of type time.Duration
-json wrong rejection: delete key ×2, e.g. /myObject/withDefault deleted: unmarshal Wrap: unmarshal Duration: unmarshal DurationMyObject: json: cannot unmarshal string into Go struct field Plain.withoutDefault of type time.Duration
-json wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Duration: unmarshal DurationMyObject: json: cannot unmarshal string into Go struct field Plain.withDefault of type time.Duration
+json missing check (silent) type: wrong type ×2, e.g. /myObject/withDefault = 12345
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: add unknown key ×2, e.g. / = {"myObject":{"withDefault":"PT20S","with…: unmarshal Wrap: unmarshal Duration: unmarshal DurationMyObject: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration line 1: cannot unmarshal !!str `P1D` into time.Duration
-yaml wrong rejection: delete key ×2, e.g. /myObject/withDefault deleted: unmarshal Wrap: unmarshal Duration: unmarshal DurationMyObject: yaml: unmarshal errors: line 1: cannot unmarshal !!str `P1D` into time.Duration
-yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Duration: unmarshal DurationMyObject: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration line 1: cannot unmarshal !!str `P1D` into time.Duration
 
 == core/integerFormat/integerFormatDefault.json
 json wrong rejection: 1e300 ×3, e.g. /count = 1e300: unmarshal Wrap: unmarshal IntegerFormatDefault: json: cannot unmarshal number 1e300 into Go struct field Plain.count of type int
@@ -2771,41 +2766,14 @@ yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Nillabili
 
 == schemaExtensions/pointer/pointer.json
 json missing check (silent) type: wrong type ×1, e.g. /durationWithDefault = 12345
-json wrong rejection: 0 ×4, e.g. /intWithDefault = 0: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: 0e99 ×4, e.g. /intWithDefault = 0e99: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: 1e300 ×6, e.g. /intWithDefault = 1e300: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: 2^53+1 ×4, e.g. /intWithDefault = 9007199254740993: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: 2^63 ×6, e.g. /intWithDefault = 9223372036854775808: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: 2^64 ×6, e.g. /intWithDefault = 18446744073709551616: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: 5000 characters ×6, e.g. /normalDefault = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: N.0 ×4, e.g. /intWithDefault = 42.0: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: Ne0 ×4, e.g. /intWithDefault = 42e0: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: add unknown key ×1, e.g. / = {"boolWithDefault":true,"durationWithDef…: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: delete key ×8, e.g. /boolWithDefault deleted: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: duplicate first item ×1, e.g. /sliceWithDefault = ["a","b","a"]: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: empty array ×1, e.g. /sliceWithDefault = []: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: empty string ×6, e.g. /normalDefault = "": unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: negative ×4, e.g. /intWithDefault = -1: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: off-enum string ×6, e.g. /normalDefault = "zzOffEnum": unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
-json wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal string into Go struct field Plain.durationWithDefault of type time.Duration
+json wrong rejection: 1e300 ×6, e.g. /intWithDefault = 1e300: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal number 1e300 into Go struct field Plain.intWithDefault of type int
+json wrong rejection: 2^63 ×6, e.g. /intWithDefault = 9223372036854775808: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.intWithDefault of type int
+json wrong rejection: 2^64 ×6, e.g. /intWithDefault = 18446744073709551616: unmarshal Wrap: unmarshal Pointer: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.intWithDefault of type int
 yaml missing check (silent) type: null ×1, e.g. / = null
-yaml wrong rejection: 0 ×4, e.g. /intWithDefault = 0: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: 0e99 ×4, e.g. /intWithDefault = 0e99: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
+yaml missing check (silent) type: wrong type ×6, e.g. /normalDefault = 12345
 yaml wrong rejection: 1e300 ×6, e.g. /intWithDefault = 1e300: unmarshal Wrap: unmarshal Pointer: field intWithDefault: 1e300 is out of range for int
-yaml wrong rejection: 2^53+1 ×4, e.g. /intWithDefault = 9007199254740993: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: 2^63 ×6, e.g. /intWithDefault = 9223372036854775808: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^63 ×6, e.g. /intWithDefault = 9223372036854775808: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
 yaml wrong rejection: 2^64 ×6, e.g. /intWithDefault = 18446744073709551616: unmarshal Wrap: unmarshal Pointer: field intWithDefault: 18446744073709551616 is out of range for int
-yaml wrong rejection: 5000 characters ×6, e.g. /normalDefault = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: N.0 ×4, e.g. /intWithDefault = 42.0: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: Ne0 ×4, e.g. /intWithDefault = 42e0: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: add unknown key ×1, e.g. / = {"boolWithDefault":true,"durationWithDef…: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: delete key ×8, e.g. /boolWithDefault deleted: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: duplicate first item ×1, e.g. /sliceWithDefault = ["a","b","a"]: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: empty array ×1, e.g. /sliceWithDefault = []: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: empty string ×6, e.g. /normalDefault = "": unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: negative ×4, e.g. /intWithDefault = -1: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: off-enum string ×6, e.g. /normalDefault = "zzOffEnum": unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
-yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Pointer: yaml: unmarshal errors: line 1: cannot unmarshal !!str `PT20S` into time.Duration
 
 == schemaPackageAlias/consumer/consumer.json
 json missing check (silent) type: null ×2, e.g. /header = null

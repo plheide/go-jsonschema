@@ -19,7 +19,7 @@ func (date SerializableDate) MarshalJSON() ([]byte, error) {
 
 func (date *SerializableDate) UnmarshalJSON(data []byte) error {
 	stringifiedData := string(data)
-	if stringifiedData == "null" {
+	if stringifiedData == jsonNull {
 		return nil
 	}
 

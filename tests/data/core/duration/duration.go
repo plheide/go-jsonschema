@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import "github.com/plheide/go-jsonschema/pkg/types"
 import yaml "gopkg.in/yaml.v3"
 import "time"
 
@@ -14,10 +15,10 @@ type Duration struct {
 
 type DurationMyObject struct {
 	// WithDefault corresponds to the JSON schema field "withDefault".
-	WithDefault time.Duration `json:"withDefault,omitempty,omitzero" yaml:"withDefault,omitempty" mapstructure:"withDefault,omitempty"`
+	WithDefault types.Duration `json:"withDefault,omitempty,omitzero" yaml:"withDefault,omitempty" mapstructure:"withDefault,omitempty"`
 
 	// WithoutDefault corresponds to the JSON schema field "withoutDefault".
-	WithoutDefault *time.Duration `json:"withoutDefault,omitempty,omitzero" yaml:"withoutDefault,omitempty" mapstructure:"withoutDefault,omitempty"`
+	WithoutDefault *types.Duration `json:"withoutDefault,omitempty,omitzero" yaml:"withoutDefault,omitempty" mapstructure:"withoutDefault,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -36,7 +37,7 @@ func (j *DurationMyObject) UnmarshalJSON(value []byte) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse the \"20s\" default value for field withDefault: %w", err)
 		}
-		plain.WithDefault = defaultDuration
+		plain.WithDefault = types.Duration{Duration: defaultDuration}
 
 	}
 	*j = DurationMyObject(plain)
@@ -59,7 +60,7 @@ func (j *DurationMyObject) UnmarshalYAML(value *yaml.Node) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse the \"20s\" default value for field withDefault: %w", err)
 		}
-		plain.WithDefault = defaultDuration
+		plain.WithDefault = types.Duration{Duration: defaultDuration}
 
 	}
 	*j = DurationMyObject(plain)

@@ -6,6 +6,7 @@ import "bytes"
 import "encoding/json"
 import "errors"
 import "fmt"
+import "github.com/plheide/go-jsonschema/pkg/types"
 import yaml "gopkg.in/yaml.v3"
 import "strconv"
 import "strings"
@@ -16,7 +17,7 @@ type Pointer struct {
 	BoolWithDefault *bool `json:"boolWithDefault,omitempty,omitzero" yaml:"boolWithDefault,omitempty" mapstructure:"boolWithDefault,omitempty"`
 
 	// DurationWithDefault corresponds to the JSON schema field "durationWithDefault".
-	DurationWithDefault *time.Duration `json:"durationWithDefault,omitempty,omitzero" yaml:"durationWithDefault,omitempty" mapstructure:"durationWithDefault,omitempty"`
+	DurationWithDefault *types.Duration `json:"durationWithDefault,omitempty,omitzero" yaml:"durationWithDefault,omitempty" mapstructure:"durationWithDefault,omitempty"`
 
 	// IntWithDefault corresponds to the JSON schema field "intWithDefault".
 	IntWithDefault *int `json:"intWithDefault,omitempty,omitzero" yaml:"intWithDefault,omitempty" mapstructure:"intWithDefault,omitempty"`
@@ -79,7 +80,7 @@ func (j *Pointer) UnmarshalJSON(value []byte) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse the \"20s\" default value for field durationWithDefault: %w", err)
 		}
-		plain.DurationWithDefault = &defaultDuration
+		plain.DurationWithDefault = &types.Duration{Duration: defaultDuration}
 
 	}
 	if v, ok := raw["intWithDefault"]; !ok || v == nil {
@@ -129,7 +130,7 @@ func (j *Pointer) UnmarshalYAML(value *yaml.Node) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse the \"20s\" default value for field durationWithDefault: %w", err)
 		}
-		plain.DurationWithDefault = &defaultDuration
+		plain.DurationWithDefault = &types.Duration{Duration: defaultDuration}
 
 	}
 	if v, ok := raw["intWithDefault"]; !ok || v == nil {

@@ -173,8 +173,8 @@ func stringVariantFormatFor(t *schemas.Type) stringVariantFormat {
 	return plain
 }
 
-// importPathPkgTypes is the package holding the date and time types a field of
-// format `date` or `time` gets.
+// importPathPkgTypes is the package holding the date, time and duration types
+// a field of format `date`, `time` or `duration` gets.
 const importPathPkgTypes = "github.com/plheide/go-jsonschema/pkg/types"
 
 // The temporal format keywords a string variant maps to a time type.

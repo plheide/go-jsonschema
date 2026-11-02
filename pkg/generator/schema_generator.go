@@ -1827,7 +1827,7 @@ func (g *schemaGenerator) primitiveType(t *schemas.Type, name string, isNillable
 	}
 
 	if dcg, ok := cg.(codegen.DurationType); ok {
-		g.output.file.Package.AddImport("time", "")
+		g.output.file.Package.AddImport(importPathPkgTypes, "")
 
 		return dcg, nil
 	}
