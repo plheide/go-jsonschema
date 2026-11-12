@@ -309,6 +309,9 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 * A definition declared as a pointer type, such as `type Key *string` for `"type": ["string", "null"]`, has no
   `UnmarshalJSON` where an `anyOf` refers to it, since Go allows no methods on a pointer type. Upstream's code for it
   did not compile.
+* An `allOf`, `anyOf` or `oneOf` member that is a `$ref` into a schema mapped to another Go package
+  (`--schema-package`) imports that package only where a type of it is used. Upstream imported it anyway, so where
+  the merge copied the member's fields, its code did not compile.
 * A property name that a struct tag can't carry for `encoding/json`, such as `a"b`, stops generation with an error.
   Upstream generated a tag that decodes nothing.
 * A `null` where a schema belongs, such as an entry of `allOf`, a property or a definition, stops generation with an

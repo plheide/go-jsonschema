@@ -193,7 +193,46 @@ func rootHasGeneratable(t *schemas.Type) bool {
 		len(t.AllOf) > 0
 }
 
+// generateReferencedType returns the type that t's $ref refers to, and imports
+// the package it is declared in, where that is another one.
 func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type, error) {
+	dt, err := g.referencedType(t)
+	if err != nil {
+		return nil, err
+	}
+
+	g.importPackageOf(dt)
+
+	return dt, nil
+}
+
+// importPackageOf imports the package that dt, or the type dt points to, is
+// declared in, when that is not this output's.
+func (g *schemaGenerator) importPackageOf(dt codegen.Type) {
+	if pt, ok := dt.(*codegen.PointerType); ok {
+		dt = pt.Type
+	}
+
+	nt, ok := dt.(*codegen.NamedType)
+	if !ok || nt.Package == nil || nt.Package.QualifiedName == g.output.file.Package.QualifiedName {
+		return
+	}
+
+	for _, i := range g.output.file.Package.Imports {
+		if i.Name == nt.Alias && i.QualifiedName == nt.Package.QualifiedName {
+			return
+		}
+	}
+
+	g.output.file.Package.AddImport(nt.Package.QualifiedName, nt.Alias)
+}
+
+// referencedType returns the type that t's $ref refers to, as
+// generateReferencedType does, but leaves the package it is declared in
+// unimported. resolveRef wants only the type's schema: an allOf or anyOf merge
+// copies its fields, so nothing need refer to that package, and an import that
+// nothing uses does not compile.
+func (g *schemaGenerator) referencedType(t *schemas.Type) (codegen.Type, error) {
 	defName, fileName, err := g.extractRefNames(t)
 	if err != nil {
 		return nil, err
@@ -307,26 +346,10 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		return dt, nil
 	}
 
-	alias := g.resolveImportAlias(sg.output.file.Package.QualifiedName)
-
-	var imp *codegen.Import
-
-	for _, i := range g.output.file.Package.Imports {
-		if i.Name == alias && i.QualifiedName == sg.output.file.Package.QualifiedName {
-			imp = &i
-
-			break
-		}
-	}
-
-	if imp == nil {
-		g.output.file.Package.AddImport(sg.output.file.Package.QualifiedName, alias)
-	}
-
 	ref := &codegen.NamedType{
 		Package: &sg.output.file.Package,
 		Decl:    nt.Decl,
-		Alias:   alias,
+		Alias:   g.resolveImportAlias(sg.output.file.Package.QualifiedName),
 	}
 
 	if _, isPointer := dt.(*codegen.PointerType); isPointer {
@@ -3251,7 +3274,9 @@ func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
 		return g.schemaTypesByRef[t.Ref], nil
 	}
 
-	typ, err := g.generateReferencedType(t)
+	// The merges that call this want the schema alone, so the type's package
+	// is imported only where the type itself is used.
+	typ, err := g.referencedType(t)
 	if err != nil {
 		return nil, err
 	}

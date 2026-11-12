@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "https://example.com/header",
+  "title": "Header",
+  "type": "object",
+  "required": ["traceId"],
+  "additionalProperties": false,
+  "properties": {
+    "traceId": { "type": "string" }
+  }
+}

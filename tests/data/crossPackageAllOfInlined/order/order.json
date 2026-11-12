@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "https://example.com/order",
+  "$defs": {
+    "OrderFields": {
+      "type": "object",
+      "required": ["orderId", "quantity"],
+      "properties": {
+        "orderId": { "type": "string" },
+        "quantity": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "https://example.com/schema",
+  "description": "An allOf and an anyOf whose member is a $ref into a schema mapped to another Go package, with properties of primitive types only. The merge copies the member's fields, so nothing refers to that package, and it is not imported.",
+  "type": "object",
+  "allOf": [
+    {
+      "type": "object",
+      "required": ["header"],
+      "properties": {
+        "header": { "$ref": "../header/header.json" }
+      }
+    },
+    { "$ref": "../order/order.json#/$defs/OrderFields" }
+  ],
+  "properties": {
+    "amendment": {
+      "anyOf": [
+        { "$ref": "../order/order.json#/$defs/OrderFields" },
+        { "type": "object", "required": ["note"], "properties": { "note": { "type": "string" } } }
+      ]
+    }
+  }
+}
