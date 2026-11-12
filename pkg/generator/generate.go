@@ -59,6 +59,9 @@ type Generator struct {
 	// reportedUntyped holds the schemas that warnUntyped has reported as
 	// falling back to interface{} for having no type.
 	reportedUntyped map[*schemas.Type]struct{}
+	// unevaluatedClosed holds the decision of checksUnevaluatedProperties for
+	// a schema an allOf is declared on and for the type it merges into.
+	unevaluatedClosed map[*schemas.Type]bool
 	// objectByDefault holds the roots of files that a `$ref` names whole and
 	// that declare no type, which generateReferencedType gives the type
 	// object. That type is a guess, which the null checks do not go by: such
@@ -137,6 +140,7 @@ func New(config Config) (*Generator, error) {
 		reportedConditionals:   map[*schemas.Type]struct{}{},
 		reportedKeywords:       map[*schemas.Type]struct{}{},
 		reportedUntyped:        map[*schemas.Type]struct{}{},
+		unevaluatedClosed:      map[*schemas.Type]bool{},
 		objectByDefault:        map[*schemas.Type]struct{}{},
 		reportedDiscriminators: map[discriminatorDecline]struct{}{},
 		declaring:              map[*schemas.Type]struct{}{},

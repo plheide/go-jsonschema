@@ -1118,8 +1118,10 @@ func (g *schemaGenerator) strictFieldsValidatorFor(
 ) *strictFieldsValidator {
 	// Only the `false` schema forbids every extra property. Any other
 	// `not` schema forbids some values and allows the rest, so enforcing
-	// on it would reject data the schema accepts.
-	schemaSaysFalse := isFalseSchema(t.AdditionalProperties)
+	// on it would reject data the schema accepts. An unevaluatedProperties
+	// of false forbids those that no property evaluates, which are those the
+	// struct has no field for, where checksUnevaluatedProperties says so.
+	schemaSaysFalse := isFalseSchema(t.AdditionalProperties) || g.checksUnevaluatedProperties(t)
 	schemaTypedAddl := t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil
 
 	switch g.config.StrictAdditionalProperties {
@@ -1973,6 +1975,36 @@ func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
 	return schemas.TypeNameNull, false
 }
 
+// rejectsEveryKey reports whether the object t, which has no properties, rejects
+// every key under StrictAdditionalProperties, and so is an empty struct that
+// strictFieldsValidatorFor checks rather than a map.
+//
+// Only the `false` schema forbids every extra property. Any other `not` schema
+// forbids some values and allows the rest, so enforcing on it would reject data
+// the schema accepts. An unevaluatedProperties of false forbids them too, where
+// checksUnevaluatedProperties says so. With patternProperties the object stays
+// a map: strict enforcement is suppressed in that case (see
+// strictFieldsValidatorFor), so an empty struct would silently drop
+// pattern-matched keys instead of preserving the map behavior.
+func (g *schemaGenerator) rejectsEveryKey(t *schemas.Type) bool {
+	if len(t.PatternProperties) > 0 {
+		return false
+	}
+
+	switch g.config.StrictAdditionalProperties {
+	case StrictAdditionalPropertiesOff:
+		return false
+
+	case StrictAdditionalPropertiesRespectSchema:
+		return isFalseSchema(t.AdditionalProperties) || g.checksUnevaluatedProperties(t)
+
+	case StrictAdditionalPropertiesStrict:
+		return t.AdditionalProperties == nil || t.AdditionalProperties.Not != nil
+	}
+
+	return false
+}
+
 func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if len(t.Properties) == 0 && len(t.AllOf) == 0 && len(t.AnyOf) == 0 {
 		if len(t.Required) > 0 {
@@ -1987,33 +2019,8 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		// "additionalProperties":false}` silently accept any map under the
 		// `RespectSchema` mode, and `Strict` mode misses property-less
 		// schemas entirely.
-		//
-		// Skip the conversion when patternProperties is present: strict
-		// enforcement is suppressed in that case (see strictFieldsValidatorFor),
-		// so an empty struct would silently drop pattern-matched keys instead
-		// of preserving the map behavior.
-		// Only the `false` schema forbids every extra property. Any other
-		// `not` schema forbids some values and allows the rest, so enforcing
-		// on it would reject data the schema accepts.
-		schemaSaysFalse := isFalseSchema(t.AdditionalProperties)
-		schemaTypedAddl := t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil
-		hasPatternProps := len(t.PatternProperties) > 0
-
-		if !hasPatternProps {
-			switch g.config.StrictAdditionalProperties {
-			case StrictAdditionalPropertiesOff:
-				// No enforcement — falls through to the map representation below.
-
-			case StrictAdditionalPropertiesRespectSchema:
-				if schemaSaysFalse {
-					return &codegen.StructType{}, nil
-				}
-
-			case StrictAdditionalPropertiesStrict:
-				if !schemaTypedAddl {
-					return &codegen.StructType{}, nil
-				}
-			}
+		if g.rejectsEveryKey(t) {
+			return &codegen.StructType{}, nil
 		}
 
 		valueType := codegen.Type(emptyInterfaceTypeVal)
@@ -2023,7 +2030,7 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		// `false` admits no value, so it has no value type to generate; the
 		// map keeps interface{}, and whether its keys are checked is up to
 		// StrictAdditionalProperties.
-		if t.AdditionalProperties != nil && !schemaSaysFalse {
+		if t.AdditionalProperties != nil && !isFalseSchema(t.AdditionalProperties) {
 			if valueType, err = g.generateType(t.AdditionalProperties, scope.add("Value")); err != nil {
 				return nil, err
 			}
@@ -2573,6 +2580,11 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 		}
 	}
 
+	// Whether the struct checks t's unevaluatedProperties is decided from t and
+	// its branches as written, before resolving them rewrites their $refs.
+	closed := g.checksUnevaluatedProperties(t)
+	g.unevaluatedClosed[t] = closed
+
 	rAllOf, _ := g.resolveRefs(flattenInlineAllOf(t.AllOf), true)
 
 	// A recursive allOf, whose merged type leads back to an allOf with the same
@@ -2632,6 +2644,7 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 	// The merge carries the conditionals of t and its branches, which are
 	// accounted for above.
 	g.reportedConditionals[allOfType] = struct{}{}
+	g.unevaluatedClosed[allOfType] = closed
 
 	g.mergingAllOf[key] = allOfType
 	defer delete(g.mergingAllOf, key)

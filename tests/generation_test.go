@@ -180,13 +180,15 @@ func TestCrossPackageAllOf(t *testing.T) {
 }
 
 // TestCrossPackageAllOfInlined covers an allOf and an anyOf whose member is a
-// $ref into a package of its own, the way aapi-codegen maps shared schemas: the
-// merge copies the member's fields, and the member's package is imported only
-// where a type of it is used.
+// $ref into a package of its own, the way aapi-codegen maps shared schemas and
+// sets StrictAdditionalProperties: the merge copies the member's fields, the
+// member's package is imported only where a type of it is used, and
+// unevaluatedProperties of false is checked over the merged fields.
 func TestCrossPackageAllOfInlined(t *testing.T) {
 	t.Parallel()
 
 	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesRespectSchema
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/unevaluatedFalse",
+  "description": "unevaluatedProperties of false where the evaluated properties are known without the value: an object's own and those of its allOf branches, inline or through a $ref, at every depth. Each rejects a property that none of them declares.",
+  "type": "object",
+  "unevaluatedProperties": false,
+  "allOf": [
+    { "type": "object", "properties": { "header": { "type": "string" } } },
+    { "$ref": "#/$defs/orderFields" }
+  ],
+  "properties": {
+    "plain": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "properties": { "a": { "type": "string" } }
+    },
+    "empty": { "type": "object", "unevaluatedProperties": false },
+    "dynamic": {
+      "description": "An anyOf evaluates the properties of the branches that match, which depends on the value, so unevaluatedProperties is not checked.",
+      "type": "object",
+      "unevaluatedProperties": false,
+      "properties": { "kind": { "type": "string" } },
+      "anyOf": [
+        { "properties": { "x": { "type": "integer" } } },
+        { "properties": { "y": { "type": "integer" } } }
+      ]
+    },
+    "open": {
+      "description": "A branch's additionalProperties evaluates every property, so unevaluatedProperties rejects none, and is not checked.",
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        { "properties": { "x": { "type": "integer" } } },
+        { "additionalProperties": { "type": "integer" } }
+      ]
+    }
+  },
+  "$defs": {
+    "orderFields": {
+      "type": "object",
+      "required": ["orderId"],
+      "allOf": [{ "$ref": "#/$defs/versioned" }],
+      "properties": { "orderId": { "type": "string" } }
+    },
+    "versioned": {
+      "type": "object",
+      "properties": { "version": { "type": "integer" } }
+    }
+  }
+}

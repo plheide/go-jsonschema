@@ -8,12 +8,15 @@ import "errors"
 import "fmt"
 import headerv1 "github.com/plheide/go-jsonschema/tests/data/crossPackageAllOfInlined/header"
 import yaml "gopkg.in/yaml.v3"
+import "sort"
 import "strconv"
 import "strings"
 
 // An allOf and an anyOf whose member is a $ref into a schema mapped to another Go
 // package, with properties of primitive types only. The merge copies the member's
-// fields, so nothing refers to that package, and it is not imported.
+// fields, so nothing refers to that package, and it is not imported. With
+// unevaluatedProperties false, the merged object rejects a property that neither
+// it nor a branch declares.
 type Schema struct {
 	// Amendment corresponds to the JSON schema field "amendment".
 	Amendment *SchemaAmendment `json:"amendment,omitempty,omitzero" yaml:"amendment,omitempty" mapstructure:"amendment,omitempty"`
@@ -213,6 +216,20 @@ func (j *Schema) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["quantity"]; raw != nil && !ok {
 		return fmt.Errorf("field quantity in Schema: required")
 	}
+	if raw != nil {
+		var extraKeys []string
+		for additionalKey := range raw {
+			switch additionalKey {
+			case "amendment", "header", "orderId", "quantity":
+			default:
+				extraKeys = append(extraKeys, additionalKey)
+			}
+		}
+		if len(extraKeys) > 0 {
+			sort.Strings(extraKeys)
+			return fmt.Errorf("fields %q in Schema: additional properties not allowed", extraKeys)
+		}
+	}
 	type Plain Schema
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -243,6 +260,20 @@ func (j *Schema) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["quantity"]; raw != nil && !ok {
 		return fmt.Errorf("field quantity in Schema: required")
+	}
+	if raw != nil {
+		var extraKeys []string
+		for additionalKey := range raw {
+			switch additionalKey {
+			case "amendment", "header", "orderId", "quantity":
+			default:
+				extraKeys = append(extraKeys, additionalKey)
+			}
+		}
+		if len(extraKeys) > 0 {
+			sort.Strings(extraKeys)
+			return fmt.Errorf("fields %q in Schema: additional properties not allowed", extraKeys)
+		}
 	}
 	type Plain Schema
 	var plain Plain

@@ -5,6 +5,7 @@ package header
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "sort"
 
 type Header struct {
 	// TraceId corresponds to the JSON schema field "traceId".
@@ -19,6 +20,20 @@ func (j *Header) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["traceId"]; raw != nil && !ok {
 		return fmt.Errorf("field traceId in Header: required")
+	}
+	if raw != nil {
+		var extraKeys []string
+		for additionalKey := range raw {
+			switch additionalKey {
+			case "traceId":
+			default:
+				extraKeys = append(extraKeys, additionalKey)
+			}
+		}
+		if len(extraKeys) > 0 {
+			sort.Strings(extraKeys)
+			return fmt.Errorf("fields %q in Header: additional properties not allowed", extraKeys)
+		}
 	}
 	type Plain Header
 	var plain Plain
@@ -37,6 +52,20 @@ func (j *Header) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["traceId"]; raw != nil && !ok {
 		return fmt.Errorf("field traceId in Header: required")
+	}
+	if raw != nil {
+		var extraKeys []string
+		for additionalKey := range raw {
+			switch additionalKey {
+			case "traceId":
+			default:
+				extraKeys = append(extraKeys, additionalKey)
+			}
+		}
+		if len(extraKeys) > 0 {
+			sort.Strings(extraKeys)
+			return fmt.Errorf("fields %q in Header: additional properties not allowed", extraKeys)
+		}
 	}
 	type Plain Header
 	var plain Plain

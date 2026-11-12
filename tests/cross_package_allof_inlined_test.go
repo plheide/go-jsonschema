@@ -13,7 +13,8 @@ import (
 // TestCrossPackageAllOfInlinedDecodes covers an allOf whose member is a $ref
 // into a package of its own: the merge copies the member's fields and checks,
 // and the file compiles, since the member's package, which nothing refers to,
-// is not imported. So does an anyOf with such a branch.
+// is not imported. So does an anyOf with such a branch. The object's
+// unevaluatedProperties of false rejects a property no branch declares.
 func TestCrossPackageAllOfInlinedDecodes(t *testing.T) {
 	t.Parallel()
 
@@ -36,6 +37,14 @@ func TestCrossPackageAllOfInlinedDecodes(t *testing.T) {
 		{`{"header": {"traceId": "t1"}, "quantity": 1}`, "field orderId in Schema: required"},
 		{`{"orderId": "o1", "quantity": 1}`, "field header in Schema: required"},
 		{`{"header": {"traceId": "t1"}, "orderId": "o1", "quantity": 1, "amendment": {}}`, "all validators failed"},
+		{
+			`{"header": {"traceId": "t1"}, "orderId": "o1", "quantity": 1, "extra": true}`,
+			`fields ["extra"] in Schema: additional properties not allowed`,
+		},
+		{
+			`{"header": {"traceId": "t1", "spanId": "s"}, "orderId": "o1", "quantity": 1}`,
+			`fields ["spanId"] in Header: additional properties not allowed`,
+		},
 	} {
 		var fromJSON, fromYAML testCrossPackageAllOfInlined.Schema
 

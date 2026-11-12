@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 605 (347 fixtures, 258 definitions), 25 skipped; documents: 15704
-json: 14649 agree, 611 missing checks (101 silent), 444 wrong rejections, 0 panics
-yaml: 14040 agree, 1202 missing checks (512 silent), 462 wrong rejections, 0 panics
+schemas: 609 (349 fixtures, 260 definitions), 25 skipped; documents: 15861
+json: 14789 agree, 613 missing checks (101 silent), 459 wrong rejections, 0 panics
+yaml: 14171 agree, 1213 missing checks (512 silent), 477 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -2195,6 +2195,39 @@ yaml missing check (silent) type: wrong type ×1, e.g. /label = 12345
 
 == strictAdditionalProperties/addlTrue/addlTrue.json
 yaml missing check (silent) type: wrong type ×1, e.g. /title = 12345
+
+== strictAdditionalProperties/unevaluatedDraft07/unevaluatedDraft07.json
+yaml missing check type: wrong type ×2, e.g. /a = 12345
+
+== strictAdditionalProperties/unevaluatedFalse/unevaluatedFalse.json
+json missing check (no keyword): add unknown key ×1, e.g. /dynamic = {"kind":"a","x":1,"zzUnknown":"x"}
+json missing check (no keyword): null ×1, e.g. /dynamic/x = null
+json wrong rejection: 1e300 ×3, e.g. /version = 1e300: unmarshal Wrap: unmarshal UnevaluatedFalse: json: cannot unmarshal number 1e300 into Go struct field Plain.version of type int
+json wrong rejection: 2^63 ×3, e.g. /version = 9223372036854775808: unmarshal Wrap: unmarshal UnevaluatedFalse: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.version of type int
+json wrong rejection: 2^64 ×3, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal UnevaluatedFalse: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.version of type int
+yaml missing check (no keyword): add unknown key ×1, e.g. /dynamic = {"kind":"a","x":1,"zzUnknown":"x"}
+yaml missing check (no keyword): null ×1, e.g. /dynamic/x = null
+yaml missing check type: wrong type ×5, e.g. /header = 12345
+yaml wrong rejection: 1e300 ×3, e.g. /version = 1e300: unmarshal Wrap: unmarshal UnevaluatedFalse: field version: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×3, e.g. /version = 9223372036854775808: unmarshal Wrap: unmarshal UnevaluatedFalse: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×3, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal UnevaluatedFalse: field version: 18446744073709551616 is out of range for int
+
+== strictAdditionalProperties/unevaluatedFalse/unevaluatedFalse.json#/$defs/orderFields
+json wrong rejection: 1e300 ×1, e.g. /version = 1e300: unmarshal Wrap: unmarshal OrderFields: json: cannot unmarshal number 1e300 into Go struct field Plain.version of type int
+json wrong rejection: 2^63 ×1, e.g. /version = 9223372036854775808: unmarshal Wrap: unmarshal OrderFields: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.version of type int
+json wrong rejection: 2^64 ×1, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal OrderFields: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.version of type int
+yaml missing check type: wrong type ×2, e.g. /orderId = 12345
+yaml wrong rejection: 1e300 ×1, e.g. /version = 1e300: unmarshal Wrap: unmarshal OrderFields: field version: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /version = 9223372036854775808: unmarshal Wrap: unmarshal OrderFields: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal OrderFields: field version: 18446744073709551616 is out of range for int
+
+== strictAdditionalProperties/unevaluatedFalse/unevaluatedFalse.json#/$defs/versioned
+json wrong rejection: 1e300 ×1, e.g. /version = 1e300: unmarshal Wrap: unmarshal Versioned: json: cannot unmarshal number 1e300 into Go struct field Plain.version of type int
+json wrong rejection: 2^63 ×1, e.g. /version = 9223372036854775808: unmarshal Wrap: unmarshal Versioned: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.version of type int
+json wrong rejection: 2^64 ×1, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal Versioned: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.version of type int
+yaml wrong rejection: 1e300 ×1, e.g. /version = 1e300: unmarshal Wrap: unmarshal Versioned: field version: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /version = 9223372036854775808: unmarshal Wrap: unmarshal Versioned: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /version = 18446744073709551616: unmarshal Wrap: unmarshal Versioned: field version: 18446744073709551616 is out of range for int
 
 == strictAdditionalProperties/withPatternProperties/withPatternProperties.json
 json missing check additionalProperties: add unknown key ×1, e.g. / = {"name":"a","zzUnknown":"x"}

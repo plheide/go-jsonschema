@@ -1,8 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "id": "https://example.com/schema",
-  "description": "An allOf and an anyOf whose member is a $ref into a schema mapped to another Go package, with properties of primitive types only. The merge copies the member's fields, so nothing refers to that package, and it is not imported.",
+  "description": "An allOf and an anyOf whose member is a $ref into a schema mapped to another Go package, with properties of primitive types only. The merge copies the member's fields, so nothing refers to that package, and it is not imported. With unevaluatedProperties false, the merged object rejects a property that neither it nor a branch declares.",
   "type": "object",
+  "unevaluatedProperties": false,
   "allOf": [
     {
       "type": "object",
