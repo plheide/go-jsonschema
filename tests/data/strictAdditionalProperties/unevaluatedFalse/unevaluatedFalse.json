@@ -25,6 +25,12 @@
         { "properties": { "y": { "type": "integer" } } }
       ]
     },
+    "refSibling": {
+      "description": "Beside a $ref, which generation follows alone, additionalProperties evaluates every property, so unevaluatedProperties rejects none, and is not checked.",
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{ "$ref": "#/$defs/versioned", "additionalProperties": true }]
+    },
     "open": {
       "description": "A branch's additionalProperties evaluates every property, so unevaluatedProperties rejects none, and is not checked.",
       "type": "object",

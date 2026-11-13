@@ -84,6 +84,10 @@ type UnevaluatedFalse struct {
 	// Plain corresponds to the JSON schema field "plain".
 	Plain *UnevaluatedFalsePlain `json:"plain,omitempty,omitzero" yaml:"plain,omitempty" mapstructure:"plain,omitempty"`
 
+	// Beside a $ref, which generation follows alone, additionalProperties evaluates
+	// every property, so unevaluatedProperties rejects none, and is not checked.
+	RefSibling *UnevaluatedFalseRefSibling `json:"refSibling,omitempty,omitzero" yaml:"refSibling,omitempty" mapstructure:"refSibling,omitempty"`
+
 	// Version corresponds to the JSON schema field "version".
 	Version *int `json:"version,omitempty,omitzero" yaml:"version,omitempty" mapstructure:"version,omitempty"`
 }
@@ -475,6 +479,39 @@ func (j *UnevaluatedFalsePlain) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// Beside a $ref, which generation follows alone, additionalProperties evaluates
+// every property, so unevaluatedProperties rejects none, and is not checked.
+type UnevaluatedFalseRefSibling struct {
+	// Version corresponds to the JSON schema field "version".
+	Version *int `json:"version,omitempty,omitzero" yaml:"version,omitempty" mapstructure:"version,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *UnevaluatedFalseRefSibling) UnmarshalJSON(value []byte) error {
+	type Plain UnevaluatedFalseRefSibling
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		var retry Plain
+		if err = unmarshalIntegral_OrderFields(value, &retry, err, integerPaths_OrderFields); err != nil {
+			return fmt.Errorf("unmarshal UnevaluatedFalseRefSibling: %w", err)
+		}
+		plain = retry
+	}
+	*j = UnevaluatedFalseRefSibling(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *UnevaluatedFalseRefSibling) UnmarshalYAML(value *yaml.Node) error {
+	type Plain UnevaluatedFalseRefSibling
+	var plain Plain
+	if err := unmarshalIntegral_OrderFields_yaml(value, &plain, integerPaths_OrderFields); err != nil {
+		return fmt.Errorf("unmarshal UnevaluatedFalseRefSibling: %w", err)
+	}
+	*j = UnevaluatedFalseRefSibling(plain)
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *UnevaluatedFalse) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -488,7 +525,7 @@ func (j *UnevaluatedFalse) UnmarshalJSON(value []byte) error {
 		var extraKeys []string
 		for additionalKey := range raw {
 			switch additionalKey {
-			case "dynamic", "empty", "header", "open", "orderId", "plain", "version":
+			case "dynamic", "empty", "header", "open", "orderId", "plain", "refSibling", "version":
 			default:
 				extraKeys = append(extraKeys, additionalKey)
 			}
@@ -524,7 +561,7 @@ func (j *UnevaluatedFalse) UnmarshalYAML(value *yaml.Node) error {
 		var extraKeys []string
 		for additionalKey := range raw {
 			switch additionalKey {
-			case "dynamic", "empty", "header", "open", "orderId", "plain", "version":
+			case "dynamic", "empty", "header", "open", "orderId", "plain", "refSibling", "version":
 			default:
 				extraKeys = append(extraKeys, additionalKey)
 			}

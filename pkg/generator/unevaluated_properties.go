@@ -66,9 +66,11 @@ func (g *schemaGenerator) declaresDraftBefore2019(s *schemas.Type) bool {
 // oneOf, not, if/then/else and dependentSchemas. Nor does one that evaluates
 // every property, additionalProperties and patternProperties, or a branch's own
 // unevaluatedProperties, which sees only the branch's. A $ref branch is
-// followed into the document that holds it, doc of the file docFile, and a
-// $ref beside the root's other keywords, which generation ignores, leaves them
-// unknown.
+// followed into the document that holds it, doc of the file docFile. Beside a
+// $ref, generation ignores other keywords, which from draft 2019-09 on apply as
+// well, and may evaluate properties the struct has no field for, such as
+// additionalProperties: true. So a $ref with any keyword beside it but
+// annotations, the root's included, leaves the properties unknown.
 func (g *schemaGenerator) evaluatesStatically(
 	s *schemas.Type,
 	doc *schemas.Schema,
@@ -83,7 +85,7 @@ func (g *schemaGenerator) evaluatesStatically(
 	for hops := 0; s.Ref != ""; hops++ {
 		var ok bool
 
-		if hops == maxNullCheckRefHops {
+		if hops == maxNullCheckRefHops || hasRefSiblings(s) {
 			return false
 		}
 
@@ -112,4 +114,13 @@ func (g *schemaGenerator) evaluatesStatically(
 	}
 
 	return true
+}
+
+// hasRefSiblings reports whether s declares, beside its $ref, a keyword that
+// may constrain a value.
+func hasRefSiblings(s *schemas.Type) bool {
+	rest := *s
+	rest.Ref = ""
+
+	return constrains(&rest)
 }

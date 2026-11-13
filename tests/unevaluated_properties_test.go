@@ -15,8 +15,8 @@ import (
 // StrictAdditionalProperties respect-schema. Where the evaluated properties are
 // an object's own and those of its allOf branches, inline or through a $ref, at
 // every depth, a property that none of them declares is rejected. Where an
-// anyOf, or a branch's additionalProperties, evaluates properties, nothing is
-// checked.
+// anyOf, or a branch's additionalProperties, also beside a $ref, evaluates
+// properties, nothing is checked.
 func TestUnevaluatedPropertiesFalse(t *testing.T) {
 	t.Parallel()
 
@@ -26,6 +26,7 @@ func TestUnevaluatedPropertiesFalse(t *testing.T) {
 		`{"orderId": "o1", "plain": {"a": "x"}, "empty": {}}`,
 		`{"orderId": "o1", "dynamic": {"kind": "k", "x": 1, "zz": true}}`,
 		`{"orderId": "o1", "open": {"x": 1, "zz": 2}}`,
+		`{"orderId": "o1", "refSibling": {"version": 1, "zz": 2}}`,
 	} {
 		var fromJSON, fromYAML testUnevaluatedFalse.UnevaluatedFalse
 
