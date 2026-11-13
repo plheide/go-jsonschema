@@ -53,6 +53,10 @@ Not offered upstream yet:
     pointer type and for an `anyOf` with a branch declared as a pointer or `interface{}`;
   * `types.Duration` for `format: duration`, read and written as an ISO 8601 duration;
   * the `--validate-null-types` checks of a property whose `$ref` points into another file;
+* the changes made on `main` for v0.29.0:
+  * importing a mapped package only where a type of it is used, so that an `allOf`, `anyOf` or `oneOf` member mapped to
+    another package compiles;
+  * checking `unevaluatedProperties: false` under `--strict-additional-properties`;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

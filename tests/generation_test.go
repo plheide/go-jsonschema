@@ -179,6 +179,38 @@ func TestCrossPackageAllOf(t *testing.T) {
 	testExampleFile(t, cfg, "./data/crossPackageAllOf/schema/schema.json")
 }
 
+// TestCrossPackageAllOfInlined covers an allOf and an anyOf whose member is a
+// $ref into a package of its own, the way aapi-codegen maps shared schemas and
+// sets StrictAdditionalProperties: the merge copies the member's fields, the
+// member's package is imported only where a type of it is used, and
+// unevaluatedProperties of false is checked over the merged fields.
+func TestCrossPackageAllOfInlined(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesRespectSchema
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schema",
+			PackageName: "github.com/plheide/go-jsonschema/tests/data/crossPackageAllOfInlined/schema",
+			OutputName:  "schema.go",
+		},
+		{
+			SchemaID:    "https://example.com/header",
+			PackageName: "github.com/plheide/go-jsonschema/tests/data/crossPackageAllOfInlined/header",
+			ImportAlias: "headerv1",
+			OutputName:  "../header/header.go",
+		},
+		{
+			SchemaID:    "https://example.com/order",
+			PackageName: "github.com/plheide/go-jsonschema/tests/data/crossPackageAllOfInlined/order",
+			ImportAlias: "orderv1",
+			OutputName:  "../order/order.go",
+		},
+	}
+	testExampleFile(t, cfg, "./data/crossPackageAllOfInlined/schema/schema.json")
+}
+
 func TestCrossPackageNoOutput(t *testing.T) {
 	t.Parallel()
 

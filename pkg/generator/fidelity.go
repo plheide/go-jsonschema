@@ -219,7 +219,12 @@ func (g *schemaGenerator) reportUnenforcedKeywords(t *schemas.Type, scope nameSc
 
 	g.reportedKeywords[t] = struct{}{}
 
-	if keywords := unenforcedKeywords(t); len(keywords) > 0 {
+	keywords := unenforcedKeywords(t)
+	if g.checksUnevaluatedProperties(t) {
+		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordUnevaluatedProperties })
+	}
+
+	if len(keywords) > 0 {
 		g.warnNotEnforced(scope, strings.Join(keywords, ", ")+" not checked")
 	}
 }
@@ -249,7 +254,7 @@ func unenforcedKeywords(t *schemas.Type) []string {
 	add(anyConstrains(t.PatternProperties), "patternProperties")
 	add(constrains(t.PropertyNames), "propertyNames")
 	add(constrains(t.UnevaluatedItems), "unevaluatedItems")
-	add(constrains(t.UnevaluatedProperties), "unevaluatedProperties")
+	add(constrains(t.UnevaluatedProperties), keywordUnevaluatedProperties)
 
 	return keywords
 }
