@@ -18,7 +18,7 @@ import (
 func TestConditionalDiscriminatorPartlyCompiled(t *testing.T) {
 	t.Parallel()
 
-	t.Run("a branch that narrows an enum no longer keeps the others from compiling", func(t *testing.T) {
+	t.Run("a branch that narrows an enum no longer keeps the others from compiling, and a not is checked", func(t *testing.T) {
 		t.Parallel()
 
 		checkDecode[testCondDiscShapes.Shapes](t, []decodeCase{
@@ -38,6 +38,12 @@ func TestConditionalDiscriminatorPartlyCompiled(t *testing.T) {
 			},
 			// Only kind=compare narrows the operator.
 			{`{"rule": {"kind": "delay", "delaySec": 5, "operator": "OR"}, "window": {"intervalSec": 60}}`, ""},
+			// Window's own not forbids count and untilSec together.
+			{
+				`{"rule": {"kind": "delay", "delaySec": 5}, "window": {"intervalSec": 60, "count": 3, "untilSec": 600}}`,
+				"fields count, untilSec in Window: must not all be present",
+			},
+			{`{"rule": {"kind": "delay", "delaySec": 5}, "window": {"intervalSec": 60, "count": 3}}`, ""},
 		})
 	})
 

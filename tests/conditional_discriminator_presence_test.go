@@ -207,10 +207,8 @@ func TestConditionalDiscriminatorOwn(t *testing.T) {
 			{"ownOtherKey", []string{
 				"schema fidelity: type OwnOtherKey does not enforce all it declares: if/then/else not compiled",
 			}},
-			// The not beside the compiled if/then is reported, once.
-			{"ownWithNot", []string{
-				`schema fidelity: type OwnWithNot does not enforce all it declares: "not" keyword not compiled`,
-			}},
+			// The not of required beside the compiled if/then compiles too.
+			{"ownWithNot", nil},
 		} {
 			warnings := generateWithWarnerCapture(t,
 				"./data/conditionalDiscriminator/"+tc.fixture+"/"+tc.fixture+".json")

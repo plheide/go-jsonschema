@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/inline",
+  "description": "A property's inline object forbids two of its properties together.",
+  "type": "object",
+  "properties": {
+    "window": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer"
+        },
+        "untilSec": {
+          "type": "number"
+        }
+      },
+      "not": {
+        "required": [
+          "count",
+          "untilSec"
+        ]
+      }
+    }
+  }
+}

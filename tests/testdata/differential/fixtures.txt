@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 617 (354 fixtures, 263 definitions), 25 skipped; documents: 16228
-json: 15054 agree, 706 missing checks (101 silent), 468 wrong rejections, 0 panics
-yaml: 14434 agree, 1308 missing checks (512 silent), 486 wrong rejections, 0 panics
+schemas: 628 (359 fixtures, 269 definitions), 25 skipped; documents: 16591
+json: 15460 agree, 663 missing checks (101 silent), 468 wrong rejections, 0 panics
+yaml: 14828 agree, 1277 missing checks (513 silent), 486 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -182,19 +182,6 @@ yaml missing check (silent) type: wrong type ×3, e.g. /x = 12345
 == conditionalDiscriminator/ownOtherKey/ownOtherKey.json
 yaml missing check type: wrong type ×2, e.g. /x = 12345
 
-== conditionalDiscriminator/ownWithNot/ownWithNot.json
-json missing check (no keyword): 5000 characters ×2, e.g. /legacy = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
-json missing check (no keyword): add unknown key ×1, e.g. / = {"kind":"a","legacy":"a","x":"a","zzUnkn…
-json missing check (no keyword): empty string ×2, e.g. /legacy = ""
-json missing check (no keyword): off-enum string ×2, e.g. /legacy = "zzOffEnum"
-json missing check (no keyword): seed ×1, e.g. seed 0
-yaml missing check (no keyword): 5000 characters ×2, e.g. /legacy = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
-yaml missing check (no keyword): add unknown key ×1, e.g. / = {"kind":"a","legacy":"a","x":"a","zzUnkn…
-yaml missing check (no keyword): empty string ×2, e.g. /legacy = ""
-yaml missing check (no keyword): off-enum string ×2, e.g. /legacy = "zzOffEnum"
-yaml missing check (no keyword): seed ×1, e.g. seed 0
-yaml missing check (no keyword): wrong type ×2, e.g. /legacy = 12345
-
 == conditionalDiscriminator/partlyCompiled/partlyCompiled.json
 json missing check minimum: 0 ×1, e.g. /x = 0
 json missing check minimum: 0e99 ×1, e.g. /x = 0e99
@@ -237,56 +224,6 @@ yaml missing check (silent) type: wrong type ×1, e.g. /skip = 12345
 
 == conditionalDiscriminator/requiredInIf/requiredInIf.json
 yaml missing check (silent) type: wrong type ×1, e.g. /values/0 = 12345
-
-== conditionalDiscriminator/shapes/shapes.json
-json missing check (no keyword): 0 ×5, e.g. /rule/delaySec = 0
-json missing check (no keyword): 0.5 ×4, e.g. /rule/delaySec = 0.5
-json missing check (no keyword): 0e99 ×5, e.g. /rule/delaySec = 0e99
-json missing check (no keyword): 1e300 ×4, e.g. /rule/delaySec = 1e300
-json missing check (no keyword): 2^53+1 ×5, e.g. /rule/delaySec = 9007199254740993
-json missing check (no keyword): 2^63 ×4, e.g. /rule/delaySec = 9223372036854775808
-json missing check (no keyword): 2^64 ×4, e.g. /rule/delaySec = 18446744073709551616
-json missing check (no keyword): N.0 ×5, e.g. /rule/delaySec = 1.0
-json missing check (no keyword): Ne0 ×5, e.g. /rule/delaySec = 1e0
-json missing check (no keyword): delete key ×2, e.g. /rule/operator deleted
-json missing check (no keyword): negative ×5, e.g. /rule/delaySec = -1
-json missing check (no keyword): seed ×1, e.g. seed 0
-yaml missing check (no keyword): 0 ×5, e.g. /rule/delaySec = 0
-yaml missing check (no keyword): 0.5 ×4, e.g. /rule/delaySec = 0.5
-yaml missing check (no keyword): 0e99 ×5, e.g. /rule/delaySec = 0e99
-yaml missing check (no keyword): 1e300 ×4, e.g. /rule/delaySec = 1e300
-yaml missing check (no keyword): 2^53+1 ×5, e.g. /rule/delaySec = 9007199254740993
-yaml missing check (no keyword): 2^63 ×4, e.g. /rule/delaySec = 9223372036854775808
-yaml missing check (no keyword): 2^64 ×4, e.g. /rule/delaySec = 18446744073709551616
-yaml missing check (no keyword): N.0 ×5, e.g. /rule/delaySec = 1.0
-yaml missing check (no keyword): Ne0 ×5, e.g. /rule/delaySec = 1e0
-yaml missing check (no keyword): delete key ×2, e.g. /rule/operator deleted
-yaml missing check (no keyword): negative ×5, e.g. /rule/delaySec = -1
-yaml missing check (no keyword): seed ×1, e.g. seed 0
-
-== conditionalDiscriminator/shapes/shapes.json#/$defs/window
-json missing check (no keyword): 0 ×3, e.g. /count = 0
-json missing check (no keyword): 0.5 ×2, e.g. /intervalSec = 0.5
-json missing check (no keyword): 0e99 ×3, e.g. /count = 0e99
-json missing check (no keyword): 1e300 ×2, e.g. /intervalSec = 1e300
-json missing check (no keyword): 2^53+1 ×3, e.g. /count = 9007199254740993
-json missing check (no keyword): 2^63 ×2, e.g. /intervalSec = 9223372036854775808
-json missing check (no keyword): 2^64 ×2, e.g. /intervalSec = 18446744073709551616
-json missing check (no keyword): N.0 ×3, e.g. /count = 1.0
-json missing check (no keyword): Ne0 ×3, e.g. /count = 1e0
-json missing check (no keyword): negative ×3, e.g. /count = -1
-json missing check (no keyword): seed ×1, e.g. seed 0
-yaml missing check (no keyword): 0 ×3, e.g. /count = 0
-yaml missing check (no keyword): 0.5 ×2, e.g. /intervalSec = 0.5
-yaml missing check (no keyword): 0e99 ×3, e.g. /count = 0e99
-yaml missing check (no keyword): 1e300 ×2, e.g. /intervalSec = 1e300
-yaml missing check (no keyword): 2^53+1 ×3, e.g. /count = 9007199254740993
-yaml missing check (no keyword): 2^63 ×2, e.g. /intervalSec = 9223372036854775808
-yaml missing check (no keyword): 2^64 ×2, e.g. /intervalSec = 18446744073709551616
-yaml missing check (no keyword): N.0 ×3, e.g. /count = 1.0
-yaml missing check (no keyword): Ne0 ×3, e.g. /count = 1e0
-yaml missing check (no keyword): negative ×3, e.g. /count = -1
-yaml missing check (no keyword): seed ×1, e.g. seed 0
 
 == conditionalDiscriminator/thenConstraints/thenConstraints.json
 json missing check minimum: 0 ×1, e.g. /x = 0
@@ -1420,6 +1357,51 @@ json wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: illegal base64 data
 yaml wrong rejection: 5000 characters ×1, e.g. / = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!str `aaaaaaa...` into Raw
 yaml wrong rejection: off-enum string ×1, e.g. / = "zzOffEnum": unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!str `zzOffEnum` into Raw
 yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!str `a` into Raw
+
+== forbiddenSets/stillWarned/stillWarned.json
+json missing check (no keyword): 5000 characters ×6, e.g. /branchNot/x = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (no keyword): add unknown key ×4, e.g. / = {"branchNot":{"x":"a","y":"a"},"mergedNo…
+json missing check (no keyword): delete key ×6, e.g. /branchNot deleted
+json missing check (no keyword): empty string ×6, e.g. /branchNot/x = ""
+json missing check (no keyword): off-enum string ×6, e.g. /branchNot/x = "zzOffEnum"
+json missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): 5000 characters ×6, e.g. /branchNot/x = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (no keyword): add unknown key ×4, e.g. / = {"branchNot":{"x":"a","y":"a"},"mergedNo…
+yaml missing check (no keyword): delete key ×6, e.g. /branchNot deleted
+yaml missing check (no keyword): empty string ×6, e.g. /branchNot/x = ""
+yaml missing check (no keyword): off-enum string ×6, e.g. /branchNot/x = "zzOffEnum"
+yaml missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): wrong type ×4, e.g. /branchNot/y = 12345
+yaml missing check type: wrong type ×2, e.g. /branchNot/x = 12345
+
+== forbiddenSets/stillWarned/stillWarned.json#/$defs/base
+yaml missing check type: wrong type ×1, e.g. /id = 12345
+
+== forbiddenSets/stillWarned/stillWarned.json#/$defs/branchNot
+yaml missing check (no keyword): wrong type ×1, e.g. /y = 12345
+yaml missing check type: wrong type ×1, e.g. /x = 12345
+
+== forbiddenSets/stillWarned/stillWarned.json#/$defs/mergedNot
+json missing check (no keyword): 5000 characters ×3, e.g. /id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (no keyword): add unknown key ×1, e.g. / = {"id":"a","p":"a","q":"a","zzUnknown":"x…
+json missing check (no keyword): delete key ×1, e.g. /id deleted
+json missing check (no keyword): empty string ×3, e.g. /id = ""
+json missing check (no keyword): off-enum string ×3, e.g. /id = "zzOffEnum"
+json missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): 5000 characters ×3, e.g. /id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (no keyword): add unknown key ×1, e.g. / = {"id":"a","p":"a","q":"a","zzUnknown":"x…
+yaml missing check (no keyword): delete key ×1, e.g. /id deleted
+yaml missing check (no keyword): empty string ×3, e.g. /id = ""
+yaml missing check (no keyword): off-enum string ×3, e.g. /id = "zzOffEnum"
+yaml missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): wrong type ×2, e.g. /p = 12345
+yaml missing check type: wrong type ×1, e.g. /id = 12345
+
+== forbiddenSets/stillWarned/stillWarned.json#/$defs/valueNot
+yaml missing check type: wrong type ×1, e.g. /kind = 12345
+
+== forbiddenSets/withPresence/withPresence.json
+yaml missing check (silent) type: wrong type ×1, e.g. /id = 12345
 
 == formatValidation/additionalElements/additionalElements.json
 yaml missing check (silent) type: wrong type ×1, e.g. /foo = 12345

@@ -241,12 +241,22 @@ func (g *schemaGenerator) warnUncompiledOneOf(t *schemas.Type, theType codegen.T
 //
 // An if/then/else of t's own that the conditional discriminator compiles is
 // not reported where t's type is declared, which willDeclare says: its
-// validator attaches only there. A not beside it still is.
+// validator attaches only there. Nor is a not of required of t's own that the
+// struct checks there; any other not beside it still is.
 func (g *schemaGenerator) warnUncompiledConditional(t *schemas.Type, scope nameScope, willDeclare bool) {
 	subject := t
-	if len(t.AllOf) == 0 && !g.config.OnlyModels && willDeclare && ownConditional(t) == conditionalIfThenElse {
-		if cd, ok := g.detectConditionalDiscriminator(t); ok && cd.compilesOwn {
-			subject = withoutOwnConditional(t)
+	if len(t.AllOf) == 0 && !g.config.OnlyModels && willDeclare {
+		if ownConditional(t) == conditionalIfThenElse {
+			if cd, ok := g.detectConditionalDiscriminator(t); ok && cd.compilesOwn {
+				subject = withoutOwnConditional(t)
+			}
+		}
+
+		// A not of required of t's own is the struct's to check.
+		if _, ok := g.ownForbiddenSets(t); ok {
+			rest := *subject
+			rest.Not = nil
+			subject = &rest
 		}
 	}
 

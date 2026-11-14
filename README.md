@@ -251,6 +251,8 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   branch checks these whatever else it declares, and a warning names what it leaves unchecked.
 * A `oneOf` or `anyOf` whose branches only list `required` checks how many of the listed property sets an object
   has: exactly one for a `oneOf`, at least one for an `anyOf`.
+* A `not` of `required` on an object, of its own or in its `allOf`, forbids properties: `not: {required: [a, b]}`
+  forbids having both, and `not: {anyOf: [{required: [a]}, {required: [b]}]}` having either. Upstream checked neither.
 * An array type declared in `$defs` checks its own `minItems` and `maxItems`.
 * A property whose `type` admits `null` but whose `enum` does not list it rejects a `null`.
 * The keywords of the values an array or a map holds are checked, at every depth: `minLength`, `maxLength`,
@@ -464,8 +466,8 @@ and on a schema that only the release generates and builds, if a second run of t
       become a holder that dispatches on a `const` discriminator or tries each variant; branches that only list
       `required` need exactly one of their property sets present; **note**: `integer`-typed variants are not
       currently routed through the wrapper)
-    * [ ] `not` (checked as a `not` of `required` in a conditional's `then` or `else`; any other is reported by a
-      [fidelity warning](#fidelity-warnings))
+    * [ ] `not` (checked as a `not` of `required` on an object, in its `allOf` and in a conditional's `then` or `else`;
+      any other is reported by a [fidelity warning](#fidelity-warnings))
   * [x] Multi-type unions (§4.2.1) — `{"type": ["string", "number", "boolean", "null"]}` is wire-equivalent to a primitive `oneOf` and routes through the same wrapper. Same primitive set as `oneOf`; same `integer` exclusion. The `["X", "null"]` shape continues to use `*X` for ergonomics; non-primitive types in the union (`object`, `array`) and per-value validation keywords on the union (`format`, `minimum`, etc.) decline detection and fall back to `interface{}`.
   * [ ] Semantic formats (§7.3)
     * [x] Dates and times

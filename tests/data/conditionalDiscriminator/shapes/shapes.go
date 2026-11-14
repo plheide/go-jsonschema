@@ -287,6 +287,11 @@ func (j *Window) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["intervalSec"]; raw != nil && !ok {
 		return fmt.Errorf("field intervalSec in Window: required")
 	}
+	if _, ok := raw["count"]; ok {
+		if _, ok := raw["untilSec"]; ok {
+			return fmt.Errorf("fields count, untilSec in Window: must not all be present")
+		}
+	}
 	type Plain Window
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -308,6 +313,11 @@ func (j *Window) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["intervalSec"]; raw != nil && !ok {
 		return fmt.Errorf("field intervalSec in Window: required")
+	}
+	if _, ok := raw["count"]; ok {
+		if _, ok := raw["untilSec"]; ok {
+			return fmt.Errorf("fields count, untilSec in Window: must not all be present")
+		}
 	}
 	type Plain Window
 	var plain Plain

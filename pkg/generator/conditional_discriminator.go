@@ -534,15 +534,20 @@ func (c conditionalClause) notCompiled(reason string) string {
 
 // conditionalClauses returns the elements of t's allOf, then, when own is set,
 // t's own if/then/else, which JSON Schema applies as it would one more allOf
-// element. ok is false when an element of the allOf is not an if/then/else,
-// or declares something besides one; detection then declines t, and says so
-// for an element whose keywords the struct built from the parent alone would
-// drop.
+// element. An element that declares only a not is skipped. ok is false when
+// any other element of the allOf is not an if/then/else, or declares
+// something besides one; detection then declines t, and says so for an
+// element whose keywords the struct built from the parent alone would drop.
 func (g *schemaGenerator) conditionalClauses(t *schemas.Type, own bool) ([]conditionalClause, bool) {
 	clauses := make([]conditionalClause, 0, len(t.AllOf)+1)
 
 	for i, elem := range t.AllOf {
 		label := fmt.Sprintf("allOf[%d]", i)
+
+		// A not is the forbidden sets' to check; see allOfAsChecks.
+		if onlyNot(elem) {
+			continue
+		}
 
 		if elem == nil || (elem.If == nil && elem.Then == nil && elem.Else == nil) {
 			return nil, false

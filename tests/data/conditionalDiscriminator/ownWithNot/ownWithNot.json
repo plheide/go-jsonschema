@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.com/ownWithNot",
-  "description": "An if/then of the object's own compiles, while a not beside it is reported.",
+  "description": "An if/then of the object's own compiles, and so does a not of required beside it.",
   "type": "object",
   "required": ["kind"],
   "properties": {

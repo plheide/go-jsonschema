@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/stillWarned",
+  "description": "Nots that the struct does not check stay reported: one that forbids a value, one in an anyOf branch, and one beside an allOf that merges.",
+  "type": "object",
+  "properties": {
+    "valueNot": {
+      "$ref": "#/$defs/valueNot"
+    },
+    "branchNot": {
+      "$ref": "#/$defs/branchNot"
+    },
+    "mergedNot": {
+      "$ref": "#/$defs/mergedNot"
+    }
+  },
+  "$defs": {
+    "valueNot": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        }
+      },
+      "not": {
+        "properties": {
+          "kind": {
+            "const": "off"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      }
+    },
+    "branchNot": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "string"
+        },
+        "y": {
+          "type": "string"
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "x": {
+              "type": "string"
+            }
+          },
+          "not": {
+            "required": [
+              "y"
+            ]
+          }
+        },
+        {
+          "properties": {
+            "y": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "base": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "mergedNot": {
+      "type": "object",
+      "properties": {
+        "p": {
+          "type": "string"
+        },
+        "q": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/$defs/base"
+        }
+      ],
+      "not": {
+        "required": [
+          "p",
+          "q"
+        ]
+      }
+    }
+  }
+}

@@ -77,6 +77,7 @@ var (
 	_ validator = new(strictFieldsValidator)
 	_ validator = new(conditionalDiscriminatorValidator)
 	_ validator = new(presenceCountValidator)
+	_ validator = new(forbiddenSetsValidator)
 	_ validator = new(elementsValidator)
 	_ validator = new(untypedConstValidator)
 	_ validator = new(uniqueItemsValidator)
