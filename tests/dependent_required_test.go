@@ -68,9 +68,9 @@ func TestDependentRequired(t *testing.T) {
 
 		for schema, want := range map[string]string{
 			"draft07Keyword": "schema fidelity: type Draft07Keyword does not enforce all it declares: " +
-				"dependentRequired not checked",
+				"dependentRequired (not in draft-07) not checked",
 			"modernLegacy": "schema fidelity: type ModernLegacy does not enforce all it declares: " +
-				"dependentRequired not checked",
+				"dependencies (not in 2020-12) not checked",
 		} {
 			assert.Equal(t, []string{want}, filterFidelityWarnings(generateWithWarnerCapture(t,
 				"./data/dependentRequired/"+schema+"/"+schema+".json")), schema)

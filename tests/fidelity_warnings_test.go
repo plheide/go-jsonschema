@@ -345,6 +345,25 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 			"both of Rule's branches compile, the narrowed enum too")
 	})
 
+	t.Run("keywords beside a $ref are reported where the declared draft applies them", func(t *testing.T) {
+		t.Parallel()
+
+		assert.ElementsMatch(t, []string{
+			"schema fidelity: type RefSiblingsBounded does not enforce all it declares: " +
+				"minimum beside $ref not checked",
+			"schema fidelity: type RefSiblingsExtended does not enforce all it declares: " +
+				"properties (extra), unevaluatedProperties beside $ref not checked",
+			"schema fidelity: type RefSiblingsMerged does not enforce all it declares: " +
+				"required beside $ref not checked",
+		}, filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/refSiblings/refSiblings.json")),
+			"a type that the target declares too, and annotations, are left out")
+
+		assert.Empty(t, filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/refSiblingsDraft07/refSiblingsDraft07.json")),
+			"draft-07 ignores the keywords beside a $ref, as the generated type does")
+	})
+
 	t.Run("conditionals that lose nothing stay silent", func(t *testing.T) {
 		t.Parallel()
 
@@ -382,10 +401,10 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 			notEnforced("UnenforcedKeywordsLabels", "patternProperties not checked"),
 			notEnforced("UnenforcedKeywordsMerged", "maxProperties, minProperties not checked"),
 			notEnforced("UnenforcedKeywordsMode", "if/then/else not compiled"),
-			notEnforced("UnenforcedKeywordsRows", "unevaluatedItems not checked"),
+			notEnforced("UnenforcedKeywordsRows", "unevaluatedItems (not in draft-07) not checked"),
 			notEnforced("UnenforcedKeywordsShape", "minProperties not checked"),
 			notEnforced("UnenforcedKeywordsShipping", "dependentSchemas not checked"),
-			notEnforced("UnenforcedKeywordsStrict", "unevaluatedProperties not checked"),
+			notEnforced("UnenforcedKeywordsStrict", "unevaluatedProperties (not in draft-07) not checked"),
 			notEnforced("UnenforcedKeywordsTags", "contains, maxContains, minContains not checked"),
 		}, filterFidelityWarnings(generateWithWarnerCapture(t, schema)))
 

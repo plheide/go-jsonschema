@@ -203,7 +203,11 @@ When generated code doesn't check something a schema declares, the generator say
   `unevaluatedProperties`, unless `--strict-additional-properties` checks it, as described
   [below](#opt-in-additionalproperties-false-enforcement), and `dependentRequired` where no struct of the object's own
   checks it, as on a type merged from a composition, or where the declared draft does not define it. A keyword whose
-  subschemas admit every value, such as `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
+  subschemas admit every value, such as `"patternProperties": {"^x-": {}}`, checks nothing and is not reported. A
+  keyword that the draft the document declares does not define is named so, as in `unevaluatedProperties (not in
+  draft-07) not checked`. A reason such as `minimum beside $ref not checked` names the keywords beside a `$ref`, which
+  apply from 2019-09 on, while the type generated for the `$ref` is its target's; put them in an `allOf` beside the
+  `$ref` instead. A document that declares draft-07 or an earlier draft, which ignores them as well, is not warned.
 * `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
   value meets, or has no `type` and keywords that are checked only on a value of some type. Nothing is generated
   for it.

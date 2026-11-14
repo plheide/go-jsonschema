@@ -7,8 +7,11 @@ import (
 
 // keywordDependentRequired is the keyword that dependentRequiredValidator
 // checks, and the name a draft-07 `dependencies` of property lists is
-// reported under.
-const keywordDependentRequired = "dependentRequired"
+// reported under. keywordDependencies is that draft-07 keyword.
+const (
+	keywordDependentRequired = "dependentRequired"
+	keywordDependencies      = "dependencies"
+)
 
 // dependentRequiredValidator checks an object's dependentRequired, or the
 // property dependencies of a draft-07 `dependencies`: where a property is

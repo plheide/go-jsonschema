@@ -301,9 +301,76 @@ func (g *schemaGenerator) reportUnenforcedKeywords(t *schemas.Type, scope nameSc
 		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordDependentRequired })
 	}
 
+	g.markNotInDeclaredDraft(t, keywords)
+
 	if len(keywords) > 0 {
 		g.warnNotEnforced(scope, strings.Join(keywords, ", ")+" not checked")
 	}
+}
+
+// markNotInDeclaredDraft marks, in keywords, those that the draft the document
+// of t declares does not define, which is why nothing checks them: the
+// keywords 2019-09 brought, in an earlier draft, and draft-07's dependencies,
+// reported as dependentRequired, in a later one.
+func (g *schemaGenerator) markNotInDeclaredDraft(t *schemas.Type, keywords []string) {
+	var undefined func(keyword string) (string, bool)
+
+	switch {
+	case g.declaresDraftBefore2019(t):
+		undefined = func(keyword string) (string, bool) {
+			switch keyword {
+			case keywordUnevaluatedProperties, keywordUnevaluatedItems:
+				return keyword, true
+			case keywordDependentRequired:
+				return keyword, !t.DependentRequiredFromDependencies
+			}
+
+			return keyword, false
+		}
+
+	case g.declaresDraft2019OrLater(t):
+		undefined = func(keyword string) (string, bool) {
+			return keywordDependencies, keyword == keywordDependentRequired && t.DependentRequiredFromDependencies
+		}
+
+	default:
+		return
+	}
+
+	for i, keyword := range keywords {
+		if name, ok := undefined(keyword); ok {
+			keywords[i] = name + " (not in " + g.declaredDraftName(t) + ")"
+		}
+	}
+}
+
+// warnRefSiblings reports, once for t, the keywords beside its $ref, which
+// the type generated for t ignores: it is the type the $ref names. Draft-07
+// and the drafts before it ignore them as well, so a document that declares
+// one of those is left alone; from 2019-09 on they apply. A `type` that the
+// $ref's target declares too adds nothing, and is left out.
+func (g *schemaGenerator) warnRefSiblings(t *schemas.Type, scope nameScope) {
+	if g.config.OnlyModels || t.Ref == "" || g.declaresDraftBefore2019(t) {
+		return
+	}
+
+	if _, reported := g.reportedKeywords[t]; reported {
+		return
+	}
+
+	rest := *t
+	rest.Ref, rest.Dereferenced, rest.GoJSONSchemaExtension = "", false, nil
+
+	if target := g.followRefs(t); target != t && slices.Equal(rest.Type, target.Type) {
+		rest.Type = nil
+	}
+
+	if !constrains(&rest) {
+		return
+	}
+
+	g.reportedKeywords[t] = struct{}{}
+	g.warnNotEnforced(scope, strings.Join(schemaKeywords(&rest), ", ")+" beside $ref not checked")
 }
 
 // unenforcedKeywords lists, in alphabetical order, the keywords of t's own
@@ -330,7 +397,7 @@ func unenforcedKeywords(t *schemas.Type) []string {
 	add(t.MinProperties != 0, "minProperties")
 	add(anyConstrains(t.PatternProperties), "patternProperties")
 	add(constrains(t.PropertyNames), "propertyNames")
-	add(constrains(t.UnevaluatedItems), "unevaluatedItems")
+	add(constrains(t.UnevaluatedItems), keywordUnevaluatedItems)
 	add(constrains(t.UnevaluatedProperties), keywordUnevaluatedProperties)
 
 	return keywords

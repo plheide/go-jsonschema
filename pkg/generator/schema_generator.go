@@ -1772,6 +1772,8 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	}
 
 	if t.Ref != "" {
+		g.warnRefSiblings(t, scope)
+
 		return g.generateReferencedType(t)
 	}
 
@@ -2418,6 +2420,10 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		}
 	}
 
+	for _, branch := range t.AnyOf {
+		g.warnRefSiblings(branch, scope)
+	}
+
 	isCycle := false
 	rAnyOf, hasNull := g.resolveRefs(t.AnyOf, false)
 
@@ -2612,6 +2618,10 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 	// its branches as written, before resolving them rewrites their $refs.
 	closed := g.checksUnevaluatedProperties(t)
 	g.unevaluatedClosed[t] = closed
+
+	for _, branch := range t.AllOf {
+		g.warnRefSiblings(branch, scope)
+	}
 
 	rAllOf, _ := g.resolveRefs(flattenInlineAllOf(t.AllOf), true)
 

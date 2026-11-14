@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/refSiblingsDraft07",
+  "description": "Draft-07 ignores the keywords beside a $ref, as the generated type does, so nothing is reported.",
+  "type": "object",
+  "properties": {
+    "extended": {
+      "description": "Adds a property to base, beside the $ref, which the generated type ignores.",
+      "$ref": "#/definitions/base",
+      "properties": {
+        "extra": {
+          "type": "string"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "bounded": {
+      "$ref": "#/definitions/count",
+      "minimum": 1
+    },
+    "typed": {
+      "description": "A type that base declares as well adds nothing.",
+      "$ref": "#/definitions/base",
+      "type": "object"
+    },
+    "merged": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/base",
+          "required": [
+            "id"
+          ]
+        },
+        {
+          "properties": {
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "base": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "count": {
+      "type": "integer"
+    }
+  }
+}
