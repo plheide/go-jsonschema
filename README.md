@@ -198,11 +198,12 @@ When generated code doesn't check something a schema declares, the generator say
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
   `oneOf`, an `anyOf` with a branch that is `interface{}`, an `if`/`then`/`else`, a `not` or a `false` schema. A
   reason such as `minProperties, propertyNames not checked` names keywords that no generated code checks: `contains`
-  (with `minContains` and `maxContains`), `dependentRequired` and `dependentSchemas` (draft 07's `dependencies`
-  counts as these), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and
+  (with `minContains` and `maxContains`), `dependentSchemas` (draft 07's `dependencies` counts as it, and as
+  `dependentRequired`), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and
   `unevaluatedProperties`, unless `--strict-additional-properties` checks it, as described
-  [below](#opt-in-additionalproperties-false-enforcement). A keyword whose subschemas admit every value, such as
-  `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
+  [below](#opt-in-additionalproperties-false-enforcement), and `dependentRequired` where no struct of the object's own
+  checks it, as on a type merged from a composition, or where the declared draft does not define it. A keyword whose
+  subschemas admit every value, such as `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
 * `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
   value meets, or has no `type` and keywords that are checked only on a value of some type. Nothing is generated
   for it.
@@ -253,6 +254,9 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   has: exactly one for a `oneOf`, at least one for an `anyOf`.
 * A `not` of `required` on an object, of its own or in its `allOf`, forbids properties: `not: {required: [a, b]}`
   forbids having both, and `not: {anyOf: [{required: [a]}, {required: [b]}]}` having either. Upstream checked neither.
+* `dependentRequired`, and the lists of properties of draft-07's `dependencies`: where a property is present, the
+  properties it lists must be too. Each is checked where the draft the document declares defines it: 2019-09 brought
+  `dependentRequired` and dropped `dependencies`. A document that declares no draft has both checked.
 * An array type declared in `$defs` checks its own `minItems` and `maxItems`.
 * A property whose `type` admits `null` but whose `enum` does not list it rejects a `null`.
 * The keywords of the values an array or a map holds are checked, at every depth: `minLength`, `maxLength`,
@@ -447,7 +451,9 @@ and on a schema that only the release generates and builds, if a second run of t
     * [x] `properties`
     * [x] `additionalProperties: false` (opt-in via `Config.StrictAdditionalProperties`)
     * [ ] `patternProperties`
-    * [ ] `dependencies` (both forms are parsed, but not enforced), `dependentRequired` and `dependentSchemas`
+    * [x] `dependentRequired`, and the lists of properties of draft-07's `dependencies`, each where the draft the
+      document declares defines it, or where it declares none
+    * [ ] `dependentSchemas`, and the schemas of draft-07's `dependencies`
     * [ ] `propertyNames`
     * [ ] `maxProperties`
     * [ ] `minProperties`

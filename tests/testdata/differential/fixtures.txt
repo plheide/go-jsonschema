@@ -6,9 +6,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 628 (359 fixtures, 269 definitions), 25 skipped; documents: 16591
-json: 15460 agree, 663 missing checks (101 silent), 468 wrong rejections, 0 panics
-yaml: 14828 agree, 1277 missing checks (513 silent), 486 wrong rejections, 0 panics
+schemas: 635 (364 fixtures, 271 definitions), 25 skipped; documents: 16767
+json: 15635 agree, 662 missing checks (101 silent), 470 wrong rejections, 0 panics
+yaml: 14982 agree, 1297 missing checks (526 silent), 488 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -718,13 +718,13 @@ yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Date: unm
 == core/dependencies/dependenciesDualForm.json
 json missing check required: 5000 characters ×4, e.g. /step/credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 json missing check required: add unknown key ×2, e.g. / = {"step":{"credit-card":"a","run":"a","sh…
-json missing check required: delete key ×3, e.g. /step/run deleted
+json missing check required: delete key ×2, e.g. /step/shell deleted
 json missing check required: empty string ×4, e.g. /step/credit-card = ""
 json missing check required: off-enum string ×4, e.g. /step/credit-card = "zzOffEnum"
 json missing check required: seed ×1, e.g. seed 0
 yaml missing check required: 5000 characters ×4, e.g. /step/credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 yaml missing check required: add unknown key ×2, e.g. / = {"step":{"credit-card":"a","run":"a","sh…
-yaml missing check required: delete key ×3, e.g. /step/run deleted
+yaml missing check required: delete key ×2, e.g. /step/shell deleted
 yaml missing check required: empty string ×4, e.g. /step/credit-card = ""
 yaml missing check required: off-enum string ×4, e.g. /step/credit-card = "zzOffEnum"
 yaml missing check required: seed ×1, e.g. seed 0
@@ -733,13 +733,13 @@ yaml missing check required: wrong type ×4, e.g. /step/credit-card = 12345
 == core/dependencies/dependenciesDualForm.json#/definitions/step
 json missing check required: 5000 characters ×4, e.g. /credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 json missing check required: add unknown key ×1, e.g. / = {"credit-card":"a","run":"a","shell":"a"…
-json missing check required: delete key ×3, e.g. /run deleted
+json missing check required: delete key ×2, e.g. /shell deleted
 json missing check required: empty string ×4, e.g. /credit-card = ""
 json missing check required: off-enum string ×4, e.g. /credit-card = "zzOffEnum"
 json missing check required: seed ×1, e.g. seed 0
 yaml missing check required: 5000 characters ×4, e.g. /credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 yaml missing check required: add unknown key ×1, e.g. / = {"credit-card":"a","run":"a","shell":"a"…
-yaml missing check required: delete key ×3, e.g. /run deleted
+yaml missing check required: delete key ×2, e.g. /shell deleted
 yaml missing check required: empty string ×4, e.g. /credit-card = ""
 yaml missing check required: off-enum string ×4, e.g. /credit-card = "zzOffEnum"
 yaml missing check required: seed ×1, e.g. seed 0
@@ -1054,6 +1054,35 @@ yaml missing check (silent) type: wrong type ×2, e.g. /defInOtherSchema/s = 123
 == crossPackageNoOutput/schema/schema.json#/$defs/Thing
 yaml missing check (silent) type: wrong type ×1, e.g. /s = 12345
 
+== dependentRequired/draft07/draft07.json
+json missing check required: delete key ×1, e.g. /billingAddress deleted
+yaml missing check required: delete key ×1, e.g. /billingAddress deleted
+yaml missing check type: wrong type ×4, e.g. /billingAddress = 12345
+
+== dependentRequired/draft07Keyword/draft07Keyword.json
+yaml missing check type: wrong type ×2, e.g. /run = 12345
+
+== dependentRequired/modern/modern.json
+yaml missing check (silent) type: wrong type ×5, e.g. /billingAddress = 12345
+
+== dependentRequired/modernLegacy/modernLegacy.json
+json missing check dependency: delete key ×1, e.g. /run deleted
+yaml missing check dependency: delete key ×1, e.g. /run deleted
+yaml missing check type: wrong type ×2, e.g. /run = 12345
+
+== dependentRequired/undeclared/undeclared.json
+json wrong rejection: delete key ×1, e.g. /current/run deleted: unmarshal Wrap: unmarshal Undeclared: field run in Current: required when shell is present
+yaml missing check (silent) type: wrong type ×4, e.g. /current/run = 12345
+yaml wrong rejection: delete key ×1, e.g. /current/run deleted: unmarshal Wrap: unmarshal Undeclared: field run in Current: required when shell is present
+
+== dependentRequired/undeclared/undeclared.json#/$defs/current
+json wrong rejection: delete key ×1, e.g. /run deleted: unmarshal Wrap: field run in Current: required when shell is present
+yaml missing check (silent) type: wrong type ×2, e.g. /run = 12345
+yaml wrong rejection: delete key ×1, e.g. /run deleted: unmarshal Wrap: field run in Current: required when shell is present
+
+== dependentRequired/undeclared/undeclared.json#/$defs/legacy
+yaml missing check (silent) type: wrong type ×2, e.g. /run = 12345
+
 == elementConstraints/elements/elements.json
 json wrong rejection: 1e300 ×2, e.g. /loose/0/0 = 1e300: unmarshal Wrap: unmarshal Elements: json: cannot unmarshal number 1e300 into Go struct field Plain.loose of type int
 json wrong rejection: 2^63 ×2, e.g. /loose/0/0 = 9223372036854775808: unmarshal Wrap: unmarshal Elements: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.loose of type int
@@ -1239,7 +1268,7 @@ json missing check minProperties: 5000 characters ×12, e.g. /annotated/a = "aaa
 json missing check minProperties: N.0 ×2, e.g. /rows/0 = 1.0
 json missing check minProperties: Ne0 ×2, e.g. /rows/0 = 1e0
 json missing check minProperties: add unknown key ×12, e.g. / = {"annotated":{"a":"a"},"codes":["a"],"cu…
-json missing check minProperties: delete key ×25, e.g. /annotated deleted
+json missing check minProperties: delete key ×24, e.g. /annotated deleted
 json missing check minProperties: duplicate first item ×3, e.g. /codes = ["a","a"]
 json missing check minProperties: empty array ×3, e.g. /codes = []
 json missing check minProperties: empty string ×12, e.g. /annotated/a = ""
@@ -1263,7 +1292,7 @@ yaml missing check minProperties: 5000 characters ×12, e.g. /annotated/a = "aaa
 yaml missing check minProperties: N.0 ×2, e.g. /rows/0 = 1.0
 yaml missing check minProperties: Ne0 ×2, e.g. /rows/0 = 1e0
 yaml missing check minProperties: add unknown key ×12, e.g. / = {"annotated":{"a":"a"},"codes":["a"],"cu…
-yaml missing check minProperties: delete key ×25, e.g. /annotated deleted
+yaml missing check minProperties: delete key ×24, e.g. /annotated deleted
 yaml missing check minProperties: duplicate first item ×3, e.g. /codes = ["a","a"]
 yaml missing check minProperties: empty array ×3, e.g. /codes = []
 yaml missing check minProperties: empty string ×12, e.g. /annotated/a = ""

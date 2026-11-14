@@ -648,6 +648,14 @@ func TestForbiddenSetsGolden(t *testing.T) {
 	testExamples(t, basicConfig, "./data/forbiddenSets")
 }
 
+// TestDependentRequiredGolden generates objects whose present properties
+// require others, through dependentRequired or a draft-07 dependencies.
+func TestDependentRequiredGolden(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/dependentRequired")
+}
+
 func TestIntegralNumbersGolden(t *testing.T) {
 	t.Parallel()
 

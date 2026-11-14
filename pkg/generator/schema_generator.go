@@ -195,8 +195,8 @@ func rootHasGeneratable(t *schemas.Type) bool {
 
 // rawMapValidators returns the checks that the struct declared for t, as
 // declName, runs on the raw map, where an absent property differs from a zero
-// one: the conditional discriminator, the presence counts, and the property
-// sets that nots forbid.
+// one: the conditional discriminator, the presence counts, the property sets
+// that nots forbid, and the properties that present ones require.
 func (g *schemaGenerator) rawMapValidators(t *schemas.Type, declName string) []validator {
 	var validators []validator
 
@@ -217,6 +217,11 @@ func (g *schemaGenerator) rawMapValidators(t *schemas.Type, declName string) []v
 	// A not of required, of t's own or in its allOf, forbids properties.
 	if sets := g.forbiddenSetsOf(t); len(sets) > 0 && !g.config.OnlyModels {
 		validators = append(validators, &forbiddenSetsValidator{declName, sets})
+	}
+
+	// A present property can require others.
+	if dependencies := g.dependentRequiredOf(t); len(dependencies) > 0 {
+		validators = append(validators, &dependentRequiredValidator{declName, dependencies})
 	}
 
 	return validators

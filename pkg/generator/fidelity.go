@@ -297,6 +297,10 @@ func (g *schemaGenerator) reportUnenforcedKeywords(t *schemas.Type, scope nameSc
 		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordUnevaluatedProperties })
 	}
 
+	if len(g.dependentRequiredOf(t)) > 0 {
+		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordDependentRequired })
+	}
+
 	if len(keywords) > 0 {
 		g.warnNotEnforced(scope, strings.Join(keywords, ", ")+" not checked")
 	}
@@ -318,7 +322,7 @@ func unenforcedKeywords(t *schemas.Type) []string {
 	}
 
 	add(t.Contains != nil, "contains")
-	add(len(t.DependentRequired) > 0, "dependentRequired")
+	add(len(t.DependentRequired) > 0, keywordDependentRequired)
 	add(anyConstrains(t.DependentSchemas), "dependentSchemas")
 	add(t.Contains != nil && t.MaxContains != nil, "maxContains")
 	add(t.HasMaxProperties(), "maxProperties")

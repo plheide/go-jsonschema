@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/dependentRequired/modernLegacy",
+  "description": "Draft 2020-12 defines no dependencies, so it is not checked, and a warning says so.",
+  "type": "object",
+  "properties": {
+    "shell": {
+      "type": "string"
+    },
+    "run": {
+      "type": "string"
+    }
+  },
+  "dependencies": {
+    "shell": [
+      "run"
+    ]
+  }
+}

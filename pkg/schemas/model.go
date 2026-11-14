@@ -292,6 +292,10 @@ type Type struct {
 	BinaryEncoding string `json:"binaryEncoding,omitempty"` // Section 4.3.
 	// RFC draft-handrews-json-schema-validation-02, section 6.
 	DependentRequired map[string][]string `json:"dependentRequired,omitempty"` // Section 6.5.4.
+	// DependentRequiredFromDependencies is set when DependentRequired holds
+	// the property dependencies of a draft-07 `dependencies`, the keyword that
+	// 2019-09 split into dependentRequired and dependentSchemas.
+	DependentRequiredFromDependencies bool `json:"-"`
 	// RFC draft-handrews-json-schema-validation-02, appendix A.
 	Definitions      Definitions      `json:"$defs,omitempty"`
 	DependentSchemas map[string]*Type `json:"dependentSchemas,omitempty"`
@@ -744,6 +748,7 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 
 	if legacyDependentRequired != nil && obj.DependentRequired == nil {
 		obj.DependentRequired = legacyDependentRequired
+		obj.DependentRequiredFromDependencies = true
 	}
 
 	if len(obj.Type) == 0 && (len(obj.Properties) > 0 || obj.AdditionalProperties != nil) {

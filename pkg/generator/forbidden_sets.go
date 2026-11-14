@@ -144,30 +144,38 @@ func (g *schemaGenerator) forbiddenSetsOf(t *schemas.Type) [][]string {
 }
 
 // ownForbiddenSets returns the property sets that t's own not forbids, when
-// the struct declared for t stands for t, so that it can check them: t is an
-// object with properties, neither a merge, whose not may come from a branch,
-// nor a branch itself, and a composition of its own leaves its struct to it:
-// its allOf compiles into checks, its anyOf or oneOf is a presence count.
+// the struct declared for t stands for t, so that it can check them.
 func (g *schemaGenerator) ownForbiddenSets(t *schemas.Type) ([][]string, bool) {
-	if t.Not == nil || !isObjectWithProperties(t) || t.GetSubSchemaType() != "" || t.IsSubSchemaTypeElem() {
-		return nil, false
-	}
-
-	if _, ok := presenceBranches(t, t.AnyOf); len(t.AnyOf) > 0 && !ok {
-		return nil, false
-	}
-
-	if _, ok := presenceBranches(t, t.OneOf); len(t.OneOf) > 0 && !ok {
-		return nil, false
-	}
-
-	if _, ok := g.allOfAsChecks(t); len(t.AllOf) > 0 && !ok {
+	if t.Not == nil || !g.structStandsFor(t) {
 		return nil, false
 	}
 
 	sets, ok := forbiddenSets(t.Not)
 
 	return sets, ok && len(sets) > 0
+}
+
+// structStandsFor reports whether the struct declared for t stands for t, so
+// that it can check what t's own keywords say of its raw map: t is an object
+// with properties, neither a merge, whose keywords may come from a branch, nor
+// a branch itself, and a composition of its own leaves its struct to it: its
+// allOf compiles into checks, its anyOf or oneOf is a presence count.
+func (g *schemaGenerator) structStandsFor(t *schemas.Type) bool {
+	if !isObjectWithProperties(t) || t.GetSubSchemaType() != "" || t.IsSubSchemaTypeElem() {
+		return false
+	}
+
+	if _, ok := presenceBranches(t, t.AnyOf); len(t.AnyOf) > 0 && !ok {
+		return false
+	}
+
+	if _, ok := presenceBranches(t, t.OneOf); len(t.OneOf) > 0 && !ok {
+		return false
+	}
+
+	_, ok := g.allOfAsChecks(t)
+
+	return len(t.AllOf) == 0 || ok
 }
 
 // onlyNot reports whether an allOf element declares nothing besides a not and
