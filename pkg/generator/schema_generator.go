@@ -1809,6 +1809,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		}
 
 		g.reportOwnConditional(t, &tCopy, scope)
+		g.reportCheckGaps(t, cd.gaps, scope)
 		g.reportUnenforcedKeywords(t, scope)
 
 		return g.generateStructType(&tCopy, scope)

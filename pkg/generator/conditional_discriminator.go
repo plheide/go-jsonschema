@@ -44,18 +44,23 @@ type conditionalDiscriminatorValidator struct {
 	// compilesOwn is set when the schema's own if/then/else, besides its
 	// allOf, is one of the branches.
 	compilesOwn bool
+
+	// gaps says, for each clause, what the branches leave unchecked: the
+	// keywords of a then or else that compile into no check, and the clauses
+	// that compile into no branch. The schema's own if/then/else is left out
+	// when it is no branch, since the schema reports it as its own.
+	gaps []string
 }
 
 // conditionalBranch is one element of the parent's `allOf`. It pairs the
-// discriminator's expected value(s) with the `then` and (optional) `else`
-// subschemas to apply when matched / not matched. matchValues is OR-ed:
-// the branch fires if discStr matches ANY entry. The single-`const` form
-// produces a one-element slice; the future enum form produces N entries
-// in declaration order.
+// discriminator's expected value(s) with the checks of the `then` and
+// (optional) `else` subschemas to apply when matched / not matched.
+// matchValues is OR-ed: the branch fires if discStr matches ANY entry. The
+// single-`const` form produces a one-element slice; the enum form produces N
+// entries in declaration order.
 type conditionalBranch struct {
 	matchValues []string
-	thenSchema  *schemas.Type
-	elseSchema  *schemas.Type
+	then, els   branchChecks
 
 	// ifRequires is set, for each level of the discriminator's path, when
 	// the `if` lists that level in its `required`, so that it is false, not
@@ -63,24 +68,44 @@ type conditionalBranch struct {
 	ifRequires []bool
 }
 
-// absentSchema returns the subschema that applies when the discriminator's
-// path is absent at level: the `else` of an `if` that requires that level,
-// which is false then, and otherwise the `then` of an `if` that holds
-// vacuously.
-func (b conditionalBranch) absentSchema(level int) *schemas.Type {
+// absent returns the checks that apply when the discriminator's path is
+// absent at level: the `else` of an `if` that requires that level, which is
+// false then, and otherwise the `then` of an `if` that holds vacuously.
+func (b conditionalBranch) absent(level int) branchChecks {
 	if b.ifRequires[level] {
-		return b.elseSchema
+		return b.els
 	}
 
-	return b.thenSchema
+	return b.then
 }
 
 // absentChecks reports whether a branch has something to check when the
 // discriminator's path is absent at level.
 func (v *conditionalDiscriminatorValidator) absentChecks(level int) bool {
 	return v.optional[level] && slices.ContainsFunc(v.branches, func(b conditionalBranch) bool {
-		return hasChecks(b.absentSchema(level))
+		return b.absent(level).any()
 	})
+}
+
+// branchChecks is what the validator checks of a then or else subschema: the
+// properties its `required` lists, the property sets its `not` forbids, and
+// the properties it narrows to some of their string values.
+type branchChecks struct {
+	required  []string
+	forbidden [][]string
+	narrowed  []narrowedProperty
+}
+
+// any reports whether there is something to check.
+func (c branchChecks) any() bool {
+	return len(c.required) > 0 || len(c.forbidden) > 0 || len(c.narrowed) > 0
+}
+
+// narrowedProperty is a property that a then or else narrows, with a `const`
+// or an `enum`, to some string values.
+type narrowedProperty struct {
+	name   string
+	values []string
 }
 
 // desc satisfies the validator interface. Runs against the raw decoded map
@@ -137,7 +162,7 @@ func (v *conditionalDiscriminatorValidator) generate(out *codegen.Emitter, _ str
 
 		absent := fmt.Sprintf("when %s is absent", goStringText(v.discriminator))
 		for _, branch := range v.branches {
-			v.emitChecks(out, branch.absentSchema(0), absent, "")
+			v.emitChecks(out, branch.absent(0), absent, "")
 		}
 
 		out.Indent(-1)
@@ -222,7 +247,7 @@ func (v *conditionalDiscriminatorValidator) generateNested(out *codegen.Emitter)
 
 		absent := fmt.Sprintf("when %s is absent", goStringText(strings.Join(v.path[:i+1], ".")))
 		for _, branch := range v.branches {
-			v.emitChecks(out, branch.absentSchema(i), absent, "")
+			v.emitChecks(out, branch.absent(i), absent, "")
 		}
 
 		out.Indent(-1)
@@ -245,15 +270,15 @@ func (v *conditionalDiscriminatorValidator) emitBranch(out *codegen.Emitter, bra
 	out.Indent(1)
 
 	thenLabel, thenRuntime := branchContextLabel(v.discriminator, branch.matchValues, false)
-	v.emitChecks(out, branch.thenSchema, thenLabel, thenRuntime)
+	v.emitChecks(out, branch.then, thenLabel, thenRuntime)
 	out.Indent(-1)
 
-	if hasChecks(branch.elseSchema) {
+	if branch.els.any() {
 		out.Printlnf(`} else {`)
 		out.Indent(1)
 
 		elseLabel, elseRuntime := branchContextLabel(v.discriminator, branch.matchValues, true)
-		v.emitChecks(out, branch.elseSchema, elseLabel, elseRuntime)
+		v.emitChecks(out, branch.els, elseLabel, elseRuntime)
 		out.Indent(-1)
 	}
 
@@ -313,28 +338,29 @@ func branchContextLabel(discriminator string, values []string, isElse bool) (str
 }
 
 // emitChecks writes the checks of a then or else subschema: a presence check
-// per property its `required` lists, then an absence check per property set
-// its `not` forbids.
+// per property its `required` lists, an absence check per property set its
+// `not` forbids, then a check of each property it narrows.
 func (v *conditionalDiscriminatorValidator) emitChecks(
-	out *codegen.Emitter, sub *schemas.Type, contextLabel, runtimeContextExpr string,
+	out *codegen.Emitter, checks branchChecks, contextLabel, runtimeContextExpr string,
 ) {
-	if sub == nil {
-		return
+	v.emitRequiredChecks(out, checks.required, contextLabel, runtimeContextExpr)
+
+	for _, set := range checks.forbidden {
+		emitForbiddenCheck(out, v.declName, set, contextLabel, runtimeContextExpr)
 	}
 
-	v.emitRequiredChecks(out, sub, contextLabel, runtimeContextExpr)
-
-	sets, _ := forbiddenSets(sub.Not)
-	for _, set := range sets {
-		v.emitForbiddenCheck(out, set, contextLabel, runtimeContextExpr)
+	for _, property := range checks.narrowed {
+		v.emitNarrowedCheck(out, property, contextLabel, runtimeContextExpr)
 	}
 }
 
 // emitForbiddenCheck writes the check that the properties of set are not all
-// present, which a `not` of their `required` asks for. contextLabel and
-// runtimeContextExpr are as for emitRequiredChecks.
-func (v *conditionalDiscriminatorValidator) emitForbiddenCheck(
-	out *codegen.Emitter, set []string, contextLabel, runtimeContextExpr string,
+// present in an instance of declName, which a `not` of their `required` asks
+// for. contextLabel and runtimeContextExpr are as for emitRequiredChecks; an
+// empty contextLabel, for a `not` that always applies, leaves the error
+// without one.
+func emitForbiddenCheck(
+	out *codegen.Emitter, declName string, set []string, contextLabel, runtimeContextExpr string,
 ) {
 	escaped := make([]string, len(set))
 
@@ -350,12 +376,17 @@ func (v *conditionalDiscriminatorValidator) emitForbiddenCheck(
 		subject, verb = "fields "+strings.Join(escaped, ", "), "must not all be present"
 	}
 
+	context := ""
+	if contextLabel != "" {
+		context = " (" + contextLabel + ")"
+	}
+
 	args := ""
 	if runtimeContextExpr != "" {
 		args = ", " + runtimeContextExpr
 	}
 
-	out.Printlnf(`return fmt.Errorf("%s in %s (%s): %s"%s)`, subject, v.declName, contextLabel, verb, args)
+	out.Printlnf(`return fmt.Errorf("%s in %s%s: %s"%s)`, subject, declName, context, verb, args)
 
 	for range set {
 		out.Indent(-1)
@@ -363,8 +394,44 @@ func (v *conditionalDiscriminatorValidator) emitForbiddenCheck(
 	}
 }
 
-// emitRequiredChecks writes a presence check per field listed in the
-// subschema's `required`. contextLabel is interpolated into the error.
+// emitNarrowedCheck writes the check that a property, where it is present,
+// holds one of the string values a then or else narrows it to.
+// contextLabel and runtimeContextExpr are as for emitRequiredChecks.
+func (v *conditionalDiscriminatorValidator) emitNarrowedCheck(
+	out *codegen.Emitter, property narrowedProperty, contextLabel, runtimeContextExpr string,
+) {
+	mismatches := make([]string, len(property.values))
+	escaped := make([]string, len(property.values))
+
+	for i, value := range property.values {
+		mismatches[i] = fmt.Sprintf("narrowedStr != %q", value)
+		escaped[i] = goStringText(value)
+	}
+
+	verb := "must be " + escaped[0]
+	if len(escaped) > 1 {
+		verb = "must be one of [" + strings.Join(escaped, ", ") + "]"
+	}
+
+	args := ""
+	if runtimeContextExpr != "" {
+		args = ", " + runtimeContextExpr
+	}
+
+	out.Printlnf(`if narrowed, present := %s[%q]; present {`, varNameRawMap, property.name)
+	out.Indent(1)
+	out.Printlnf(`if narrowedStr, isString := narrowed.(string); !isString || (%s) {`, strings.Join(mismatches, " && "))
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("field %s in %s (%s): %s"%s)`,
+		goStringText(property.name), v.declName, contextLabel, verb, args)
+	out.Indent(-1)
+	out.Printlnf(`}`)
+	out.Indent(-1)
+	out.Printlnf(`}`)
+}
+
+// emitRequiredChecks writes a presence check per field listed in required.
+// contextLabel is interpolated into the error.
 //
 // When runtimeContextExpr is empty, contextLabel is a static phrase
 // (single-value branches — byte-equivalent to the pre-enum behavior).
@@ -372,13 +439,9 @@ func (v *conditionalDiscriminatorValidator) emitForbiddenCheck(
 // placeholder and runtimeContextExpr is the Go expression supplying its
 // value at runtime (multi-value branches).
 func (v *conditionalDiscriminatorValidator) emitRequiredChecks(
-	out *codegen.Emitter, sub *schemas.Type, contextLabel, runtimeContextExpr string,
+	out *codegen.Emitter, required []string, contextLabel, runtimeContextExpr string,
 ) {
-	if sub == nil {
-		return
-	}
-
-	for _, req := range sub.Required {
+	for _, req := range required {
 		out.Printlnf(`if _, ok := %s[%q]; !ok {`, varNameRawMap, req)
 		out.Indent(1)
 
@@ -401,13 +464,16 @@ func (v *conditionalDiscriminatorValidator) emitRequiredChecks(
 
 // detectConditionalDiscriminator inspects t for the canonical
 // `allOf` of `if[const]/then[/else]` pattern and returns a populated
-// validator when the schema qualifies. Returns false if any element of the
-// pattern doesn't match — in which case the schema falls through to the
-// existing routing (which, post-Phase 9, will warn at the silent-loss site).
+// validator when the schema qualifies: when the allOf holds nothing but
+// such clauses, and at least one of them compiles into a check. Each clause
+// compiles what it can, keyword by keyword, and the validator lists what is
+// left unchecked, for a warning. Returns false otherwise — in which case the
+// schema falls through to the existing routing, which warns about what it
+// drops.
 //
-// Detection is conservative: we accept only the shape we can compile
-// end-to-end correctly, to avoid surprising users who relied on today's
-// silent-fallback behavior.
+// A clause whose element declares anything besides its if/then/else declines
+// detection for t as a whole: the struct is built from the parent alone, so
+// that element's keywords would be lost.
 func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*conditionalDiscriminatorValidator, bool) {
 	if len(t.Type) != 1 || t.Type[0] != schemas.TypeNameObject {
 		return nil, false
@@ -422,43 +488,86 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 	// so its own is left out.
 	own := (t.If != nil || t.Then != nil || t.Else != nil) && t.GetSubSchemaType() == ""
 
-	if v, ok := g.detectDiscriminatorIn(t, conditionalClauses(t, own)); ok || !own || len(t.AllOf) == 0 {
-		if ok {
-			v.compilesOwn = own
-		}
-
-		return v, ok
+	clauses, ok := g.conditionalClauses(t, own)
+	if !ok {
+		return nil, false
 	}
 
-	// t's own conditional does not fit the allOf's discriminator, which then
-	// compiles on its own, as before; the own conditional is reported.
-	return g.detectDiscriminatorIn(t, conditionalClauses(t, false))
+	return g.detectDiscriminatorIn(t, clauses)
 }
 
 // conditionalClause is one if/then/else that conditional-discriminator
-// detection reads, and where it sits, for the decline warning.
+// detection reads, and where it sits, for the warnings.
 type conditionalClause struct {
 	elem  *schemas.Type
 	label string
+
+	// own is set for t's own if/then/else.
+	own bool
+}
+
+// unchecked describes, for a warning, the keywords that side, its then or
+// its else, leaves unchecked, or returns "" when there are none.
+func (c conditionalClause) unchecked(side string, keywords []string) string {
+	if len(keywords) == 0 {
+		return ""
+	}
+
+	where := c.label + "'s " + side
+	if c.own {
+		where = "its own " + side
+	}
+
+	return where + ": " + strings.Join(keywords, ", ") + " not checked"
+}
+
+// notCompiled describes, for a warning, a clause that compiles into no
+// branch, and why, if reason says.
+func (c conditionalClause) notCompiled(reason string) string {
+	gap := c.label + "'s if/then/else not compiled"
+	if reason != "" {
+		gap += " (" + reason + ")"
+	}
+
+	return gap
 }
 
 // conditionalClauses returns the elements of t's allOf, then, when own is set,
 // t's own if/then/else, which JSON Schema applies as it would one more allOf
-// element.
-func conditionalClauses(t *schemas.Type, own bool) []conditionalClause {
+// element. ok is false when an element of the allOf is not an if/then/else,
+// or declares something besides one; detection then declines t, and says so
+// for an element whose keywords the struct built from the parent alone would
+// drop.
+func (g *schemaGenerator) conditionalClauses(t *schemas.Type, own bool) ([]conditionalClause, bool) {
 	clauses := make([]conditionalClause, 0, len(t.AllOf)+1)
 
 	for i, elem := range t.AllOf {
-		clauses = append(clauses, conditionalClause{elem, fmt.Sprintf("allOf[%d]", i)})
+		label := fmt.Sprintf("allOf[%d]", i)
+
+		if elem == nil || (elem.If == nil && elem.Then == nil && elem.Else == nil) {
+			return nil, false
+		}
+
+		if !onlyConditional(elem) {
+			g.warnDecline(t, fmt.Sprintf(
+				"conditional-discriminator detection declined on %s: %s", label, reasonElementKeywords,
+			))
+
+			return nil, false
+		}
+
+		clauses = append(clauses, conditionalClause{elem: elem, label: label})
 	}
 
 	if own {
 		clauses = append(clauses, conditionalClause{
-			&schemas.Type{If: t.If, Then: t.Then, Else: t.Else}, "its own if/then/else",
+			elem:  &schemas.Type{If: t.If, Then: t.Then, Else: t.Else},
+			label: "its own if/then/else",
+			own:   true,
 		})
 	}
 
-	return clauses
+	return clauses, true
 }
 
 // discriminatorDecline is a decline warning detection has given for a schema.
@@ -479,58 +588,100 @@ func (g *schemaGenerator) warnDecline(t *schemas.Type, message string) {
 }
 
 // detectDiscriminatorIn matches clauses, the if/then/else clauses of t, to
-// the conditional-discriminator pattern.
+// the conditional-discriminator pattern. A clause becomes a branch when its
+// `if` checks the discriminator, the same one as the branches before it, and
+// its then or else compiles into a check, or leaves nothing unchecked. Any
+// other clause is left out, and the validator's gaps say so; with no branch at
+// all, detection declines t, and gives the warning it gave before branches
+// compiled on their own: the first clause's that does not compile whole.
 func (g *schemaGenerator) detectDiscriminatorIn(
 	t *schemas.Type, clauses []conditionalClause,
 ) (*conditionalDiscriminatorValidator, bool) {
-	if len(clauses) == 0 {
-		return nil, false
-	}
-
 	var (
-		path     []string
-		branches = make([]conditionalBranch, 0, len(clauses))
+		path        []string
+		branches    = make([]conditionalBranch, 0, len(clauses))
+		gaps        []string
+		compilesOwn bool
+
+		decline  string
+		declined bool
 	)
 
-	for i, clause := range clauses {
+	// noteDecline keeps the first clause's decline, whose message is "" when
+	// detection used to decline it silently.
+	noteDecline := func(clause conditionalClause, reason string) {
+		if declined {
+			return
+		}
+
+		declined = true
+
+		if reason != "" {
+			decline = fmt.Sprintf("conditional-discriminator detection declined on %s: %s", clause.label, reason)
+		}
+	}
+
+	for _, clause := range clauses {
 		elem := clause.elem
 
 		clausePath, matchValues, ifRequires, ok, declineReason := discriminatorIfClause(elem)
 		if !ok {
-			if declineReason != "" {
-				g.warnDecline(t, fmt.Sprintf(
-					"conditional-discriminator detection declined on %s: %s",
-					clause.label, declineReason,
-				))
+			noteDecline(clause, declineReason)
+
+			if !clause.own {
+				gaps = append(gaps, clause.notCompiled(declineReason))
 			}
 
-			return nil, false
+			continue
 		}
 
-		// The validator enforces only the branches' `required`, on a struct
-		// built from the parent alone. An element declaring anything else
-		// would have it dropped, so detection declines, and says why: the
-		// allOf merge path it falls back to does not warn.
 		if reason := unsupportedConditionalReason(elem); reason != "" {
-			g.warnDecline(t, fmt.Sprintf(
-				"conditional-discriminator detection declined on %s: %s", clause.label, reason,
-			))
-
-			return nil, false
+			noteDecline(clause, reason)
 		}
 
-		if i == 0 {
-			path = clausePath
-		} else if !slices.Equal(clausePath, path) {
-			return nil, false
+		if path != nil && !slices.Equal(clausePath, path) {
+			noteDecline(clause, "")
+
+			if !clause.own {
+				gaps = append(gaps, clause.notCompiled(fmt.Sprintf(
+					"keyed on %q, not %q", strings.Join(clausePath, "."), strings.Join(path, "."),
+				)))
+			}
+
+			continue
 		}
+
+		then, thenUnchecked := compileBranch(elem.Then)
+		els, elseUnchecked := compileBranch(elem.Else)
+
+		// A then or else that leaves nothing unchecked is a branch even with
+		// nothing to check, as it was before branches compiled on their own.
+		if !then.any() && !els.any() && (len(thenUnchecked) > 0 || len(elseUnchecked) > 0) {
+			if !clause.own {
+				gaps = appendNonEmpty(gaps, clause.unchecked("then", thenUnchecked), clause.unchecked("else", elseUnchecked))
+			}
+
+			continue
+		}
+
+		gaps = appendNonEmpty(gaps, clause.unchecked("then", thenUnchecked), clause.unchecked("else", elseUnchecked))
+		path = clausePath
+		compilesOwn = compilesOwn || clause.own
 
 		branches = append(branches, conditionalBranch{
 			matchValues: matchValues,
-			thenSchema:  elem.Then,
-			elseSchema:  elem.Else,
+			then:        then,
+			els:         els,
 			ifRequires:  ifRequires,
 		})
+	}
+
+	if len(branches) == 0 {
+		if decline != "" {
+			g.warnDecline(t, decline)
+		}
+
+		return nil, false
 	}
 
 	discriminator := strings.Join(path, ".")
@@ -560,7 +711,115 @@ func (g *schemaGenerator) detectDiscriminatorIn(
 		discriminator: discriminator,
 		branches:      branches,
 		optional:      optional,
+		compilesOwn:   compilesOwn,
+		gaps:          gaps,
 	}, true
+}
+
+// appendNonEmpty appends the descriptions that are not "".
+func appendNonEmpty(list []string, descriptions ...string) []string {
+	for _, description := range descriptions {
+		if description != "" {
+			list = append(list, description)
+		}
+	}
+
+	return list
+}
+
+// compileBranch splits a then or else subschema into what the validator
+// checks and the names of the keywords it leaves unchecked. It checks
+// `required`, a `not` that forbiddenSets reads, and a property narrowed to
+// some strings; `type: object` holds already. A subschema with a $ref
+// checks nothing: draft-07 ignores the keywords beside a $ref, so checking
+// them could reject what the schema accepts.
+func compileBranch(sub *schemas.Type) (branchChecks, []string) {
+	if sub == nil {
+		return branchChecks{}, nil
+	}
+
+	if sub.Ref != "" {
+		return branchChecks{}, schemaKeywords(sub)
+	}
+
+	var (
+		checks branchChecks
+		rest   = *sub
+	)
+
+	checks.required, rest.Required = sub.Required, nil
+
+	if sets, ok := forbiddenSets(sub.Not); ok {
+		checks.forbidden, rest.Not = sets, nil
+	}
+
+	if len(rest.Type) == 1 && rest.Type[0] == schemas.TypeNameObject {
+		rest.Type = nil
+	}
+
+	rest.Properties = nil
+
+	for _, name := range sortedKeys(sub.Properties) {
+		if values, ok := narrowedValues(sub.Properties[name]); ok {
+			checks.narrowed = append(checks.narrowed, narrowedProperty{name, values})
+
+			continue
+		}
+
+		if rest.Properties == nil {
+			rest.Properties = map[string]*schemas.Type{}
+		}
+
+		rest.Properties[name] = sub.Properties[name]
+	}
+
+	if !constrains(&rest) {
+		return checks, nil
+	}
+
+	return checks, schemaKeywords(&rest)
+}
+
+// narrowedValues returns the values a then or else allows a property, when it
+// only narrows the property to strings: a `const` or an `enum` of strings,
+// besides at most `type: string` and annotations.
+func narrowedValues(p *schemas.Type) ([]string, bool) {
+	hasConst := p != nil && (p.ConstIsSet || p.Const != nil)
+	if p == nil || p.Ref != "" || (hasConst && p.Enum != nil) {
+		return nil, false
+	}
+
+	var values []string
+
+	switch {
+	case hasConst:
+		s, ok := p.Const.(string)
+		if !ok {
+			return nil, false
+		}
+
+		values = []string{s}
+
+	case p.Enum != nil:
+		strs, reason := stringEnumValues(p.Enum)
+		if reason != "" {
+			return nil, false
+		}
+
+		values = strs
+
+	default:
+		return nil, false
+	}
+
+	rest := *p
+	rest.Const, rest.ConstExact, rest.ConstIsSet, rest.Enum = nil, nil, false, nil
+
+	if len(rest.Type) == 1 && rest.Type[0] == schemas.TypeNameString {
+		rest.Type = nil
+	}
+
+	return values, !constrains(&rest)
 }
 
 // discriminatorIfClause matches an allOf element of shape
@@ -863,14 +1122,19 @@ func unsupportedConditionalReason(elem *schemas.Type) string {
 		return "then/else nests a composition or a conditional, which would not be enforced"
 
 	case !onlyChecks(elem.Then) || !onlyChecks(elem.Else):
-		return "then/else declares keywords besides required and a not of required, which would not be enforced"
+		return "then/else declares keywords besides required, a not of required and a narrowed enum, " +
+			"which would not be enforced"
 
 	case !onlyConditional(elem):
-		return "the element declares keywords besides if/then/else, which would not be enforced"
+		return reasonElementKeywords
 	}
 
 	return ""
 }
+
+// reasonElementKeywords is why detection declines an allOf element that
+// declares keywords besides its if/then/else.
+const reasonElementKeywords = "the element declares keywords besides if/then/else, which would not be enforced"
 
 // onlyConditional reports whether an allOf element declares nothing besides
 // its if/then/else and annotations.
@@ -914,18 +1178,6 @@ func onlyChecks(sub *schemas.Type) bool {
 	rest.Not = nil
 
 	return onlyRequired(&rest)
-}
-
-// hasChecks reports whether a then/else subschema has something to check: a
-// `required`, or a `not` that forbids a property set.
-func hasChecks(sub *schemas.Type) bool {
-	if sub == nil {
-		return false
-	}
-
-	sets, _ := forbiddenSets(sub.Not)
-
-	return len(sub.Required) > 0 || len(sets) > 0
 }
 
 // forbiddenSets reads a `not` of a then/else subschema as the property sets it

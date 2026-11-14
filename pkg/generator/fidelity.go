@@ -2,12 +2,75 @@ package generator
 
 import (
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 
 	"github.com/plheide/go-jsonschema/pkg/codegen"
 	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
+
+// isAnnotationField reports whether the field of the schema model that name
+// names holds an annotation, which checks nothing.
+func isAnnotationField(name string) bool {
+	switch name {
+	case "Version", "Title", "Description", "Default", "Definitions", "ReadOnly", "Deprecated", "XEnumVarnames",
+		"GoJSONSchemaExtension":
+		return true
+	}
+
+	return false
+}
+
+// schemaKeywords names the keywords t declares, as JSON Schema spells them and
+// in the order the model lists them, for a warning about what goes unchecked.
+// It leaves out annotations, which check nothing, and names a property list
+// with its properties. It reads t's own fields alone, so it is safe on a
+// cyclic schema, and it names at least something.
+func schemaKeywords(t *schemas.Type) []string {
+	var (
+		value = reflect.ValueOf(*t)
+		names []string
+	)
+
+	for i := range value.NumField() {
+		field := value.Type().Field(i)
+
+		name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
+		if !field.IsExported() || name == "" || name == "-" || isAnnotationField(field.Name) || value.Field(i).IsZero() {
+			continue
+		}
+
+		if field.Name == "Properties" {
+			name += " (" + strings.Join(sortedKeys(t.Properties), ", ") + ")"
+		}
+
+		names = append(names, name)
+	}
+
+	// These keywords leave their field zero when they are written as a null,
+	// a zero or an array.
+	for _, keyword := range []struct {
+		declared bool
+		name     string
+	}{
+		{t.ConstIsSet && t.Const == nil, "const"},
+		{t.MaxLengthIsSet && t.MaxLength == 0, "maxLength"},
+		{t.MaxItemsIsSet && t.MaxItems == 0, "maxItems"},
+		{t.MaxPropertiesIsSet && t.MaxProperties == 0, "maxProperties"},
+		{len(t.TupleItems) > 0 && t.Items == nil, "tuple items"},
+	} {
+		if keyword.declared {
+			names = append(names, keyword.name)
+		}
+	}
+
+	if len(names) == 0 {
+		names = append(names, "other keywords")
+	}
+
+	return names
+}
 
 // warnFallback emits a structured warning when a schema is about to be
 // represented as `interface{}` while still declaring keywords whose presence
@@ -304,6 +367,21 @@ func (g *schemaGenerator) reportOwnConditional(t, subject *schemas.Type, scope n
 		g.reportedConditionals[t] = struct{}{}
 		g.warnNotEnforced(scope, reason)
 	}
+}
+
+// reportCheckGaps reports, once for t, what the checks compiled for t's allOf
+// and its own conditional leave unchecked, as gaps describes it.
+func (g *schemaGenerator) reportCheckGaps(t *schemas.Type, gaps []string, scope nameScope) {
+	if g.config.OnlyModels || len(gaps) == 0 {
+		return
+	}
+
+	if _, reported := g.reportedGaps[t]; reported {
+		return
+	}
+
+	g.reportedGaps[t] = struct{}{}
+	g.warnNotEnforced(scope, strings.Join(gaps, "; "))
 }
 
 // isDeclaring reports whether generateDeclaredType is generating t's type,

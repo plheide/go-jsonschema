@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/narrowedEnumMulti",
+  "description": "A branch keyed on two values narrows op, and its error names the value that matched; the else narrows op to a const.",
+  "type": "object",
+  "required": [
+    "kind"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "sum",
+        "count",
+        "max"
+      ]
+    },
+    "op": {
+      "type": "string",
+      "enum": [
+        "add",
+        "inc",
+        "cmp"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "sum",
+              "count"
+            ]
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "op"
+        ],
+        "properties": {
+          "op": {
+            "enum": [
+              "add",
+              "inc"
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "op": {
+            "const": "cmp"
+          }
+        }
+      }
+    }
+  ]
+}

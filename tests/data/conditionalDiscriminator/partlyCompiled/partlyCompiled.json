@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/partlyCompiled",
+  "description": "Each clause compiles what it can: allOf[0] its required but not its bound, allOf[1] nothing of its $ref, allOf[2] nothing, as its if is no discriminator check, allOf[3] nothing, as it is keyed on another property, and allOf[4] all of it.",
+  "type": "object",
+  "required": [
+    "kind"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "fast",
+        "slow"
+      ]
+    },
+    "x": {
+      "type": "integer"
+    },
+    "y": {
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "a"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "x"
+        ],
+        "properties": {
+          "x": {
+            "minimum": 5
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "b"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/bFields"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "x": {
+            "minimum": 10
+          }
+        },
+        "required": [
+          "x"
+        ]
+      },
+      "then": {
+        "required": [
+          "y"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "fast"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "y"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "c"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "y"
+        ],
+        "not": {
+          "required": [
+            "x"
+          ]
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "bFields": {
+      "type": "object",
+      "required": [
+        "y"
+      ],
+      "properties": {
+        "y": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
