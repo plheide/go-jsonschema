@@ -7,9 +7,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 641 (366 fixtures, 275 definitions), 25 skipped; documents: 16925
-json: 15776 agree, 669 missing checks (102 silent), 480 wrong rejections, 0 panics
-yaml: 15113 agree, 1314 missing checks (532 silent), 498 wrong rejections, 0 panics
+schemas: 645 (367 fixtures, 278 definitions), 25 skipped; documents: 17028
+json: 15847 agree, 698 missing checks (103 silent), 483 wrong rejections, 0 panics
+yaml: 15180 agree, 1347 missing checks (535 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -1229,8 +1229,8 @@ json missing check (no keyword): add unknown key ×1, e.g. /extended = {"id":"a"
 json missing check minimum: 0 ×1, e.g. /bounded = 0
 json missing check minimum: 0e99 ×1, e.g. /bounded = 0e99
 json missing check minimum: negative ×1, e.g. /bounded = -1
-json missing check required: delete key ×1, e.g. /merged/id deleted
-json missing check type: null ×1, e.g. /merged = null
+json missing check required: delete key ×2, e.g. /merged/id deleted
+json missing check type: null ×2, e.g. /merged = null
 json wrong rejection: 1e300 ×1, e.g. /bounded = 1e300: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: json: cannot unmarshal number 1e300 into Go value of type Plain
 json wrong rejection: 2^63 ×1, e.g. /bounded = 9223372036854775808: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
 json wrong rejection: 2^64 ×1, e.g. /bounded = 18446744073709551616: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
@@ -1238,9 +1238,9 @@ yaml missing check (no keyword): add unknown key ×1, e.g. /extended = {"id":"a"
 yaml missing check minimum: 0 ×1, e.g. /bounded = 0
 yaml missing check minimum: 0e99 ×1, e.g. /bounded = 0e99
 yaml missing check minimum: negative ×1, e.g. /bounded = -1
-yaml missing check required: delete key ×1, e.g. /merged/id deleted
-yaml missing check type: null ×1, e.g. /merged = null
-yaml missing check type: wrong type ×4, e.g. /extended/id = 12345
+yaml missing check required: delete key ×2, e.g. /merged/id deleted
+yaml missing check type: null ×2, e.g. /merged = null
+yaml missing check type: wrong type ×6, e.g. /extended/id = 12345
 yaml wrong rejection: 1e300 ×1, e.g. /bounded = 1e300: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /bounded = 9223372036854775808: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
 yaml wrong rejection: 2^64 ×1, e.g. /bounded = 18446744073709551616: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: 18446744073709551616 is out of range for int
@@ -1256,13 +1256,73 @@ yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count
 yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
 yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: 18446744073709551616 is out of range for int
 
+== fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json
+json missing check maximum: 1e300 ×1, e.g. /every = 1e300
+json missing check maximum: 2^53+1 ×1, e.g. /every = 9007199254740993
+json missing check maximum: 2^63 ×1, e.g. /every = 9223372036854775808
+json missing check maximum: 2^64 ×1, e.g. /every = 18446744073709551616
+json missing check minimum: 0 ×1, e.g. /some = 0
+json missing check minimum: 0e99 ×1, e.g. /some = 0e99
+json missing check minimum: negative ×1, e.g. /some = -1
+json missing check type: 0.5 ×2, e.g. /every = 0.5
+json missing check type: null ×2, e.g. /every = null
+json missing check type: wrong type ×2, e.g. /every = "12345"
+yaml missing check maximum: 1e300 ×1, e.g. /every = 1e300
+yaml missing check maximum: 2^53+1 ×1, e.g. /every = 9007199254740993
+yaml missing check maximum: 2^63 ×1, e.g. /every = 9223372036854775808
+yaml missing check maximum: 2^64 ×1, e.g. /every = 18446744073709551616
+yaml missing check minimum: 0 ×1, e.g. /some = 0
+yaml missing check minimum: 0e99 ×1, e.g. /some = 0e99
+yaml missing check minimum: negative ×1, e.g. /some = -1
+yaml missing check type: 0.5 ×2, e.g. /every = 0.5
+yaml missing check type: null ×2, e.g. /every = null
+yaml missing check type: wrong type ×2, e.g. /every = "12345"
+
+== fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json#/$defs/count
+json wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 1e300 into Go value of type Plain
+json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
+json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
+yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
+yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: 18446744073709551616 is out of range for int
+
+== fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json#/$defs/everyCount
+json missing check maximum: 1e300 ×1, e.g. / = 1e300
+json missing check maximum: 2^53+1 ×1, e.g. / = 9007199254740993
+json missing check maximum: 2^63 ×1, e.g. / = 9223372036854775808
+json missing check maximum: 2^64 ×1, e.g. / = 18446744073709551616
+json missing check type: 0.5 ×1, e.g. / = 0.5
+json missing check type: null ×1, e.g. / = null
+json missing check type: wrong type ×1, e.g. / = "12345"
+yaml missing check maximum: 1e300 ×1, e.g. / = 1e300
+yaml missing check maximum: 2^53+1 ×1, e.g. / = 9007199254740993
+yaml missing check maximum: 2^63 ×1, e.g. / = 9223372036854775808
+yaml missing check maximum: 2^64 ×1, e.g. / = 18446744073709551616
+yaml missing check type: 0.5 ×1, e.g. / = 0.5
+yaml missing check type: null ×1, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. / = "12345"
+
+== fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json#/$defs/someCount
+json missing check minimum: 0 ×1, e.g. / = 0
+json missing check minimum: 0e99 ×1, e.g. / = 0e99
+json missing check minimum: negative ×1, e.g. / = -1
+json missing check type: 0.5 ×1, e.g. / = 0.5
+json missing check type: null ×1, e.g. / = null
+json missing check type: wrong type ×1, e.g. / = "12345"
+yaml missing check minimum: 0 ×1, e.g. / = 0
+yaml missing check minimum: 0e99 ×1, e.g. / = 0e99
+yaml missing check minimum: negative ×1, e.g. / = -1
+yaml missing check type: 0.5 ×1, e.g. / = 0.5
+yaml missing check type: null ×1, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. / = "12345"
+
 == fidelityWarnings/refSiblingsDraft07/refSiblingsDraft07.json
-json missing check (silent) type: null ×1, e.g. /merged = null
+json missing check (silent) type: null ×2, e.g. /merged = null
 json wrong rejection: 1e300 ×1, e.g. /bounded = 1e300: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: json: cannot unmarshal number 1e300 into Go value of type Plain
 json wrong rejection: 2^63 ×1, e.g. /bounded = 9223372036854775808: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
 json wrong rejection: 2^64 ×1, e.g. /bounded = 18446744073709551616: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
-yaml missing check (silent) type: null ×1, e.g. /merged = null
-yaml missing check (silent) type: wrong type ×4, e.g. /extended/id = 12345
+yaml missing check (silent) type: null ×2, e.g. /merged = null
+yaml missing check (silent) type: wrong type ×6, e.g. /extended/id = 12345
 yaml wrong rejection: 1e300 ×1, e.g. /bounded = 1e300: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /bounded = 9223372036854775808: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
 yaml wrong rejection: 2^64 ×1, e.g. /bounded = 18446744073709551616: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: 18446744073709551616 is out of range for int

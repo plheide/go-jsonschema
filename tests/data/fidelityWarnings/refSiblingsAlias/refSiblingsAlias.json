@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/refSiblingsAlias",
+  "description": "Wrappers of a single $ref, which --alias-single-allof-anyof-refs makes aliases of the target, with a keyword beside the $ref.",
+  "type": "object",
+  "properties": {
+    "some": {
+      "$ref": "#/$defs/someCount"
+    },
+    "every": {
+      "$ref": "#/$defs/everyCount"
+    }
+  },
+  "$defs": {
+    "count": {
+      "type": "integer"
+    },
+    "someCount": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/count",
+          "minimum": 1
+        }
+      ]
+    },
+    "everyCount": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/count",
+          "maximum": 9
+        }
+      ]
+    }
+  }
+}

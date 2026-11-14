@@ -56,6 +56,9 @@ type RefSiblings struct {
 	// Merged corresponds to the JSON schema field "merged".
 	Merged *RefSiblingsMerged `json:"merged,omitempty,omitzero" yaml:"merged,omitempty" mapstructure:"merged,omitempty"`
 
+	// Nested corresponds to the JSON schema field "nested".
+	Nested *RefSiblingsNested `json:"nested,omitempty,omitzero" yaml:"nested,omitempty" mapstructure:"nested,omitempty"`
+
 	// A type that base declares as well adds nothing.
 	Typed *Base `json:"typed,omitempty,omitzero" yaml:"typed,omitempty" mapstructure:"typed,omitempty"`
 }
@@ -66,6 +69,14 @@ type RefSiblingsMerged struct {
 
 	// Note corresponds to the JSON schema field "note".
 	Note *string `json:"note,omitempty,omitzero" yaml:"note,omitempty" mapstructure:"note,omitempty"`
+}
+
+type RefSiblingsNested struct {
+	// Id corresponds to the JSON schema field "id".
+	Id *string `json:"id,omitempty,omitzero" yaml:"id,omitempty" mapstructure:"id,omitempty"`
+
+	// Tag corresponds to the JSON schema field "tag".
+	Tag *string `json:"tag,omitempty,omitzero" yaml:"tag,omitempty" mapstructure:"tag,omitempty"`
 }
 
 // unmarshalIntegral_Count decodes data into v again, as json.Unmarshal does, after

@@ -39,6 +39,27 @@
           }
         }
       ]
+    },
+    "nested": {
+      "allOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/definitions/base",
+              "required": [
+                "id"
+              ]
+            }
+          ]
+        },
+        {
+          "properties": {
+            "tag": {
+              "type": "string"
+            }
+          }
+        }
+      ]
     }
   },
   "definitions": {

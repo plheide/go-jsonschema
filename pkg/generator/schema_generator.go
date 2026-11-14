@@ -2413,6 +2413,8 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		if childType.Ref != "" {
 			resolvedType, err := g.resolveRef(childType)
 			if err == nil {
+				g.warnRefSiblings(childType, scope)
+
 				return g.generateTypeInline(resolvedType, scope)
 			} else {
 				g.warner(fmt.Sprintf("Could not resolve ref %q: %v", childType.Ref, err))
@@ -2607,6 +2609,8 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 		if subType.Ref != "" {
 			resolvedType, err := g.resolveRef(subType)
 			if err == nil {
+				g.warnRefSiblings(subType, scope)
+
 				return g.generateTypeInline(resolvedType, scope)
 			} else {
 				g.warner(fmt.Sprintf("Could not resolve subtype ref %q: %v", subType.Ref, err))
@@ -2619,11 +2623,12 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 	closed := g.checksUnevaluatedProperties(t)
 	g.unevaluatedClosed[t] = closed
 
-	for _, branch := range t.AllOf {
+	flat := flattenInlineAllOf(t.AllOf)
+	for _, branch := range flat {
 		g.warnRefSiblings(branch, scope)
 	}
 
-	rAllOf, _ := g.resolveRefs(flattenInlineAllOf(t.AllOf), true)
+	rAllOf, _ := g.resolveRefs(flat, true)
 
 	// A recursive allOf, whose merged type leads back to an allOf with the same
 	// merge, would merge into a fresh copy at every level and never finish: no

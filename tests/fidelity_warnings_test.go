@@ -356,6 +356,8 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 				"properties (extra), unevaluatedProperties beside $ref not checked",
 			"schema fidelity: type RefSiblingsMerged does not enforce all it declares: " +
 				"required beside $ref not checked",
+			"schema fidelity: type RefSiblingsNested does not enforce all it declares: " +
+				"required beside $ref not checked",
 		}, filterFidelityWarnings(generateWithWarnerCapture(t,
 			"./data/fidelityWarnings/refSiblings/refSiblings.json")),
 			"a type that the target declares too, and annotations, are left out")
@@ -363,6 +365,16 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Empty(t, filterFidelityWarnings(generateWithWarnerCapture(t,
 			"./data/fidelityWarnings/refSiblingsDraft07/refSiblingsDraft07.json")),
 			"draft-07 ignores the keywords beside a $ref, as the generated type does")
+
+		// A wrapper of one $ref that becomes an alias of the target is reported as well.
+		cfg := basicConfig
+		cfg.AliasSingleAllOfAnyOfRefs = true
+
+		assert.ElementsMatch(t, []string{
+			"schema fidelity: type EveryCount does not enforce all it declares: maximum beside $ref not checked",
+			"schema fidelity: type SomeCount does not enforce all it declares: minimum beside $ref not checked",
+		}, filterFidelityWarnings(generateWithConfigAndWarnerCapture(t, cfg,
+			"./data/fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json")))
 	})
 
 	t.Run("conditionals that lose nothing stay silent", func(t *testing.T) {

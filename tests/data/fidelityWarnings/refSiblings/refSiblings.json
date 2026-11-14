@@ -39,6 +39,27 @@
           }
         }
       ]
+    },
+    "nested": {
+      "allOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/base",
+              "required": [
+                "id"
+              ]
+            }
+          ]
+        },
+        {
+          "properties": {
+            "tag": {
+              "type": "string"
+            }
+          }
+        }
+      ]
     }
   },
   "$defs": {
