@@ -41,8 +41,12 @@ func schemaKeywords(t *schemas.Type) []string {
 			continue
 		}
 
-		if field.Name == "Properties" {
+		switch field.Name {
+		case "Properties":
 			name += " (" + strings.Join(sortedKeys(t.Properties), ", ") + ")"
+		case "Not":
+			// So that it does not read as part of "not checked".
+			name = `"` + name + `"`
 		}
 
 		names = append(names, name)

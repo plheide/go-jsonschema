@@ -68,10 +68,11 @@ func TestConditionalDiscriminatorPartlyCompiled(t *testing.T) {
 			{`{"kind": "c", "y": "v"}`, ""},
 			{`{"kind": "c"}`, "field y in PartlyCompiled (when kind='c'): required"},
 			{`{"kind": "c", "y": "v", "x": 1}`, "field x in PartlyCompiled (when kind='c'): must not be present"},
-			// allOf[1]'s $ref, allOf[2] and allOf[3] are reported, not checked.
+			// allOf[1]'s $ref, allOf[2], allOf[3] and allOf[5]'s not are reported, not checked.
 			{`{"kind": "b"}`, ""},
 			{`{"kind": "a", "x": 10}`, ""},
 			{`{"kind": "a", "x": 5, "mode": "fast"}`, ""},
+			{`{"kind": "a", "x": 5, "y": "none"}`, ""},
 		})
 	})
 

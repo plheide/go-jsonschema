@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/partlyCompiled",
-  "description": "Each clause compiles what it can: allOf[0] its required but not its bound, allOf[1] nothing of its $ref, allOf[2] nothing, as its if is no discriminator check, allOf[3] nothing, as it is keyed on another property, and allOf[4] all of it.",
+  "description": "Each clause compiles what it can: allOf[0] its required but not its bound, allOf[1] nothing of its $ref, allOf[2] nothing, as its if is no discriminator check, allOf[3] nothing, as it is keyed on another property, allOf[4] all of it, and allOf[5] nothing, as its not forbids a value.",
   "type": "object",
   "required": [
     "kind"
@@ -107,6 +107,27 @@
         "not": {
           "required": [
             "x"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "a"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "properties": {
+            "y": {
+              "const": "none"
+            }
+          },
+          "required": [
+            "y"
           ]
         }
       }

@@ -54,8 +54,8 @@ func (j *BFields) UnmarshalYAML(value *yaml.Node) error {
 
 // Each clause compiles what it can: allOf[0] its required but not its bound,
 // allOf[1] nothing of its $ref, allOf[2] nothing, as its if is no discriminator
-// check, allOf[3] nothing, as it is keyed on another property, and allOf[4] all of
-// it.
+// check, allOf[3] nothing, as it is keyed on another property, allOf[4] all of it,
+// and allOf[5] nothing, as its not forbids a value.
 type PartlyCompiled struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind PartlyCompiledKind `json:"kind" yaml:"kind" mapstructure:"kind"`

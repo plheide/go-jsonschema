@@ -335,7 +335,8 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 				"allOf[0]'s then: properties (x) not checked; " +
 				"allOf[1]'s then: $ref not checked; " +
 				"allOf[2]'s if/then/else not compiled; " +
-				`allOf[3]'s if/then/else not compiled (keyed on "mode", not "kind")`,
+				`allOf[3]'s if/then/else not compiled (keyed on "mode", not "kind"); ` +
+				`allOf[5]'s then: "not" not checked`,
 		}, warnings, "each clause says what it leaves unchecked")
 
 		warnings = filterFidelityWarnings(generateWithWarnerCapture(t,
