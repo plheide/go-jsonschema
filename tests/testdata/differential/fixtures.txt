@@ -1,5 +1,6 @@
 Documents derived from the fixtures under tests/data, decoded into the generated types and validated
-by santhosh-tekuri/jsonschema v6, which reads draft-07 unless $schema says otherwise and checks formats.
+by santhosh-tekuri/jsonschema v6, which reads draft-07 unless $schema says otherwise, or a schema without it
+uses dependentRequired or unevaluatedProperties, which the generator reads as 2020-12, and checks formats.
 The documents are seeds built from each schema, and mutants that each change one node of a seed.
 Each line counts one kind of disagreement for one schema: a missing check accepts a document the
 validator rejects, for the keyword it names; a wrong rejection rejects one it accepts. A missing
@@ -7,8 +8,8 @@ check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
 schemas: 641 (366 fixtures, 275 definitions), 25 skipped; documents: 16925
-json: 15774 agree, 669 missing checks (102 silent), 482 wrong rejections, 0 panics
-yaml: 15111 agree, 1314 missing checks (532 silent), 500 wrong rejections, 0 panics
+json: 15776 agree, 669 missing checks (102 silent), 480 wrong rejections, 0 panics
+yaml: 15113 agree, 1314 missing checks (532 silent), 498 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -1071,14 +1072,10 @@ yaml missing check dependency: delete key ×1, e.g. /run deleted
 yaml missing check type: wrong type ×2, e.g. /run = 12345
 
 == dependentRequired/undeclared/undeclared.json
-json wrong rejection: delete key ×1, e.g. /current/run deleted: unmarshal Wrap: unmarshal Undeclared: field run in Current: required when shell is present
 yaml missing check (silent) type: wrong type ×4, e.g. /current/run = 12345
-yaml wrong rejection: delete key ×1, e.g. /current/run deleted: unmarshal Wrap: unmarshal Undeclared: field run in Current: required when shell is present
 
 == dependentRequired/undeclared/undeclared.json#/$defs/current
-json wrong rejection: delete key ×1, e.g. /run deleted: unmarshal Wrap: field run in Current: required when shell is present
 yaml missing check (silent) type: wrong type ×2, e.g. /run = 12345
-yaml wrong rejection: delete key ×1, e.g. /run deleted: unmarshal Wrap: field run in Current: required when shell is present
 
 == dependentRequired/undeclared/undeclared.json#/$defs/legacy
 yaml missing check (silent) type: wrong type ×2, e.g. /run = 12345

@@ -218,7 +218,8 @@ func differentialReport(inputs []diffInput, outcomes map[string]*harness.Outcome
 	var out strings.Builder
 
 	out.WriteString("Documents derived from the fixtures under tests/data, decoded into the generated types and validated\n")
-	out.WriteString("by santhosh-tekuri/jsonschema v6, which reads draft-07 unless $schema says otherwise and checks formats.\n")
+	out.WriteString("by santhosh-tekuri/jsonschema v6, which reads draft-07 unless $schema says otherwise, or a schema without it\n")
+	out.WriteString("uses dependentRequired or unevaluatedProperties, which the generator reads as 2020-12, and checks formats.\n")
 	out.WriteString("The documents are seeds built from each schema, and mutants that each change one node of a seed.\n")
 	out.WriteString("Each line counts one kind of disagreement for one schema: a missing check accepts a document the\n")
 	out.WriteString("validator rejects, for the keyword it names; a wrong rejection rejects one it accepts. A missing\n")

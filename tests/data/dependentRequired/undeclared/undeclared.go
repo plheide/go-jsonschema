@@ -103,9 +103,7 @@ func (j *Legacy) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // A document that declares no draft has both dependencies and dependentRequired
-// checked, as unevaluatedProperties is checked there. The reference validator of
-// the differential report reads such a document as draft-07, which has no
-// dependentRequired, so it reports that check as a wrong rejection.
+// checked, as unevaluatedProperties is checked there.
 type Undeclared struct {
 	// Current corresponds to the JSON schema field "current".
 	Current *Current `json:"current,omitempty,omitzero" yaml:"current,omitempty" mapstructure:"current,omitempty"`

@@ -1,6 +1,6 @@
 {
   "$id": "https://example.com/dependentRequired/undeclared",
-  "description": "A document that declares no draft has both dependencies and dependentRequired checked, as unevaluatedProperties is checked there. The reference validator of the differential report reads such a document as draft-07, which has no dependentRequired, so it reports that check as a wrong rejection.",
+  "description": "A document that declares no draft has both dependencies and dependentRequired checked, as unevaluatedProperties is checked there.",
   "type": "object",
   "properties": {
     "legacy": {

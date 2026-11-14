@@ -211,10 +211,10 @@ func compileOracle(o *Oracle) (*jsonschema.Schema, error) {
 		files = draft7Loader{}
 	}
 
-	loaders := jsonschema.SchemeURLLoader{"file": files}
+	loaders := jsonschema.SchemeURLLoader{"file": modernUndeclaredLoader{files}}
 
 	if o.Remote {
-		web := httpLoader{client: &http.Client{Timeout: fetchTimeout}}
+		web := modernUndeclaredLoader{httpLoader{client: &http.Client{Timeout: fetchTimeout}}}
 		loaders["http"], loaders["https"] = web, web
 	}
 
@@ -249,6 +249,62 @@ func (draft7Loader) Load(url string) (any, error) {
 	}
 
 	return doc, nil
+}
+
+// modernUndeclaredLoader loads schemas as next does, and makes one that declares no draft, but uses a keyword that
+// came with 2019-09 and that the generator checks, dependentRequired or unevaluatedProperties, declare 2020-12. The
+// generator reads such a schema as one of 2019-09 or later, which the compiler's default, draft-07, would not.
+type modernUndeclaredLoader struct {
+	next jsonschema.URLLoader
+}
+
+func (l modernUndeclaredLoader) Load(url string) (any, error) {
+	doc, err := l.next.Load(url)
+	if err != nil {
+		return nil, err //nolint:wrapcheck // The compiler reports the loader's error with the URL.
+	}
+
+	if m, ok := doc.(map[string]any); ok {
+		if _, declared := m["$schema"]; !declared && usesModernKeyword(m) {
+			m["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+		}
+	}
+
+	return doc, nil
+}
+
+// usesModernKeyword reports whether schema, or a subschema of it, declares dependentRequired or
+// unevaluatedProperties. The names of properties and definitions, and values such as an enum's, are not keywords.
+func usesModernKeyword(schema any) bool {
+	m, ok := schema.(map[string]any)
+	if !ok {
+		list, isList := schema.([]any)
+
+		return isList && slices.ContainsFunc(list, usesModernKeyword)
+	}
+
+	for key, value := range m {
+		switch key {
+		case "dependentRequired", "unevaluatedProperties":
+			return true
+		case "properties", "patternProperties", "$defs", "definitions", "dependentSchemas", "dependencies":
+			if named, isMap := value.(map[string]any); isMap {
+				for _, sub := range named {
+					if usesModernKeyword(sub) {
+						return true
+					}
+				}
+			}
+		case "enum", "const", "default", "examples", "required":
+			// Values and names, not subschemas.
+		default:
+			if usesModernKeyword(value) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // httpLoader fetches a remote schema.
