@@ -57,6 +57,12 @@ Not offered upstream yet:
   * importing a mapped package only where a type of it is used, so that an `allOf`, `anyOf` or `oneOf` member mapped to
     another package compiles;
   * checking `unevaluatedProperties: false` under `--strict-additional-properties`;
+* the changes made on `main` for v0.30.0:
+  * compiling each conditional branch keyword by keyword, a narrowed `const` or `enum` included, instead of declining
+    the object when one branch does not compile whole;
+  * checking an object's own `not` of `required`, and the `not`s of its `allOf`;
+  * checking `dependentRequired` and draft-07's lists of property `dependencies`, each in the drafts that define it;
+  * warning about keywords beside a `$ref` from 2019-09 on, and naming the draft that lacks a keyword;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);
