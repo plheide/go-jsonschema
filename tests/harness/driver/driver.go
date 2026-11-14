@@ -252,8 +252,9 @@ func (draft7Loader) Load(url string) (any, error) {
 }
 
 // modernUndeclaredLoader loads schemas as next does, and makes one that declares no draft, but uses a keyword that
-// came with 2019-09 and that the generator checks, dependentRequired or unevaluatedProperties, declare 2020-12. The
-// generator reads such a schema as one of 2019-09 or later, which the compiler's default, draft-07, would not.
+// came with 2019-09 and that the generator checks there, dependentRequired or unevaluatedProperties, declare 2019-09:
+// the compiler would read it as draft-07, its default, which has neither. 2019-09 still has the array form of items
+// that draft-07 schemas use for tuples, which 2020-12 replaced with prefixItems.
 type modernUndeclaredLoader struct {
 	next jsonschema.URLLoader
 }
@@ -266,7 +267,7 @@ func (l modernUndeclaredLoader) Load(url string) (any, error) {
 
 	if m, ok := doc.(map[string]any); ok {
 		if _, declared := m["$schema"]; !declared && usesModernKeyword(m) {
-			m["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+			m["$schema"] = "https://json-schema.org/draft/2019-09/schema"
 		}
 	}
 
@@ -274,33 +275,46 @@ func (l modernUndeclaredLoader) Load(url string) (any, error) {
 }
 
 // usesModernKeyword reports whether schema, or a subschema of it, declares dependentRequired or
-// unevaluatedProperties. The names of properties and definitions, and values such as an enum's, are not keywords.
+// unevaluatedProperties. It walks only the keywords that hold subschemas, so that annotations, such as x-
+// extensions, and values, such as an enum's, are never read as schemas.
 func usesModernKeyword(schema any) bool {
 	m, ok := schema.(map[string]any)
 	if !ok {
-		list, isList := schema.([]any)
-
-		return isList && slices.ContainsFunc(list, usesModernKeyword)
+		return false
 	}
 
-	for key, value := range m {
-		switch key {
-		case "dependentRequired", "unevaluatedProperties":
-			return true
-		case "properties", "patternProperties", "$defs", "definitions", "dependentSchemas", "dependencies":
-			if named, isMap := value.(map[string]any); isMap {
-				for _, sub := range named {
-					if usesModernKeyword(sub) {
-						return true
-					}
+	if _, has := m["dependentRequired"]; has {
+		return true
+	}
+
+	if _, has := m["unevaluatedProperties"]; has {
+		return true
+	}
+
+	for _, key := range []string{
+		"properties", "patternProperties", "$defs", "definitions", "dependentSchemas", "dependencies",
+	} {
+		if named, isMap := m[key].(map[string]any); isMap {
+			for _, sub := range named {
+				if usesModernKeyword(sub) {
+					return true
 				}
 			}
-		case "enum", "const", "default", "examples", "required":
-			// Values and names, not subschemas.
-		default:
-			if usesModernKeyword(value) {
-				return true
-			}
+		}
+	}
+
+	for _, key := range []string{
+		"items", "additionalItems", "additionalProperties", "unevaluatedItems", "contains", "propertyNames",
+		"not", "if", "then", "else",
+	} {
+		if usesModernKeyword(m[key]) {
+			return true
+		}
+	}
+
+	for _, key := range []string{"allOf", "anyOf", "oneOf", "prefixItems", "items"} {
+		if list, isList := m[key].([]any); isList && slices.ContainsFunc(list, usesModernKeyword) {
+			return true
 		}
 	}
 
