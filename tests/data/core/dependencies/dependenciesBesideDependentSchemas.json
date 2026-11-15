@@ -1,0 +1,39 @@
+{
+  "description": "A $ref into the dependencies of a definition finds its schema, not the dependentSchemas entry of the same name beside it.",
+  "type": "object",
+  "properties": {
+    "card": {
+      "$ref": "#/$defs/payment/dependencies/card"
+    }
+  },
+  "$defs": {
+    "payment": {
+      "type": "object",
+      "properties": {
+        "card": {
+          "type": "string"
+        }
+      },
+      "dependentSchemas": {
+        "card": {
+          "type": "object",
+          "properties": {
+            "fromDependentSchemas": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "dependencies": {
+        "card": {
+          "type": "object",
+          "properties": {
+            "fromDependencies": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

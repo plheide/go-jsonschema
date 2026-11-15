@@ -8,9 +8,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 645 (367 fixtures, 278 definitions), 25 skipped; documents: 17028
-json: 15847 agree, 698 missing checks (103 silent), 483 wrong rejections, 0 panics
-yaml: 15180 agree, 1347 missing checks (535 silent), 501 wrong rejections, 0 panics
+schemas: 651 (372 fixtures, 279 definitions), 25 skipped; documents: 17204
+json: 16019 agree, 702 missing checks (103 silent), 483 wrong rejections, 0 panics
+yaml: 15331 agree, 1372 missing checks (540 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -717,6 +717,12 @@ yaml wrong rejection: 2^64 ×1, e.g. /myIntegerArray/0 = 18446744073709551616: u
 yaml wrong rejection: add unknown key ×2, e.g. / = {"myObject":{"myDate":"2020-01-01"},"zzU…: unmarshal Wrap: unmarshal Date: unmarshal DateMyObject: parsing time "2020-01-01" as "2006-01-02T15:04:05Z07:00": cannot parse "" as "T"
 yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Date: unmarshal DateMyObject: parsing time "2020-01-01" as "2006-01-02T15:04:05Z07:00": cannot parse "" as "T"
 
+== core/dependencies/dependenciesBesideDependentSchemas.json
+yaml missing check type: wrong type ×1, e.g. /card/fromDependencies = 12345
+
+== core/dependencies/dependenciesBesideDependentSchemas.json#/$defs/payment
+yaml missing check type: wrong type ×1, e.g. /card = 12345
+
 == core/dependencies/dependenciesDualForm.json
 json missing check required: 5000 characters ×4, e.g. /step/credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 json missing check required: add unknown key ×2, e.g. / = {"step":{"credit-card":"a","run":"a","sh…
@@ -1056,12 +1062,32 @@ yaml missing check (silent) type: wrong type ×2, e.g. /defInOtherSchema/s = 123
 == crossPackageNoOutput/schema/schema.json#/$defs/Thing
 yaml missing check (silent) type: wrong type ×1, e.g. /s = 12345
 
+== dependentRequired/bothDraft07/bothDraft07.json
+json missing check required: delete key ×1, e.g. /zip deleted
+yaml missing check required: delete key ×1, e.g. /zip deleted
+yaml missing check type: wrong type ×6, e.g. /billingAddress = 12345
+
+== dependentRequired/bothModern/bothModern.json
+json missing check dependency: delete key ×1, e.g. /billingAddress deleted
+json missing check required: delete key ×1, e.g. /zip deleted
+yaml missing check dependency: delete key ×1, e.g. /billingAddress deleted
+yaml missing check required: delete key ×1, e.g. /zip deleted
+yaml missing check type: wrong type ×6, e.g. /billingAddress = 12345
+
+== dependentRequired/bothUndeclared/bothUndeclared.json
+yaml missing check (silent) type: wrong type ×5, e.g. /billingAddress = 12345
+
 == dependentRequired/draft07/draft07.json
 json missing check required: delete key ×1, e.g. /billingAddress deleted
 yaml missing check required: delete key ×1, e.g. /billingAddress deleted
 yaml missing check type: wrong type ×4, e.g. /billingAddress = 12345
 
 == dependentRequired/draft07Keyword/draft07Keyword.json
+yaml missing check type: wrong type ×2, e.g. /run = 12345
+
+== dependentRequired/inThen/inThen.json
+json missing check dependency: delete key ×1, e.g. /run deleted
+yaml missing check dependency: delete key ×1, e.g. /run deleted
 yaml missing check type: wrong type ×2, e.g. /run = 12345
 
 == dependentRequired/modern/modern.json

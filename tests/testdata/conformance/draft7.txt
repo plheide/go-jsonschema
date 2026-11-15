@@ -276,15 +276,15 @@ generation failed: generate: cannot add struct field: could not generate type wi
 == dependencies.json
 
 -- dependencies
-warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentRequired not checked
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependencies not checked
 json missing check: missing dependency
 yaml missing check: missing dependency
 
 -- dependencies with empty array
-warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentRequired not checked
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependencies not checked
 
 -- multiple dependencies
-warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentRequired not checked
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependencies not checked
 json missing check: missing dependency
 yaml missing check: missing dependency
 json missing check: missing other dependency
@@ -293,7 +293,7 @@ json missing check: missing both dependencies
 yaml missing check: missing both dependencies
 
 -- multiple dependencies subschema
-warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentSchemas not checked
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependencies not checked
 json missing check: wrong type
 yaml missing check: wrong type
 json missing check: wrong type other
@@ -302,14 +302,14 @@ json missing check: wrong type both
 yaml missing check: wrong type both
 
 -- dependencies with boolean subschemas
-warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentSchemas not checked
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependencies not checked
 json missing check: object with property having schema false is invalid
 yaml missing check: object with property having schema false is invalid
 json missing check: object with both properties is invalid
 yaml missing check: object with both properties is invalid
 
 -- dependencies with escaped characters
-warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependentRequired, dependentSchemas not checked
+warning: schema fidelity: root of root.json does not enforce all it declares: with no type, dependencies not checked
 json missing check: invalid object 1
 yaml missing check: invalid object 1
 json missing check: invalid object 2
@@ -320,7 +320,7 @@ json missing check: invalid object 4
 yaml missing check: invalid object 4
 
 -- dependent subschema incompatible with root
-warning: schema fidelity: type Root does not enforce all it declares: dependentSchemas not checked
+warning: schema fidelity: type Root does not enforce all it declares: dependencies not checked
 json missing check: matches root
 yaml missing check: matches root
 json missing check: matches both

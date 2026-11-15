@@ -416,7 +416,7 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 			notEnforced("UnenforcedKeywordsMode", "if/then/else not compiled"),
 			notEnforced("UnenforcedKeywordsRows", "unevaluatedItems (not in draft-07) not checked"),
 			notEnforced("UnenforcedKeywordsShape", "minProperties not checked"),
-			notEnforced("UnenforcedKeywordsShipping", "dependentSchemas not checked"),
+			notEnforced("UnenforcedKeywordsShipping", "dependencies (zip) not checked"),
 			notEnforced("UnenforcedKeywordsStrict", "unevaluatedProperties (not in draft-07) not checked"),
 			notEnforced("UnenforcedKeywordsTags", "contains, maxContains, minContains not checked"),
 		}, filterFidelityWarnings(generateWithWarnerCapture(t, schema)))

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/dependentRequired/bothModern",
+  "description": "Draft 2020-12 checks dependentRequired, and defines no dependencies, in either form, which a warning names.",
+  "type": "object",
+  "properties": {
+    "shell": {
+      "type": "string"
+    },
+    "run": {
+      "type": "string"
+    },
+    "creditCard": {
+      "type": "string"
+    },
+    "billingAddress": {
+      "type": "string"
+    },
+    "zip": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    }
+  },
+  "dependentRequired": {
+    "shell": [
+      "run"
+    ]
+  },
+  "dependencies": {
+    "creditCard": [
+      "billingAddress"
+    ],
+    "city": {
+      "required": [
+        "zip"
+      ]
+    }
+  }
+}

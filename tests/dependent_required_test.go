@@ -5,6 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	testDepReqBothDraft07 "github.com/plheide/go-jsonschema/tests/data/dependentRequired/bothDraft07"
+	testDepReqBothModern "github.com/plheide/go-jsonschema/tests/data/dependentRequired/bothModern"
+	testDepReqBothUndeclared "github.com/plheide/go-jsonschema/tests/data/dependentRequired/bothUndeclared"
 	testDepReqDraft07 "github.com/plheide/go-jsonschema/tests/data/dependentRequired/draft07"
 	testDepReqDraft07Keyword "github.com/plheide/go-jsonschema/tests/data/dependentRequired/draft07Keyword"
 	testDepReqModern "github.com/plheide/go-jsonschema/tests/data/dependentRequired/modern"
@@ -13,7 +16,7 @@ import (
 )
 
 // TestDependentRequired covers properties that require others where they are
-// present, through dependentRequired or a draft-07 dependencies, each checked
+// present, through dependentRequired and a draft-07 dependencies, each checked
 // in the drafts that define it. Each input is decoded as JSON and as YAML.
 func TestDependentRequired(t *testing.T) {
 	t.Parallel()
@@ -55,6 +58,32 @@ func TestDependentRequired(t *testing.T) {
 		})
 	})
 
+	t.Run("an object that declares both keywords", func(t *testing.T) {
+		t.Parallel()
+
+		// A document that declares no draft checks both, merged per property.
+		checkDecode[testDepReqBothUndeclared.BothUndeclared](t, []decodeCase{
+			{`{"shell": "sh", "run": "x", "image": "i"}`, ""},
+			{`{"shell": "sh", "image": "i"}`, "field run in BothUndeclared: required when shell is present"},
+			{`{"shell": "sh", "run": "x"}`, "field image in BothUndeclared: required when shell is present"},
+			{`{"creditCard": "1"}`, "field billingAddress in BothUndeclared: required when creditCard is present"},
+		})
+
+		assert.Empty(t, filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/dependentRequired/bothUndeclared/bothUndeclared.json")))
+
+		// Draft-07 checks its dependencies alone, and 2020-12 dependentRequired.
+		checkDecode[testDepReqBothDraft07.BothDraft07](t, []decodeCase{
+			{`{"shell": "sh"}`, ""},
+			{`{"creditCard": "1"}`, "field billingAddress in BothDraft07: required when creditCard is present"},
+		})
+
+		checkDecode[testDepReqBothModern.BothModern](t, []decodeCase{
+			{`{"creditCard": "1"}`, ""},
+			{`{"shell": "sh"}`, "field run in BothModern: required when shell is present"},
+		})
+	})
+
 	t.Run("a keyword the declared draft does not define is not checked", func(t *testing.T) {
 		t.Parallel()
 
@@ -71,6 +100,15 @@ func TestDependentRequired(t *testing.T) {
 				"dependentRequired (not in draft-07) not checked",
 			"modernLegacy": "schema fidelity: type ModernLegacy does not enforce all it declares: " +
 				"dependencies (not in 2020-12) not checked",
+			// Where its property lists are checked, what a dependencies leaves
+			// unchecked is named by property.
+			"bothDraft07": "schema fidelity: type BothDraft07 does not enforce all it declares: " +
+				"dependencies (city), dependentRequired (not in draft-07), dependentSchemas (not in draft-07) not checked",
+			"bothModern": "schema fidelity: type BothModern does not enforce all it declares: " +
+				"dependencies (not in 2020-12) not checked",
+			// A dependencies is named as written where a then leaves it unchecked.
+			"inThen": "schema fidelity: type InThen does not enforce all it declares: " +
+				"allOf[0]'s then: dependencies not checked",
 		} {
 			assert.Equal(t, []string{want}, filterFidelityWarnings(generateWithWarnerCapture(t,
 				"./data/dependentRequired/"+schema+"/"+schema+".json")), schema)

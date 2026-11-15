@@ -100,11 +100,21 @@ func stepRefPath(cur *schemas.Type, rest []string) (*schemas.Type, int, error) {
 		return derefRefPath(cur.PatternProperties[key], 2)
 	case "definitions", "$defs":
 		return derefRefPath(cur.Definitions[key], 2)
-	case keywordDependencies, "dependentSchemas":
-		// Draft-07 `dependencies` is dual-form. The schema form is parsed
-		// into DependentSchemas, so both spellings resolve there; a
-		// property-name dependency lands in DependentRequired instead and
-		// is not a schema, so it correctly finds nothing here.
+	case keywordDependencies:
+		// Draft-07 `dependencies` is dual-form. Its schema dependencies are
+		// held in DependenciesSchemas; a property dependency is not a schema,
+		// so it correctly finds nothing. Where the schema declares no
+		// `dependencies`, the spelling resolves among its dependentSchemas,
+		// as it always has.
+		if cur.DependenciesSchemas == nil && cur.DependenciesRequired == nil {
+			return derefRefPath(cur.DependentSchemas[key], 2)
+		}
+
+		return derefRefPath(cur.DependenciesSchemas[key], 2)
+	case keywordDependentSchemas:
+		// A draft-07 `dependencies` is held here too where the schema
+		// declares no dependentSchemas, so this spelling finds its schema
+		// dependencies as well.
 		return derefRefPath(cur.DependentSchemas[key], 2)
 	case "allOf":
 		return derefRefPathList(cur.AllOf, key)
@@ -225,7 +235,7 @@ func refPathTypeName(path string) string {
 		// Keywords holding a collection: the name or index that follows is
 		// what identifies the subschema, so the keyword itself is noise.
 		case "properties", "patternProperties", "definitions", "$defs",
-			"allOf", "anyOf", "oneOf", keywordDependencies, "dependentSchemas":
+			"allOf", "anyOf", "oneOf", keywordDependencies, keywordDependentSchemas:
 			if i+1 < len(segments) {
 				kept = append(kept, segments[i+1])
 				i += 2

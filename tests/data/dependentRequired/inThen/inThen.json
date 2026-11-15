@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/dependentRequired/inThen",
+  "description": "A then that declares a dependencies, which the conditional does not check, names it as written.",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "a",
+        "b"
+      ]
+    },
+    "shell": {
+      "type": "string"
+    },
+    "run": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "a"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "shell"
+        ],
+        "dependencies": {
+          "shell": [
+            "run"
+          ]
+        }
+      }
+    }
+  ]
+}

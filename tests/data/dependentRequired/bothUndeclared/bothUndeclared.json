@@ -1,0 +1,35 @@
+{
+  "$id": "https://example.com/dependentRequired/bothUndeclared",
+  "description": "A document that declares no draft checks a dependentRequired and the property lists of a dependencies beside it, merged per property: shell requires both run and image.",
+  "type": "object",
+  "properties": {
+    "shell": {
+      "type": "string"
+    },
+    "run": {
+      "type": "string"
+    },
+    "image": {
+      "type": "string"
+    },
+    "creditCard": {
+      "type": "string"
+    },
+    "billingAddress": {
+      "type": "string"
+    }
+  },
+  "dependentRequired": {
+    "shell": [
+      "run"
+    ]
+  },
+  "dependencies": {
+    "shell": [
+      "image"
+    ],
+    "creditCard": [
+      "billingAddress"
+    ]
+  }
+}
