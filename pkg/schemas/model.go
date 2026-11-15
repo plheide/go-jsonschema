@@ -299,6 +299,17 @@ type Type struct {
 	// RFC draft-handrews-json-schema-validation-02, appendix A.
 	Definitions      Definitions      `json:"$defs,omitempty"`
 	DependentSchemas map[string]*Type `json:"dependentSchemas,omitempty"`
+	// DependentSchemasFromDependencies is set when DependentSchemas holds the
+	// schema dependencies of a draft-07 `dependencies`.
+	DependentSchemasFromDependencies bool `json:"-"`
+	// DependenciesRequired and DependenciesSchemas hold a draft-07
+	// `dependencies` as written: its property dependencies and its schema
+	// dependencies. DependentRequired holds the first as well where the
+	// schema declares no dependentRequired, and DependentSchemas the second
+	// where it declares no dependentSchemas, as the flags above say, so that
+	// the code that reads the 2019-09 keywords alone finds them there.
+	DependenciesRequired map[string][]string `json:"-"`
+	DependenciesSchemas  map[string]*Type    `json:"-"`
 
 	// Keywords of draft 06 and later. minContains and maxContains are counts,
 	// held as numbers so that one written as 2.0 parses, as JSON Schema counts
@@ -742,8 +753,11 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		obj.Definitions = legacyObj.Definitions
 	}
 
+	obj.DependenciesRequired, obj.DependenciesSchemas = legacyDependentRequired, legacyDependentSchemas
+
 	if legacyDependentSchemas != nil && obj.DependentSchemas == nil {
 		obj.DependentSchemas = legacyDependentSchemas
+		obj.DependentSchemasFromDependencies = true
 	}
 
 	if legacyDependentRequired != nil && obj.DependentRequired == nil {

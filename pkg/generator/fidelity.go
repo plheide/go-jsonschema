@@ -47,9 +47,24 @@ func schemaKeywords(t *schemas.Type) []string {
 		case "Not":
 			// So that it does not read as part of "not checked".
 			name = `"` + name + `"`
+		case "DependentRequired":
+			if t.DependentRequiredFromDependencies {
+				continue
+			}
+		case "DependentSchemas":
+			if t.DependentSchemasFromDependencies {
+				continue
+			}
 		}
 
 		names = append(names, name)
+	}
+
+	// A draft-07 dependencies is held in fields without a JSON name, and also
+	// in those of dependentRequired and dependentSchemas, left out above, where
+	// the schema declares no keyword of the same name.
+	if len(t.DependenciesRequired) > 0 || len(t.DependenciesSchemas) > 0 {
+		names = append(names, keywordDependencies)
 	}
 
 	// These keywords leave their field zero when they are written as a null,
@@ -301,8 +316,22 @@ func (g *schemaGenerator) reportUnenforcedKeywords(t *schemas.Type, scope nameSc
 		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordUnevaluatedProperties })
 	}
 
-	if len(g.dependentRequiredOf(t)) > 0 {
+	checkedRequired, checkedDependencies := g.checkedPropertyDependencies(t)
+	if len(checkedRequired) > 0 {
 		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordDependentRequired })
+	}
+
+	// Where its property dependencies are checked, what a draft-07
+	// dependencies leaves unchecked is its schema dependencies, named by
+	// property, if any constrains.
+	if len(checkedDependencies) > 0 {
+		_, schemaDeps := schemaDependencies(t)
+		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordDependencies })
+
+		if names := constrainingNames(schemaDeps); len(names) > 0 {
+			keywords = append(keywords, keywordDependencies+" ("+strings.Join(names, ", ")+")")
+			slices.Sort(keywords)
+		}
 	}
 
 	g.markNotInDeclaredDraft(t, keywords)
@@ -314,36 +343,25 @@ func (g *schemaGenerator) reportUnenforcedKeywords(t *schemas.Type, scope nameSc
 
 // markNotInDeclaredDraft marks, in keywords, those that the draft the document
 // of t declares does not define, which is why nothing checks them: the
-// keywords 2019-09 brought, in an earlier draft, and draft-07's dependencies,
-// reported as dependentRequired, in a later one.
+// keywords 2019-09 brought, in an earlier draft, and the dependencies it
+// dropped, in a later one.
 func (g *schemaGenerator) markNotInDeclaredDraft(t *schemas.Type, keywords []string) {
-	var undefined func(keyword string) (string, bool)
+	var undefined []string
 
 	switch {
 	case g.declaresDraftBefore2019(t):
-		undefined = func(keyword string) (string, bool) {
-			switch keyword {
-			case keywordUnevaluatedProperties, keywordUnevaluatedItems:
-				return keyword, true
-			case keywordDependentRequired:
-				return keyword, !t.DependentRequiredFromDependencies
-			}
-
-			return keyword, false
+		undefined = []string{
+			keywordUnevaluatedProperties, keywordUnevaluatedItems, keywordDependentRequired, keywordDependentSchemas,
 		}
-
 	case g.declaresDraft2019OrLater(t):
-		undefined = func(keyword string) (string, bool) {
-			return keywordDependencies, keyword == keywordDependentRequired && t.DependentRequiredFromDependencies
-		}
-
+		undefined = []string{keywordDependencies}
 	default:
 		return
 	}
 
 	for i, keyword := range keywords {
-		if name, ok := undefined(keyword); ok {
-			keywords[i] = name + " (not in " + g.declaredDraftName(t) + ")"
+		if slices.Contains(undefined, keyword) {
+			keywords[i] = keyword + " (not in " + g.declaredDraftName(t) + ")"
 		}
 	}
 }
@@ -378,8 +396,8 @@ func (g *schemaGenerator) warnRefSiblings(t *schemas.Type, scope nameScope) {
 }
 
 // unenforcedKeywords lists, in alphabetical order, the keywords of t's own
-// that no generated code checks. Draft 07's dependencies count as the
-// dependentRequired and dependentSchemas they are read as. A subschema that
+// that no generated code checks. A draft-07 dependencies is named as written,
+// apart from a dependentRequired or dependentSchemas beside it. A subschema that
 // admits every value, such as `propertyNames: true`, checks nothing, as do
 // patternProperties and dependentSchemas whose subschemas all admit every
 // value, and minContains and maxContains apply only beside contains.
@@ -392,9 +410,13 @@ func unenforcedKeywords(t *schemas.Type) []string {
 		}
 	}
 
+	dependentRequired, requiredDeps := propertyDependencies(t)
+	dependentSchemas, schemaDeps := schemaDependencies(t)
+
 	add(t.Contains != nil, "contains")
-	add(len(t.DependentRequired) > 0, keywordDependentRequired)
-	add(anyConstrains(t.DependentSchemas), "dependentSchemas")
+	add(len(requiredDeps) > 0 || anyConstrains(schemaDeps), keywordDependencies)
+	add(len(dependentRequired) > 0, keywordDependentRequired)
+	add(anyConstrains(dependentSchemas), keywordDependentSchemas)
 	add(t.Contains != nil && t.MaxContains != nil, "maxContains")
 	add(t.HasMaxProperties(), "maxProperties")
 	add(t.Contains != nil && t.MinContains != nil, "minContains")
@@ -424,13 +446,21 @@ func constrains(s *schemas.Type) bool {
 
 // anyConstrains reports whether any of subschemas may reject a value.
 func anyConstrains(subschemas map[string]*schemas.Type) bool {
-	for _, s := range subschemas {
-		if constrains(s) {
-			return true
+	return len(constrainingNames(subschemas)) > 0
+}
+
+// constrainingNames returns, in order, the names of those of subschemas that
+// may reject a value.
+func constrainingNames(subschemas map[string]*schemas.Type) []string {
+	var names []string
+
+	for _, name := range sortedKeys(subschemas) {
+		if constrains(subschemas[name]) {
+			names = append(names, name)
 		}
 	}
 
-	return false
+	return names
 }
 
 // reportOwnConditional reports the conditional of subject's own, which stands

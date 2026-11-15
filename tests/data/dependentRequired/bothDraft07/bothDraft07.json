@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/dependentRequired/bothDraft07",
+  "description": "Draft-07 checks the property lists of dependencies, and defines neither dependentRequired nor dependentSchemas. A warning names those, and the schema of dependencies that is not checked.",
+  "type": "object",
+  "properties": {
+    "shell": {
+      "type": "string"
+    },
+    "run": {
+      "type": "string"
+    },
+    "creditCard": {
+      "type": "string"
+    },
+    "billingAddress": {
+      "type": "string"
+    },
+    "zip": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    }
+  },
+  "dependentRequired": {
+    "shell": [
+      "run"
+    ]
+  },
+  "dependentSchemas": {
+    "zip": {
+      "required": [
+        "city"
+      ]
+    }
+  },
+  "dependencies": {
+    "creditCard": [
+      "billingAddress"
+    ],
+    "city": {
+      "required": [
+        "zip"
+      ]
+    }
+  }
+}
