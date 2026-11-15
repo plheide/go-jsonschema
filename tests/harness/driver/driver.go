@@ -276,10 +276,15 @@ func (l modernUndeclaredLoader) Load(url string) (any, error) {
 
 // usesModernKeyword reports whether schema, or a subschema of it, declares dependentRequired or
 // unevaluatedProperties. It walks only the keywords that hold subschemas, so that annotations, such as x-
-// extensions, and values, such as an enum's, are never read as schemas.
+// extensions, and values, such as an enum's, are never read as schemas. A subschema that declares a $schema of
+// its own is read in that draft, by the generator too, so it is not searched.
 func usesModernKeyword(schema any) bool {
 	m, ok := schema.(map[string]any)
 	if !ok {
+		return false
+	}
+
+	if _, declares := m["$schema"]; declares {
 		return false
 	}
 
