@@ -193,6 +193,40 @@ func rootHasGeneratable(t *schemas.Type) bool {
 		len(t.AllOf) > 0
 }
 
+// rawMapValidators returns the checks that the struct declared for t, as
+// declName, runs on the raw map, where an absent property differs from a zero
+// one: the conditional discriminator, the presence counts, the property sets
+// that nots forbid, and the properties that present ones require.
+func (g *schemaGenerator) rawMapValidators(t *schemas.Type, declName string) []validator {
+	var validators []validator
+
+	// Attach the conditional-discriminator validator when the schema
+	// matches the allOf+if/then[/else] pattern. Detection is repeated
+	// here (also runs in generateType) — the cost is negligible for
+	// non-matching schemas, and re-detecting avoids threading state
+	// through generateType's return signature.
+	if cd, ok := g.detectConditionalDiscriminator(t); ok && !g.config.OnlyModels {
+		cd.declName = declName
+		validators = append(validators, cd)
+	}
+
+	// A oneOf or anyOf whose branches only list required is a count of
+	// the branches whose properties are all present.
+	validators = append(validators, presenceCountValidators(t, declName)...)
+
+	// A not of required, of t's own or in its allOf, forbids properties.
+	if sets := g.forbiddenSetsOf(t); len(sets) > 0 && !g.config.OnlyModels {
+		validators = append(validators, &forbiddenSetsValidator{declName, sets})
+	}
+
+	// A present property can require others.
+	if dependencies := g.dependentRequiredOf(t); len(dependencies) > 0 {
+		validators = append(validators, &dependentRequiredValidator{declName, dependencies})
+	}
+
+	return validators
+}
+
 // generateReferencedType returns the type that t's $ref refers to, and imports
 // the package it is declared in, where that is another one.
 func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type, error) {
@@ -695,19 +729,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			validators = append(validators, v)
 		}
 
-		// Attach the conditional-discriminator validator when the schema
-		// matches the allOf+if/then[/else] pattern. Detection is repeated
-		// here (also runs in generateType) — the cost is negligible for
-		// non-matching schemas, and re-detecting avoids threading state
-		// through generateType's return signature.
-		if cd, ok := g.detectConditionalDiscriminator(t); ok && !g.config.OnlyModels {
-			cd.declName = decl.Name
-			validators = append(validators, cd)
-		}
-
-		// A oneOf or anyOf whose branches only list required is a count of
-		// the branches whose properties are all present.
-		validators = append(validators, presenceCountValidators(t, decl.Name)...)
+		validators = append(validators, g.rawMapValidators(t, decl.Name)...)
 
 		for _, f := range tt.Fields {
 			validators = g.propertyValidators(validators, f, decl.Name)
@@ -1750,6 +1772,8 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	}
 
 	if t.Ref != "" {
+		g.warnRefSiblings(t, scope)
+
 		return g.generateReferencedType(t)
 	}
 
@@ -1790,25 +1814,31 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	}
 
 	// Conditional-discriminator pattern: allOf of {if: {<K>: const}, then,
-	// else?} keyed on a single discriminator property's const value. Only a
-	// declared type takes its validator: elsewhere, such as an element of a
-	// declared array, t goes the general way, which reports what it drops.
-	// Bypass the AllOf merge (which would lose the parent's struct shape)
-	// and emit the struct as a regular object — the per-discriminator
-	// conditional checks attach as a runtime validator in
+	// else?} keyed on a single discriminator property's const value, and nots
+	// of required, which add no fields. Only a declared type takes their
+	// validators: elsewhere, such as an element of a declared array, t goes
+	// the general way, which reports what it drops. Bypass the AllOf merge
+	// (which would lose the parent's struct shape) and emit the struct as a
+	// regular object — the checks attach as runtime validators in
 	// generateDeclaredType.
-	if cd, ok := g.detectConditionalDiscriminator(t); ok && g.isDeclaring(t) {
+	if checks, ok := g.structChecks(t); ok && g.isDeclaring(t) {
 		tCopy := *t
 		tCopy.AllOf = nil
 
 		// The allOf's conditionals compile into the discriminator, and so
-		// does the schema's own if/then/else where it is a branch too; any
-		// other conditional of its own does not, and is reported for t.
-		if cd.compilesOwn {
+		// does the schema's own if/then/else where it is a branch too, and its
+		// own not of required into the forbidden sets; any other conditional
+		// of its own does not, and is reported for t.
+		if checks.conditional != nil && checks.conditional.compilesOwn {
 			tCopy = *withoutOwnConditional(&tCopy)
 		}
 
+		if _, ok := g.ownForbiddenSets(t); ok {
+			tCopy.Not = nil
+		}
+
 		g.reportOwnConditional(t, &tCopy, scope)
+		g.reportCheckGaps(t, checks.gaps, scope)
 		g.reportUnenforcedKeywords(t, scope)
 
 		return g.generateStructType(&tCopy, scope)
@@ -2383,11 +2413,17 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		if childType.Ref != "" {
 			resolvedType, err := g.resolveRef(childType)
 			if err == nil {
+				g.warnRefSiblings(childType, scope)
+
 				return g.generateTypeInline(resolvedType, scope)
 			} else {
 				g.warner(fmt.Sprintf("Could not resolve ref %q: %v", childType.Ref, err))
 			}
 		}
+	}
+
+	for _, branch := range t.AnyOf {
+		g.warnRefSiblings(branch, scope)
 	}
 
 	isCycle := false
@@ -2573,6 +2609,8 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 		if subType.Ref != "" {
 			resolvedType, err := g.resolveRef(subType)
 			if err == nil {
+				g.warnRefSiblings(subType, scope)
+
 				return g.generateTypeInline(resolvedType, scope)
 			} else {
 				g.warner(fmt.Sprintf("Could not resolve subtype ref %q: %v", subType.Ref, err))
@@ -2585,7 +2623,12 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 	closed := g.checksUnevaluatedProperties(t)
 	g.unevaluatedClosed[t] = closed
 
-	rAllOf, _ := g.resolveRefs(flattenInlineAllOf(t.AllOf), true)
+	flat := flattenInlineAllOf(t.AllOf)
+	for _, branch := range flat {
+		g.warnRefSiblings(branch, scope)
+	}
+
+	rAllOf, _ := g.resolveRefs(flat, true)
 
 	// A recursive allOf, whose merged type leads back to an allOf with the same
 	// merge, would merge into a fresh copy at every level and never finish: no
@@ -2849,9 +2892,10 @@ func (g *schemaGenerator) generateInlineComposition(t *schemas.Type, scope nameS
 	}
 
 	if len(t.AllOf) > 0 {
-		// The conditional-discriminator pattern compiles to a validator
-		// that attaches only on a declared type, so it skips the merge.
-		if _, ok := g.detectConditionalDiscriminator(t); ok {
+		// The conditional-discriminator pattern and nots of required compile
+		// to validators that attach only on a declared type, so they skip the
+		// merge.
+		if _, ok := g.allOfAsChecks(t); ok {
 			dt, err := g.generateDeclaredType(t, scope)
 
 			return dt, true, err

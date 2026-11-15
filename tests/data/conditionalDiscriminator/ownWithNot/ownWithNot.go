@@ -7,7 +7,8 @@ import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
 
-// An if/then of the object's own compiles, while a not beside it is reported.
+// An if/then of the object's own compiles, and so does a not of required beside
+// it.
 type OwnWithNot struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind OwnWithNotKind `json:"kind" yaml:"kind" mapstructure:"kind"`
@@ -90,6 +91,9 @@ func (j *OwnWithNot) UnmarshalJSON(value []byte) error {
 			}
 		}
 	}
+	if _, ok := raw["legacy"]; ok {
+		return fmt.Errorf("field legacy in OwnWithNot: must not be present")
+	}
 	type Plain OwnWithNot
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -119,6 +123,9 @@ func (j *OwnWithNot) UnmarshalYAML(value *yaml.Node) error {
 				return fmt.Errorf("field x in OwnWithNot (when kind='a'): required")
 			}
 		}
+	}
+	if _, ok := raw["legacy"]; ok {
+		return fmt.Errorf("field legacy in OwnWithNot: must not be present")
 	}
 	type Plain OwnWithNot
 	var plain Plain

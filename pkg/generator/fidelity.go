@@ -2,12 +2,79 @@ package generator
 
 import (
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 
 	"github.com/plheide/go-jsonschema/pkg/codegen"
 	"github.com/plheide/go-jsonschema/pkg/schemas"
 )
+
+// isAnnotationField reports whether the field of the schema model that name
+// names holds an annotation, which checks nothing.
+func isAnnotationField(name string) bool {
+	switch name {
+	case "Version", "Title", "Description", "Default", "Definitions", "ReadOnly", "Deprecated", "XEnumVarnames",
+		"GoJSONSchemaExtension":
+		return true
+	}
+
+	return false
+}
+
+// schemaKeywords names the keywords t declares, as JSON Schema spells them and
+// in the order the model lists them, for a warning about what goes unchecked.
+// It leaves out annotations, which check nothing, and names a property list
+// with its properties. It reads t's own fields alone, so it is safe on a
+// cyclic schema, and it names at least something.
+func schemaKeywords(t *schemas.Type) []string {
+	var (
+		value = reflect.ValueOf(*t)
+		names []string
+	)
+
+	for i := range value.NumField() {
+		field := value.Type().Field(i)
+
+		name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
+		if !field.IsExported() || name == "" || name == "-" || isAnnotationField(field.Name) || value.Field(i).IsZero() {
+			continue
+		}
+
+		switch field.Name {
+		case "Properties":
+			name += " (" + strings.Join(sortedKeys(t.Properties), ", ") + ")"
+		case "Not":
+			// So that it does not read as part of "not checked".
+			name = `"` + name + `"`
+		}
+
+		names = append(names, name)
+	}
+
+	// These keywords leave their field zero when they are written as a null,
+	// a zero or an array.
+	for _, keyword := range []struct {
+		declared bool
+		name     string
+	}{
+		{t.ConstIsSet && t.Const == nil, "const"},
+		{t.MaxLengthIsSet && t.MaxLength == 0, "maxLength"},
+		{t.MaxItemsIsSet && t.MaxItems == 0, "maxItems"},
+		{t.MaxPropertiesIsSet && t.MaxProperties == 0, "maxProperties"},
+		{len(t.TupleItems) > 0 && t.Items == nil, "tuple items"},
+	} {
+		if keyword.declared {
+			names = append(names, keyword.name)
+		}
+	}
+
+	if len(names) == 0 {
+		names = append(names, "other keywords")
+	}
+
+	return names
+}
 
 // warnFallback emits a structured warning when a schema is about to be
 // represented as `interface{}` while still declaring keywords whose presence
@@ -178,12 +245,22 @@ func (g *schemaGenerator) warnUncompiledOneOf(t *schemas.Type, theType codegen.T
 //
 // An if/then/else of t's own that the conditional discriminator compiles is
 // not reported where t's type is declared, which willDeclare says: its
-// validator attaches only there. A not beside it still is.
+// validator attaches only there. Nor is a not of required of t's own that the
+// struct checks there; any other not beside it still is.
 func (g *schemaGenerator) warnUncompiledConditional(t *schemas.Type, scope nameScope, willDeclare bool) {
 	subject := t
-	if len(t.AllOf) == 0 && !g.config.OnlyModels && willDeclare && ownConditional(t) == conditionalIfThenElse {
-		if cd, ok := g.detectConditionalDiscriminator(t); ok && cd.compilesOwn {
-			subject = withoutOwnConditional(t)
+	if len(t.AllOf) == 0 && !g.config.OnlyModels && willDeclare {
+		if ownConditional(t) == conditionalIfThenElse {
+			if cd, ok := g.detectConditionalDiscriminator(t); ok && cd.compilesOwn {
+				subject = withoutOwnConditional(t)
+			}
+		}
+
+		// A not of required of t's own is the struct's to check.
+		if _, ok := g.ownForbiddenSets(t); ok {
+			rest := *subject
+			rest.Not = nil
+			subject = &rest
 		}
 	}
 
@@ -224,9 +301,80 @@ func (g *schemaGenerator) reportUnenforcedKeywords(t *schemas.Type, scope nameSc
 		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordUnevaluatedProperties })
 	}
 
+	if len(g.dependentRequiredOf(t)) > 0 {
+		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordDependentRequired })
+	}
+
+	g.markNotInDeclaredDraft(t, keywords)
+
 	if len(keywords) > 0 {
 		g.warnNotEnforced(scope, strings.Join(keywords, ", ")+" not checked")
 	}
+}
+
+// markNotInDeclaredDraft marks, in keywords, those that the draft the document
+// of t declares does not define, which is why nothing checks them: the
+// keywords 2019-09 brought, in an earlier draft, and draft-07's dependencies,
+// reported as dependentRequired, in a later one.
+func (g *schemaGenerator) markNotInDeclaredDraft(t *schemas.Type, keywords []string) {
+	var undefined func(keyword string) (string, bool)
+
+	switch {
+	case g.declaresDraftBefore2019(t):
+		undefined = func(keyword string) (string, bool) {
+			switch keyword {
+			case keywordUnevaluatedProperties, keywordUnevaluatedItems:
+				return keyword, true
+			case keywordDependentRequired:
+				return keyword, !t.DependentRequiredFromDependencies
+			}
+
+			return keyword, false
+		}
+
+	case g.declaresDraft2019OrLater(t):
+		undefined = func(keyword string) (string, bool) {
+			return keywordDependencies, keyword == keywordDependentRequired && t.DependentRequiredFromDependencies
+		}
+
+	default:
+		return
+	}
+
+	for i, keyword := range keywords {
+		if name, ok := undefined(keyword); ok {
+			keywords[i] = name + " (not in " + g.declaredDraftName(t) + ")"
+		}
+	}
+}
+
+// warnRefSiblings reports, once for t, the keywords beside its $ref, which
+// the type generated for t ignores: it is the type the $ref names. Draft-07
+// and the drafts before it ignore them as well, so a document that declares
+// one of those is left alone; from 2019-09 on they apply. A `type` that the
+// $ref's target declares too adds nothing, and is left out.
+func (g *schemaGenerator) warnRefSiblings(t *schemas.Type, scope nameScope) {
+	if g.config.OnlyModels || t.Ref == "" || g.declaresDraftBefore2019(t) {
+		return
+	}
+
+	if _, reported := g.reportedKeywords[t]; reported {
+		return
+	}
+
+	rest := *t
+	rest.Ref, rest.Dereferenced, rest.GoJSONSchemaExtension = "", false, nil
+
+	if target := g.followRefs(t); target != t && slices.Equal(rest.Type, target.Type) {
+		rest.Type = nil
+	}
+
+	if !constrains(&rest) {
+		return
+	}
+
+	g.reportedKeywords[t] = struct{}{}
+	g.warnNotEnforced(scope, strings.Join(schemaKeywords(&rest), ", ")+" beside $ref not checked")
 }
 
 // unenforcedKeywords lists, in alphabetical order, the keywords of t's own
@@ -245,7 +393,7 @@ func unenforcedKeywords(t *schemas.Type) []string {
 	}
 
 	add(t.Contains != nil, "contains")
-	add(len(t.DependentRequired) > 0, "dependentRequired")
+	add(len(t.DependentRequired) > 0, keywordDependentRequired)
 	add(anyConstrains(t.DependentSchemas), "dependentSchemas")
 	add(t.Contains != nil && t.MaxContains != nil, "maxContains")
 	add(t.HasMaxProperties(), "maxProperties")
@@ -253,7 +401,7 @@ func unenforcedKeywords(t *schemas.Type) []string {
 	add(t.MinProperties != 0, "minProperties")
 	add(anyConstrains(t.PatternProperties), "patternProperties")
 	add(constrains(t.PropertyNames), "propertyNames")
-	add(constrains(t.UnevaluatedItems), "unevaluatedItems")
+	add(constrains(t.UnevaluatedItems), keywordUnevaluatedItems)
 	add(constrains(t.UnevaluatedProperties), keywordUnevaluatedProperties)
 
 	return keywords
@@ -304,6 +452,21 @@ func (g *schemaGenerator) reportOwnConditional(t, subject *schemas.Type, scope n
 		g.reportedConditionals[t] = struct{}{}
 		g.warnNotEnforced(scope, reason)
 	}
+}
+
+// reportCheckGaps reports, once for t, what the checks compiled for t's allOf
+// and its own conditional leave unchecked, as gaps describes it.
+func (g *schemaGenerator) reportCheckGaps(t *schemas.Type, gaps []string, scope nameScope) {
+	if g.config.OnlyModels || len(gaps) == 0 {
+		return
+	}
+
+	if _, reported := g.reportedGaps[t]; reported {
+		return
+	}
+
+	g.reportedGaps[t] = struct{}{}
+	g.warnNotEnforced(scope, strings.Join(gaps, "; "))
 }
 
 // isDeclaring reports whether generateDeclaredType is generating t's type,

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.com/thenConstraints",
-  "description": "The then branch also bounds x, which the validator would not enforce, so detection declines with a warning.",
+  "description": "The then branch also bounds x, which the validator does not check: it checks that x is present, and a warning reports the bound.",
   "type": "object",
   "properties": {
     "kind": { "type": "string", "enum": ["a", "b"] },

@@ -198,11 +198,16 @@ When generated code doesn't check something a schema declares, the generator say
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
   `oneOf`, an `anyOf` with a branch that is `interface{}`, an `if`/`then`/`else`, a `not` or a `false` schema. A
   reason such as `minProperties, propertyNames not checked` names keywords that no generated code checks: `contains`
-  (with `minContains` and `maxContains`), `dependentRequired` and `dependentSchemas` (draft 07's `dependencies`
-  counts as these), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and
+  (with `minContains` and `maxContains`), `dependentSchemas` (draft 07's `dependencies` counts as it, and as
+  `dependentRequired`), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`, `unevaluatedItems` and
   `unevaluatedProperties`, unless `--strict-additional-properties` checks it, as described
-  [below](#opt-in-additionalproperties-false-enforcement). A keyword whose subschemas admit every value, such as
-  `"patternProperties": {"^x-": {}}`, checks nothing and is not reported.
+  [below](#opt-in-additionalproperties-false-enforcement), and `dependentRequired` where no struct of the object's own
+  checks it, as on a type merged from a composition, or where the declared draft does not define it. A keyword whose
+  subschemas admit every value, such as `"patternProperties": {"^x-": {}}`, checks nothing and is not reported. A
+  keyword that the draft the document declares does not define is named so, as in `unevaluatedProperties (not in
+  draft-07) not checked`. A reason such as `minimum beside $ref not checked` names the keywords beside a `$ref`, which
+  apply from 2019-09 on, while the type generated for the `$ref` is its target's; put them in an `allOf` beside the
+  `$ref` instead. A document that declares draft-07 or an earlier draft, which ignores them as well, is not warned.
 * `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
   value meets, or has no `type` and keywords that are checked only on a value of some type. Nothing is generated
   for it.
@@ -246,10 +251,16 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 ### Checks the fork adds
 
 * An `if`/`then`/`else` keyed on one property's `const` or `enum`, in an `allOf` or on the object itself, checks each
-  branch's `required` and a `not` of `required`, also where the property is optional or a nested object holds it, as
-  described under [Validation](#validation).
+  branch's `required`, a `not` of `required` and a property it narrows to some strings with a `const` or an `enum`,
+  also where the property is optional or a nested object holds it, as described under [Validation](#validation). A
+  branch checks these whatever else it declares, and a warning names what it leaves unchecked.
 * A `oneOf` or `anyOf` whose branches only list `required` checks how many of the listed property sets an object
   has: exactly one for a `oneOf`, at least one for an `anyOf`.
+* A `not` of `required` on an object, of its own or in its `allOf`, forbids properties: `not: {required: [a, b]}`
+  forbids having both, and `not: {anyOf: [{required: [a]}, {required: [b]}]}` having either. Upstream checked neither.
+* `dependentRequired`, and the lists of properties of draft-07's `dependencies`: where a property is present, the
+  properties it lists must be too. Each is checked where the draft the document declares defines it: 2019-09 brought
+  `dependentRequired` and dropped `dependencies`. A document that declares no draft has both checked.
 * An array type declared in `$defs` checks its own `minItems` and `maxItems`.
 * A property whose `type` admits `null` but whose `enum` does not list it rejects a `null`.
 * The keywords of the values an array or a map holds are checked, at every depth: `minLength`, `maxLength`,
@@ -444,12 +455,14 @@ and on a schema that only the release generates and builds, if a second run of t
     * [x] `properties`
     * [x] `additionalProperties: false` (opt-in via `Config.StrictAdditionalProperties`)
     * [ ] `patternProperties`
-    * [ ] `dependencies` (both forms are parsed, but not enforced), `dependentRequired` and `dependentSchemas`
+    * [x] `dependentRequired`, and the lists of properties of draft-07's `dependencies`, each where the draft the
+      document declares defines it, or where it declares none
+    * [ ] `dependentSchemas`, and the schemas of draft-07's `dependencies`
     * [ ] `propertyNames`
     * [ ] `maxProperties`
     * [ ] `minProperties`
     * [x] `unevaluatedProperties: false` (opt-in via `Config.StrictAdditionalProperties`, for `allOf` branches)
-  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property, which may be declared through a `$ref` and may be held by nested objects, such as `meta.status`; an `if`/`then`/`else` on the object itself counts as one more `allOf` element; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's checks: its `required`, and a `not` of `required` (`not: {required: [a, b]}` forbids both together, `not: {anyOf: [{required: [a]}, {required: [b]}]}` either). Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check, which it may also list in its `required` (other `required`/composition/validation keywords decline detection). Where the discriminator, or an object holding it, is absent, an if that requires it is false, so its `else` applies, and one that does not is true, vacuously, so its `then` applies. Other conditionals
+  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property, which may be declared through a `$ref` and may be held by nested objects, such as `meta.status`; an `if`/`then`/`else` on the object itself counts as one more `allOf` element; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's checks: its `required`, a `not` of `required` (`not: {required: [a, b]}` forbids both together, `not: {anyOf: [{required: [a]}, {required: [b]}]}` either), and a property it narrows to some strings with a `const` or an `enum` (`then: {properties: {operator: {enum: [GT, LT]}}}`). Each clause compiles what it can: a `then` or `else` that declares other keywords as well still checks these, and a [fidelity warning](#fidelity-warnings) names the rest, as it names a clause that compiles into no check, because its `if` is no such check or is keyed on another property. A `then` or `else` with a `$ref` checks nothing, since draft-07 ignores the keywords beside a `$ref`, and an `allOf` element that declares anything besides its `if`/`then`/`else` declines detection for the object. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check, which it may also list in its `required` (other `required`/composition/validation keywords decline detection). Where the discriminator, or an object holding it, is absent, an if that requires it is false, so its `else` applies, and one that does not is true, vacuously, so its `then` applies. Other conditionals
     are not compiled, and a [fidelity warning](#fidelity-warnings) reports them
     * [x] `if`
     * [x] `then`
@@ -463,8 +476,8 @@ and on a schema that only the release generates and builds, if a second run of t
       become a holder that dispatches on a `const` discriminator or tries each variant; branches that only list
       `required` need exactly one of their property sets present; **note**: `integer`-typed variants are not
       currently routed through the wrapper)
-    * [ ] `not` (checked as a `not` of `required` in a conditional's `then` or `else`; any other is reported by a
-      [fidelity warning](#fidelity-warnings))
+    * [ ] `not` (checked as a `not` of `required` on an object, in its `allOf` and in a conditional's `then` or `else`;
+      any other is reported by a [fidelity warning](#fidelity-warnings))
   * [x] Multi-type unions (§4.2.1) — `{"type": ["string", "number", "boolean", "null"]}` is wire-equivalent to a primitive `oneOf` and routes through the same wrapper. Same primitive set as `oneOf`; same `integer` exclusion. The `["X", "null"]` shape continues to use `*X` for ergonomics; non-primitive types in the union (`object`, `array`) and per-value validation keywords on the union (`format`, `minimum`, etc.) decline detection and fall back to `interface{}`.
   * [ ] Semantic formats (§7.3)
     * [x] Dates and times

@@ -56,6 +56,9 @@ type Generator struct {
 	// reportedKeywords holds the schemas whose unchecked keywords have been
 	// reported, so they are not reported a second time.
 	reportedKeywords map[*schemas.Type]struct{}
+	// reportedGaps holds the schemas whose compiled allOf or conditional
+	// checks have had what they leave unchecked reported.
+	reportedGaps map[*schemas.Type]struct{}
 	// reportedUntyped holds the schemas that warnUntyped has reported as
 	// falling back to interface{} for having no type.
 	reportedUntyped map[*schemas.Type]struct{}
@@ -139,6 +142,7 @@ func New(config Config) (*Generator, error) {
 		resolvingRefs:          map[*schemas.Type]struct{}{},
 		reportedConditionals:   map[*schemas.Type]struct{}{},
 		reportedKeywords:       map[*schemas.Type]struct{}{},
+		reportedGaps:           map[*schemas.Type]struct{}{},
 		reportedUntyped:        map[*schemas.Type]struct{}{},
 		unevaluatedClosed:      map[*schemas.Type]bool{},
 		objectByDefault:        map[*schemas.Type]struct{}{},

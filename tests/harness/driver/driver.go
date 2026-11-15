@@ -211,10 +211,10 @@ func compileOracle(o *Oracle) (*jsonschema.Schema, error) {
 		files = draft7Loader{}
 	}
 
-	loaders := jsonschema.SchemeURLLoader{"file": files}
+	loaders := jsonschema.SchemeURLLoader{"file": modernUndeclaredLoader{files}}
 
 	if o.Remote {
-		web := httpLoader{client: &http.Client{Timeout: fetchTimeout}}
+		web := modernUndeclaredLoader{httpLoader{client: &http.Client{Timeout: fetchTimeout}}}
 		loaders["http"], loaders["https"] = web, web
 	}
 
@@ -249,6 +249,81 @@ func (draft7Loader) Load(url string) (any, error) {
 	}
 
 	return doc, nil
+}
+
+// modernUndeclaredLoader loads schemas as next does, and makes one that declares no draft, but uses a keyword that
+// came with 2019-09 and that the generator checks there, dependentRequired or unevaluatedProperties, declare 2019-09:
+// the compiler would read it as draft-07, its default, which has neither. 2019-09 still has the array form of items
+// that draft-07 schemas use for tuples, which 2020-12 replaced with prefixItems.
+type modernUndeclaredLoader struct {
+	next jsonschema.URLLoader
+}
+
+func (l modernUndeclaredLoader) Load(url string) (any, error) {
+	doc, err := l.next.Load(url)
+	if err != nil {
+		return nil, err //nolint:wrapcheck // The compiler reports the loader's error with the URL.
+	}
+
+	if m, ok := doc.(map[string]any); ok {
+		if _, declared := m["$schema"]; !declared && usesModernKeyword(m) {
+			m["$schema"] = "https://json-schema.org/draft/2019-09/schema"
+		}
+	}
+
+	return doc, nil
+}
+
+// usesModernKeyword reports whether schema, or a subschema of it, declares dependentRequired or
+// unevaluatedProperties. It walks only the keywords that hold subschemas, so that annotations, such as x-
+// extensions, and values, such as an enum's, are never read as schemas. A subschema that declares a $schema of
+// its own is read in that draft, by the generator too, so it is not searched.
+func usesModernKeyword(schema any) bool {
+	m, ok := schema.(map[string]any)
+	if !ok {
+		return false
+	}
+
+	if _, declares := m["$schema"]; declares {
+		return false
+	}
+
+	if _, has := m["dependentRequired"]; has {
+		return true
+	}
+
+	if _, has := m["unevaluatedProperties"]; has {
+		return true
+	}
+
+	for _, key := range []string{
+		"properties", "patternProperties", "$defs", "definitions", "dependentSchemas", "dependencies",
+	} {
+		if named, isMap := m[key].(map[string]any); isMap {
+			for _, sub := range named {
+				if usesModernKeyword(sub) {
+					return true
+				}
+			}
+		}
+	}
+
+	for _, key := range []string{
+		"items", "additionalItems", "additionalProperties", "unevaluatedItems", "contains", "propertyNames",
+		"not", "if", "then", "else",
+	} {
+		if usesModernKeyword(m[key]) {
+			return true
+		}
+	}
+
+	for _, key := range []string{"allOf", "anyOf", "oneOf", "prefixItems", "items"} {
+		if list, isList := m[key].([]any); isList && slices.ContainsFunc(list, usesModernKeyword) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // httpLoader fetches a remote schema.

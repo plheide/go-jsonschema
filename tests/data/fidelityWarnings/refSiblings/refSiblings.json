@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/refSiblings",
+  "description": "From 2019-09 on, keywords beside a $ref apply, but the type generated for the $ref is its target's, so a warning names them; a type the target declares too, and annotations, add nothing.",
+  "type": "object",
+  "properties": {
+    "extended": {
+      "description": "Adds a property to base, beside the $ref, which the generated type ignores.",
+      "$ref": "#/$defs/base",
+      "properties": {
+        "extra": {
+          "type": "string"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "bounded": {
+      "$ref": "#/$defs/count",
+      "minimum": 1
+    },
+    "typed": {
+      "description": "A type that base declares as well adds nothing.",
+      "$ref": "#/$defs/base",
+      "type": "object"
+    },
+    "merged": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/base",
+          "required": [
+            "id"
+          ]
+        },
+        {
+          "properties": {
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "nested": {
+      "allOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/base",
+              "required": [
+                "id"
+              ]
+            }
+          ]
+        },
+        {
+          "properties": {
+            "tag": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "base": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "count": {
+      "type": "integer"
+    }
+  }
+}

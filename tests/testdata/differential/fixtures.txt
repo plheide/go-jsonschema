@@ -1,14 +1,16 @@
 Documents derived from the fixtures under tests/data, decoded into the generated types and validated
-by santhosh-tekuri/jsonschema v6, which reads draft-07 unless $schema says otherwise and checks formats.
+by santhosh-tekuri/jsonschema v6, which reads draft-07 unless $schema says otherwise, and checks formats.
+A schema without $schema that uses dependentRequired or unevaluatedProperties, which the generator checks in
+such a schema, it reads as 2019-09.
 The documents are seeds built from each schema, and mutants that each change one node of a seed.
 Each line counts one kind of disagreement for one schema: a missing check accepts a document the
 validator rejects, for the keyword it names; a wrong rejection rejects one it accepts. A missing
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 609 (349 fixtures, 260 definitions), 25 skipped; documents: 15878
-json: 14803 agree, 613 missing checks (101 silent), 462 wrong rejections, 0 panics
-yaml: 14185 agree, 1213 missing checks (512 silent), 480 wrong rejections, 0 panics
+schemas: 645 (367 fixtures, 278 definitions), 25 skipped; documents: 17028
+json: 15847 agree, 698 missing checks (103 silent), 483 wrong rejections, 0 panics
+yaml: 15180 agree, 1347 missing checks (535 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -182,18 +184,39 @@ yaml missing check (silent) type: wrong type ×3, e.g. /x = 12345
 == conditionalDiscriminator/ownOtherKey/ownOtherKey.json
 yaml missing check type: wrong type ×2, e.g. /x = 12345
 
-== conditionalDiscriminator/ownWithNot/ownWithNot.json
-json missing check (no keyword): 5000 characters ×2, e.g. /legacy = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
-json missing check (no keyword): add unknown key ×1, e.g. / = {"kind":"a","legacy":"a","x":"a","zzUnkn…
-json missing check (no keyword): empty string ×2, e.g. /legacy = ""
-json missing check (no keyword): off-enum string ×2, e.g. /legacy = "zzOffEnum"
-json missing check (no keyword): seed ×1, e.g. seed 0
-yaml missing check (no keyword): 5000 characters ×2, e.g. /legacy = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
-yaml missing check (no keyword): add unknown key ×1, e.g. / = {"kind":"a","legacy":"a","x":"a","zzUnkn…
-yaml missing check (no keyword): empty string ×2, e.g. /legacy = ""
-yaml missing check (no keyword): off-enum string ×2, e.g. /legacy = "zzOffEnum"
-yaml missing check (no keyword): seed ×1, e.g. seed 0
-yaml missing check (no keyword): wrong type ×2, e.g. /legacy = 12345
+== conditionalDiscriminator/partlyCompiled/partlyCompiled.json
+json missing check minimum: 0 ×1, e.g. /x = 0
+json missing check minimum: 0e99 ×1, e.g. /x = 0e99
+json missing check minimum: 5000 characters ×1, e.g. /y = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check minimum: N.0 ×1, e.g. /x = 1.0
+json missing check minimum: Ne0 ×1, e.g. /x = 1e0
+json missing check minimum: add unknown key ×1, e.g. / = {"kind":"a","mode":"fast","x":1,"y":"a",…
+json missing check minimum: delete key ×2, e.g. /mode deleted
+json missing check minimum: empty string ×1, e.g. /y = ""
+json missing check minimum: negative ×1, e.g. /x = -1
+json missing check minimum: off-enum string ×1, e.g. /y = "zzOffEnum"
+json missing check minimum: seed ×1, e.g. seed 0
+json wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal PartlyCompiled: json: cannot unmarshal number 1e300 into Go struct field Plain.x of type int
+json wrong rejection: 2^63 ×1, e.g. /x = 9223372036854775808: unmarshal Wrap: unmarshal PartlyCompiled: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.x of type int
+json wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal PartlyCompiled: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.x of type int
+yaml missing check minimum: 0 ×1, e.g. /x = 0
+yaml missing check minimum: 0e99 ×1, e.g. /x = 0e99
+yaml missing check minimum: 5000 characters ×1, e.g. /y = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check minimum: N.0 ×1, e.g. /x = 1.0
+yaml missing check minimum: Ne0 ×1, e.g. /x = 1e0
+yaml missing check minimum: add unknown key ×1, e.g. / = {"kind":"a","mode":"fast","x":1,"y":"a",…
+yaml missing check minimum: delete key ×2, e.g. /mode deleted
+yaml missing check minimum: empty string ×1, e.g. /y = ""
+yaml missing check minimum: negative ×1, e.g. /x = -1
+yaml missing check minimum: off-enum string ×1, e.g. /y = "zzOffEnum"
+yaml missing check minimum: seed ×1, e.g. seed 0
+yaml missing check minimum: wrong type ×1, e.g. /y = 12345
+yaml wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal PartlyCompiled: field x: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /x = 9223372036854775808: unmarshal Wrap: unmarshal PartlyCompiled: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal PartlyCompiled: field x: 18446744073709551616 is out of range for int
+
+== conditionalDiscriminator/partlyCompiled/partlyCompiled.json#/$defs/bFields
+yaml missing check type: wrong type ×1, e.g. /y = 12345
 
 == conditionalDiscriminator/refEnum/refEnum.json
 yaml missing check (silent) type: wrong type ×2, e.g. /reason = 12345
@@ -212,8 +235,6 @@ json missing check minimum: Ne0 ×1, e.g. /x = 1e0
 json missing check minimum: add unknown key ×1, e.g. / = {"kind":"a","x":1,"zzUnknown":"x"}
 json missing check minimum: negative ×1, e.g. /x = -1
 json missing check minimum: seed ×1, e.g. seed 0
-json missing check required: add unknown key ×1, e.g. / = {"kind":"a","zzUnknown":"x"}
-json missing check required: seed ×1, e.g. seed 1
 json wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal ThenConstraints: json: cannot unmarshal number 1e300 into Go struct field Plain.x of type int
 json wrong rejection: 2^63 ×1, e.g. /x = 9223372036854775808: unmarshal Wrap: unmarshal ThenConstraints: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.x of type int
 json wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal ThenConstraints: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.x of type int
@@ -224,11 +245,31 @@ yaml missing check minimum: Ne0 ×1, e.g. /x = 1e0
 yaml missing check minimum: add unknown key ×1, e.g. / = {"kind":"a","x":1,"zzUnknown":"x"}
 yaml missing check minimum: negative ×1, e.g. /x = -1
 yaml missing check minimum: seed ×1, e.g. seed 0
-yaml missing check required: add unknown key ×1, e.g. / = {"kind":"a","zzUnknown":"x"}
-yaml missing check required: seed ×1, e.g. seed 1
 yaml wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal ThenConstraints: field x: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. /x = 9223372036854775808: unmarshal Wrap: unmarshal ThenConstraints: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
 yaml wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal ThenConstraints: field x: 18446744073709551616 is out of range for int
+
+== conditionalDiscriminator/thenUnchecked/thenUnchecked.json
+json missing check minimum: 0 ×1, e.g. /x = 0
+json missing check minimum: 0e99 ×1, e.g. /x = 0e99
+json missing check minimum: N.0 ×1, e.g. /x = 1.0
+json missing check minimum: Ne0 ×1, e.g. /x = 1e0
+json missing check minimum: add unknown key ×1, e.g. / = {"kind":"a","x":1,"zzUnknown":"x"}
+json missing check minimum: negative ×1, e.g. /x = -1
+json missing check minimum: seed ×1, e.g. seed 0
+json wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal ThenUnchecked: json: cannot unmarshal number 1e300 into Go struct field Plain.x of type int
+json wrong rejection: 2^63 ×1, e.g. /x = 9223372036854775808: unmarshal Wrap: unmarshal ThenUnchecked: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.x of type int
+json wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal ThenUnchecked: json: cannot unmarshal number 18446744073709551616 into Go struct field Plain.x of type int
+yaml missing check minimum: 0 ×1, e.g. /x = 0
+yaml missing check minimum: 0e99 ×1, e.g. /x = 0e99
+yaml missing check minimum: N.0 ×1, e.g. /x = 1.0
+yaml missing check minimum: Ne0 ×1, e.g. /x = 1e0
+yaml missing check minimum: add unknown key ×1, e.g. / = {"kind":"a","x":1,"zzUnknown":"x"}
+yaml missing check minimum: negative ×1, e.g. /x = -1
+yaml missing check minimum: seed ×1, e.g. seed 0
+yaml wrong rejection: 1e300 ×1, e.g. /x = 1e300: unmarshal Wrap: unmarshal ThenUnchecked: field x: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /x = 9223372036854775808: unmarshal Wrap: unmarshal ThenUnchecked: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
+yaml wrong rejection: 2^64 ×1, e.g. /x = 18446744073709551616: unmarshal Wrap: unmarshal ThenUnchecked: field x: 18446744073709551616 is out of range for int
 
 == conditionalDiscriminator/vacuousIf/vacuousIf.json
 yaml missing check (silent) type: wrong type ×3, e.g. /label = 12345
@@ -679,13 +720,13 @@ yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: unmarshal Date: unm
 == core/dependencies/dependenciesDualForm.json
 json missing check required: 5000 characters ×4, e.g. /step/credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 json missing check required: add unknown key ×2, e.g. / = {"step":{"credit-card":"a","run":"a","sh…
-json missing check required: delete key ×3, e.g. /step/run deleted
+json missing check required: delete key ×2, e.g. /step/shell deleted
 json missing check required: empty string ×4, e.g. /step/credit-card = ""
 json missing check required: off-enum string ×4, e.g. /step/credit-card = "zzOffEnum"
 json missing check required: seed ×1, e.g. seed 0
 yaml missing check required: 5000 characters ×4, e.g. /step/credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 yaml missing check required: add unknown key ×2, e.g. / = {"step":{"credit-card":"a","run":"a","sh…
-yaml missing check required: delete key ×3, e.g. /step/run deleted
+yaml missing check required: delete key ×2, e.g. /step/shell deleted
 yaml missing check required: empty string ×4, e.g. /step/credit-card = ""
 yaml missing check required: off-enum string ×4, e.g. /step/credit-card = "zzOffEnum"
 yaml missing check required: seed ×1, e.g. seed 0
@@ -694,13 +735,13 @@ yaml missing check required: wrong type ×4, e.g. /step/credit-card = 12345
 == core/dependencies/dependenciesDualForm.json#/definitions/step
 json missing check required: 5000 characters ×4, e.g. /credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 json missing check required: add unknown key ×1, e.g. / = {"credit-card":"a","run":"a","shell":"a"…
-json missing check required: delete key ×3, e.g. /run deleted
+json missing check required: delete key ×2, e.g. /shell deleted
 json missing check required: empty string ×4, e.g. /credit-card = ""
 json missing check required: off-enum string ×4, e.g. /credit-card = "zzOffEnum"
 json missing check required: seed ×1, e.g. seed 0
 yaml missing check required: 5000 characters ×4, e.g. /credit-card = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
 yaml missing check required: add unknown key ×1, e.g. / = {"credit-card":"a","run":"a","shell":"a"…
-yaml missing check required: delete key ×3, e.g. /run deleted
+yaml missing check required: delete key ×2, e.g. /shell deleted
 yaml missing check required: empty string ×4, e.g. /credit-card = ""
 yaml missing check required: off-enum string ×4, e.g. /credit-card = "zzOffEnum"
 yaml missing check required: seed ×1, e.g. seed 0
@@ -1015,6 +1056,31 @@ yaml missing check (silent) type: wrong type ×2, e.g. /defInOtherSchema/s = 123
 == crossPackageNoOutput/schema/schema.json#/$defs/Thing
 yaml missing check (silent) type: wrong type ×1, e.g. /s = 12345
 
+== dependentRequired/draft07/draft07.json
+json missing check required: delete key ×1, e.g. /billingAddress deleted
+yaml missing check required: delete key ×1, e.g. /billingAddress deleted
+yaml missing check type: wrong type ×4, e.g. /billingAddress = 12345
+
+== dependentRequired/draft07Keyword/draft07Keyword.json
+yaml missing check type: wrong type ×2, e.g. /run = 12345
+
+== dependentRequired/modern/modern.json
+yaml missing check (silent) type: wrong type ×5, e.g. /billingAddress = 12345
+
+== dependentRequired/modernLegacy/modernLegacy.json
+json missing check dependency: delete key ×1, e.g. /run deleted
+yaml missing check dependency: delete key ×1, e.g. /run deleted
+yaml missing check type: wrong type ×2, e.g. /run = 12345
+
+== dependentRequired/undeclared/undeclared.json
+yaml missing check (silent) type: wrong type ×4, e.g. /current/run = 12345
+
+== dependentRequired/undeclared/undeclared.json#/$defs/current
+yaml missing check (silent) type: wrong type ×2, e.g. /run = 12345
+
+== dependentRequired/undeclared/undeclared.json#/$defs/legacy
+yaml missing check (silent) type: wrong type ×2, e.g. /run = 12345
+
 == elementConstraints/elements/elements.json
 json wrong rejection: 1e300 ×2, e.g. /loose/0/0 = 1e300: unmarshal Wrap: unmarshal Elements: json: cannot unmarshal number 1e300 into Go struct field Plain.loose of type int
 json wrong rejection: 2^63 ×2, e.g. /loose/0/0 = 9223372036854775808: unmarshal Wrap: unmarshal Elements: json: cannot unmarshal number 9223372036854775808 into Go struct field Plain.loose of type int
@@ -1159,6 +1225,120 @@ yaml missing check required: add unknown key ×1, e.g. / = {"kind":"a","zzUnknow
 yaml missing check required: seed ×1, e.g. seed 1
 yaml missing check type: wrong type ×1, e.g. /x = 12345
 
+== fidelityWarnings/refSiblings/refSiblings.json
+json missing check (no keyword): add unknown key ×1, e.g. /extended = {"id":"a","zzUnknown":"x"}
+json missing check minimum: 0 ×1, e.g. /bounded = 0
+json missing check minimum: 0e99 ×1, e.g. /bounded = 0e99
+json missing check minimum: negative ×1, e.g. /bounded = -1
+json missing check required: delete key ×2, e.g. /merged/id deleted
+json missing check type: null ×2, e.g. /merged = null
+json wrong rejection: 1e300 ×1, e.g. /bounded = 1e300: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: json: cannot unmarshal number 1e300 into Go value of type Plain
+json wrong rejection: 2^63 ×1, e.g. /bounded = 9223372036854775808: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
+json wrong rejection: 2^64 ×1, e.g. /bounded = 18446744073709551616: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
+yaml missing check (no keyword): add unknown key ×1, e.g. /extended = {"id":"a","zzUnknown":"x"}
+yaml missing check minimum: 0 ×1, e.g. /bounded = 0
+yaml missing check minimum: 0e99 ×1, e.g. /bounded = 0e99
+yaml missing check minimum: negative ×1, e.g. /bounded = -1
+yaml missing check required: delete key ×2, e.g. /merged/id deleted
+yaml missing check type: null ×2, e.g. /merged = null
+yaml missing check type: wrong type ×6, e.g. /extended/id = 12345
+yaml wrong rejection: 1e300 ×1, e.g. /bounded = 1e300: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /bounded = 9223372036854775808: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
+yaml wrong rejection: 2^64 ×1, e.g. /bounded = 18446744073709551616: unmarshal Wrap: unmarshal RefSiblings: unmarshal Count: 18446744073709551616 is out of range for int
+
+== fidelityWarnings/refSiblings/refSiblings.json#/$defs/base
+yaml missing check type: wrong type ×1, e.g. /id = 12345
+
+== fidelityWarnings/refSiblings/refSiblings.json#/$defs/count
+json wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 1e300 into Go value of type Plain
+json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
+json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
+yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
+yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: 18446744073709551616 is out of range for int
+
+== fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json
+json missing check maximum: 1e300 ×1, e.g. /every = 1e300
+json missing check maximum: 2^53+1 ×1, e.g. /every = 9007199254740993
+json missing check maximum: 2^63 ×1, e.g. /every = 9223372036854775808
+json missing check maximum: 2^64 ×1, e.g. /every = 18446744073709551616
+json missing check minimum: 0 ×1, e.g. /some = 0
+json missing check minimum: 0e99 ×1, e.g. /some = 0e99
+json missing check minimum: negative ×1, e.g. /some = -1
+json missing check type: 0.5 ×2, e.g. /every = 0.5
+json missing check type: null ×2, e.g. /every = null
+json missing check type: wrong type ×2, e.g. /every = "12345"
+yaml missing check maximum: 1e300 ×1, e.g. /every = 1e300
+yaml missing check maximum: 2^53+1 ×1, e.g. /every = 9007199254740993
+yaml missing check maximum: 2^63 ×1, e.g. /every = 9223372036854775808
+yaml missing check maximum: 2^64 ×1, e.g. /every = 18446744073709551616
+yaml missing check minimum: 0 ×1, e.g. /some = 0
+yaml missing check minimum: 0e99 ×1, e.g. /some = 0e99
+yaml missing check minimum: negative ×1, e.g. /some = -1
+yaml missing check type: 0.5 ×2, e.g. /every = 0.5
+yaml missing check type: null ×2, e.g. /every = null
+yaml missing check type: wrong type ×2, e.g. /every = "12345"
+
+== fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json#/$defs/count
+json wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 1e300 into Go value of type Plain
+json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
+json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
+yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
+yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: 18446744073709551616 is out of range for int
+
+== fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json#/$defs/everyCount
+json missing check maximum: 1e300 ×1, e.g. / = 1e300
+json missing check maximum: 2^53+1 ×1, e.g. / = 9007199254740993
+json missing check maximum: 2^63 ×1, e.g. / = 9223372036854775808
+json missing check maximum: 2^64 ×1, e.g. / = 18446744073709551616
+json missing check type: 0.5 ×1, e.g. / = 0.5
+json missing check type: null ×1, e.g. / = null
+json missing check type: wrong type ×1, e.g. / = "12345"
+yaml missing check maximum: 1e300 ×1, e.g. / = 1e300
+yaml missing check maximum: 2^53+1 ×1, e.g. / = 9007199254740993
+yaml missing check maximum: 2^63 ×1, e.g. / = 9223372036854775808
+yaml missing check maximum: 2^64 ×1, e.g. / = 18446744073709551616
+yaml missing check type: 0.5 ×1, e.g. / = 0.5
+yaml missing check type: null ×1, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. / = "12345"
+
+== fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json#/$defs/someCount
+json missing check minimum: 0 ×1, e.g. / = 0
+json missing check minimum: 0e99 ×1, e.g. / = 0e99
+json missing check minimum: negative ×1, e.g. / = -1
+json missing check type: 0.5 ×1, e.g. / = 0.5
+json missing check type: null ×1, e.g. / = null
+json missing check type: wrong type ×1, e.g. / = "12345"
+yaml missing check minimum: 0 ×1, e.g. / = 0
+yaml missing check minimum: 0e99 ×1, e.g. / = 0e99
+yaml missing check minimum: negative ×1, e.g. / = -1
+yaml missing check type: 0.5 ×1, e.g. / = 0.5
+yaml missing check type: null ×1, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. / = "12345"
+
+== fidelityWarnings/refSiblingsDraft07/refSiblingsDraft07.json
+json missing check (silent) type: null ×2, e.g. /merged = null
+json wrong rejection: 1e300 ×1, e.g. /bounded = 1e300: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: json: cannot unmarshal number 1e300 into Go value of type Plain
+json wrong rejection: 2^63 ×1, e.g. /bounded = 9223372036854775808: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
+json wrong rejection: 2^64 ×1, e.g. /bounded = 18446744073709551616: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
+yaml missing check (silent) type: null ×2, e.g. /merged = null
+yaml missing check (silent) type: wrong type ×6, e.g. /extended/id = 12345
+yaml wrong rejection: 1e300 ×1, e.g. /bounded = 1e300: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. /bounded = 9223372036854775808: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
+yaml wrong rejection: 2^64 ×1, e.g. /bounded = 18446744073709551616: unmarshal Wrap: unmarshal RefSiblingsDraft07: unmarshal Count: 18446744073709551616 is out of range for int
+
+== fidelityWarnings/refSiblingsDraft07/refSiblingsDraft07.json#/definitions/base
+yaml missing check (silent) type: wrong type ×1, e.g. /id = 12345
+
+== fidelityWarnings/refSiblingsDraft07/refSiblingsDraft07.json#/definitions/count
+json wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 1e300 into Go value of type Plain
+json wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 9223372036854775808 into Go value of type Plain
+json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: json: cannot unmarshal number 18446744073709551616 into Go value of type Plain
+yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: 1e300 is out of range for int
+yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
+yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: 18446744073709551616 is out of range for int
+
 == fidelityWarnings/uncompiledConditionals/uncompiledConditionals.json
 json missing check (no keyword): empty string ×2, e.g. /either = ""
 json missing check pattern: empty string ×1, e.g. /code = ""
@@ -1200,7 +1380,7 @@ json missing check minProperties: 5000 characters ×12, e.g. /annotated/a = "aaa
 json missing check minProperties: N.0 ×2, e.g. /rows/0 = 1.0
 json missing check minProperties: Ne0 ×2, e.g. /rows/0 = 1e0
 json missing check minProperties: add unknown key ×12, e.g. / = {"annotated":{"a":"a"},"codes":["a"],"cu…
-json missing check minProperties: delete key ×25, e.g. /annotated deleted
+json missing check minProperties: delete key ×24, e.g. /annotated deleted
 json missing check minProperties: duplicate first item ×3, e.g. /codes = ["a","a"]
 json missing check minProperties: empty array ×3, e.g. /codes = []
 json missing check minProperties: empty string ×12, e.g. /annotated/a = ""
@@ -1224,7 +1404,7 @@ yaml missing check minProperties: 5000 characters ×12, e.g. /annotated/a = "aaa
 yaml missing check minProperties: N.0 ×2, e.g. /rows/0 = 1.0
 yaml missing check minProperties: Ne0 ×2, e.g. /rows/0 = 1e0
 yaml missing check minProperties: add unknown key ×12, e.g. / = {"annotated":{"a":"a"},"codes":["a"],"cu…
-yaml missing check minProperties: delete key ×25, e.g. /annotated deleted
+yaml missing check minProperties: delete key ×24, e.g. /annotated deleted
 yaml missing check minProperties: duplicate first item ×3, e.g. /codes = ["a","a"]
 yaml missing check minProperties: empty array ×3, e.g. /codes = []
 yaml missing check minProperties: empty string ×12, e.g. /annotated/a = ""
@@ -1318,6 +1498,51 @@ json wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: illegal base64 data
 yaml wrong rejection: 5000 characters ×1, e.g. / = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!str `aaaaaaa...` into Raw
 yaml wrong rejection: off-enum string ×1, e.g. / = "zzOffEnum": unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!str `zzOffEnum` into Raw
 yaml wrong rejection: seed ×1, e.g. seed 0: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!str `a` into Raw
+
+== forbiddenSets/stillWarned/stillWarned.json
+json missing check (no keyword): 5000 characters ×6, e.g. /branchNot/x = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (no keyword): add unknown key ×4, e.g. / = {"branchNot":{"x":"a","y":"a"},"mergedNo…
+json missing check (no keyword): delete key ×6, e.g. /branchNot deleted
+json missing check (no keyword): empty string ×6, e.g. /branchNot/x = ""
+json missing check (no keyword): off-enum string ×6, e.g. /branchNot/x = "zzOffEnum"
+json missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): 5000 characters ×6, e.g. /branchNot/x = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (no keyword): add unknown key ×4, e.g. / = {"branchNot":{"x":"a","y":"a"},"mergedNo…
+yaml missing check (no keyword): delete key ×6, e.g. /branchNot deleted
+yaml missing check (no keyword): empty string ×6, e.g. /branchNot/x = ""
+yaml missing check (no keyword): off-enum string ×6, e.g. /branchNot/x = "zzOffEnum"
+yaml missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): wrong type ×4, e.g. /branchNot/y = 12345
+yaml missing check type: wrong type ×2, e.g. /branchNot/x = 12345
+
+== forbiddenSets/stillWarned/stillWarned.json#/$defs/base
+yaml missing check type: wrong type ×1, e.g. /id = 12345
+
+== forbiddenSets/stillWarned/stillWarned.json#/$defs/branchNot
+yaml missing check (no keyword): wrong type ×1, e.g. /y = 12345
+yaml missing check type: wrong type ×1, e.g. /x = 12345
+
+== forbiddenSets/stillWarned/stillWarned.json#/$defs/mergedNot
+json missing check (no keyword): 5000 characters ×3, e.g. /id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (no keyword): add unknown key ×1, e.g. / = {"id":"a","p":"a","q":"a","zzUnknown":"x…
+json missing check (no keyword): delete key ×1, e.g. /id deleted
+json missing check (no keyword): empty string ×3, e.g. /id = ""
+json missing check (no keyword): off-enum string ×3, e.g. /id = "zzOffEnum"
+json missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): 5000 characters ×3, e.g. /id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (no keyword): add unknown key ×1, e.g. / = {"id":"a","p":"a","q":"a","zzUnknown":"x…
+yaml missing check (no keyword): delete key ×1, e.g. /id deleted
+yaml missing check (no keyword): empty string ×3, e.g. /id = ""
+yaml missing check (no keyword): off-enum string ×3, e.g. /id = "zzOffEnum"
+yaml missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): wrong type ×2, e.g. /p = 12345
+yaml missing check type: wrong type ×1, e.g. /id = 12345
+
+== forbiddenSets/stillWarned/stillWarned.json#/$defs/valueNot
+yaml missing check type: wrong type ×1, e.g. /kind = 12345
+
+== forbiddenSets/withPresence/withPresence.json
+yaml missing check (silent) type: wrong type ×1, e.g. /id = 12345
 
 == formatValidation/additionalElements/additionalElements.json
 yaml missing check (silent) type: wrong type ×1, e.g. /foo = 12345

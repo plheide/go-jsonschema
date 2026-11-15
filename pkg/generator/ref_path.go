@@ -100,7 +100,7 @@ func stepRefPath(cur *schemas.Type, rest []string) (*schemas.Type, int, error) {
 		return derefRefPath(cur.PatternProperties[key], 2)
 	case "definitions", "$defs":
 		return derefRefPath(cur.Definitions[key], 2)
-	case "dependencies", "dependentSchemas":
+	case keywordDependencies, "dependentSchemas":
 		// Draft-07 `dependencies` is dual-form. The schema form is parsed
 		// into DependentSchemas, so both spellings resolve there; a
 		// property-name dependency lands in DependentRequired instead and
@@ -225,7 +225,7 @@ func refPathTypeName(path string) string {
 		// Keywords holding a collection: the name or index that follows is
 		// what identifies the subschema, so the keyword itself is noise.
 		case "properties", "patternProperties", "definitions", "$defs",
-			"allOf", "anyOf", "oneOf", "dependencies", "dependentSchemas":
+			"allOf", "anyOf", "oneOf", keywordDependencies, "dependentSchemas":
 			if i+1 < len(segments) {
 				kept = append(kept, segments[i+1])
 				i += 2

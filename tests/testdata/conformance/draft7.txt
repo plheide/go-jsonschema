@@ -9,7 +9,7 @@ Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
 json: 632 agree, 225 missing checks (29 silent), 16 wrong rejections, 0 panics, 56 not run
 yaml: 612 agree, 245 missing checks (49 silent), 16 wrong rejections, 0 panics, 56 not run
-cases: 23 generation failures, 0 compilation failures, 133 with warnings
+cases: 23 generation failures, 0 compilation failures, 134 with warnings
 
 == additionalItems.json
 
@@ -827,6 +827,9 @@ yaml missing check: mismatch array
 warning: schema fidelity: type Root falls back to interface{} due to allOf merge produced empty result; declared but not enforced: $ref #/definitions/c
 json missing check: nested ref invalid
 yaml missing check: nested ref invalid
+
+-- ref overrides any sibling keywords
+warning: schema fidelity: type RootFoo does not enforce all it declares: maxItems beside $ref not checked
 
 -- $ref prevents a sibling $id from changing the base uri
 warning: Could not resolve ref "foo.json": could not follow $ref "foo.json" to file "foo.json": cannot load schema failed to load schema "foo.json": cannot resolve schema "foo.json"

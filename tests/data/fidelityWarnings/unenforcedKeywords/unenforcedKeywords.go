@@ -223,6 +223,46 @@ type UnenforcedKeywordsShipping struct {
 	Zip *string `json:"zip,omitempty,omitzero" yaml:"zip,omitempty" mapstructure:"zip,omitempty"`
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *UnenforcedKeywordsShipping) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw UnenforcedKeywordsShipping: %w", err)
+	}
+	if _, ok := raw["address"]; ok {
+		if _, ok := raw["zip"]; !ok {
+			return fmt.Errorf("field zip in UnenforcedKeywordsShipping: required when address is present")
+		}
+	}
+	type Plain UnenforcedKeywordsShipping
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal UnenforcedKeywordsShipping: %w", err)
+	}
+	*j = UnenforcedKeywordsShipping(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *UnenforcedKeywordsShipping) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw UnenforcedKeywordsShipping: %w", err)
+	}
+	if _, ok := raw["address"]; ok {
+		if _, ok := raw["zip"]; !ok {
+			return fmt.Errorf("field zip in UnenforcedKeywordsShipping: required when address is present")
+		}
+	}
+	type Plain UnenforcedKeywordsShipping
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal UnenforcedKeywordsShipping: %w", err)
+	}
+	*j = UnenforcedKeywordsShipping(plain)
+	return nil
+}
+
 type UnenforcedKeywordsStrict struct {
 	// A corresponds to the JSON schema field "a".
 	A *string `json:"a,omitempty,omitzero" yaml:"a,omitempty" mapstructure:"a,omitempty"`

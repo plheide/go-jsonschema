@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/shapes/v1/shapes.schema.json",
+  "description": "Rule's allOf[1] narrows operator in its then, which no longer keeps allOf[0] from compiling; Window forbids count and untilSec together.",
+  "title": "Shapes",
+  "type": "object",
+  "required": [
+    "rule",
+    "window"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "rule": {
+      "$ref": "#/$defs/rule"
+    },
+    "window": {
+      "$ref": "#/$defs/window"
+    }
+  },
+  "$defs": {
+    "rule": {
+      "title": "Rule",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "delay",
+            "compare"
+          ]
+        },
+        "delaySec": {
+          "type": "number"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "GT",
+            "LT",
+            "AND",
+            "OR"
+          ]
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "delay"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "delaySec"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "compare"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "operator",
+              "value"
+            ],
+            "properties": {
+              "operator": {
+                "enum": [
+                  "GT",
+                  "LT"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "window": {
+      "title": "Window",
+      "type": "object",
+      "required": [
+        "intervalSec"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "intervalSec": {
+          "type": "number"
+        },
+        "count": {
+          "type": "integer"
+        },
+        "untilSec": {
+          "type": "number"
+        }
+      },
+      "not": {
+        "required": [
+          "count",
+          "untilSec"
+        ]
+      }
+    }
+  }
+}

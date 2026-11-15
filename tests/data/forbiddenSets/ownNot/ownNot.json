@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/ownNot",
+  "description": "A window takes a count or an end, not both.",
+  "type": "object",
+  "required": [
+    "intervalSec"
+  ],
+  "properties": {
+    "intervalSec": {
+      "type": "number"
+    },
+    "count": {
+      "type": "integer"
+    },
+    "untilSec": {
+      "type": "number"
+    },
+    "legacy": {
+      "$ref": "#/$defs/legacy"
+    },
+    "body": {
+      "$ref": "#/$defs/body"
+    }
+  },
+  "not": {
+    "required": [
+      "count",
+      "untilSec"
+    ]
+  },
+  "$defs": {
+    "legacy": {
+      "description": "The old name stays readable, but must not be written.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "oldName": {
+          "type": "string"
+        }
+      },
+      "not": {
+        "required": [
+          "oldName"
+        ]
+      }
+    },
+    "body": {
+      "description": "A body is given inline or by reference, or neither, never both.",
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "encoding": {
+          "type": "string"
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "source",
+              "content"
+            ]
+          },
+          {
+            "required": [
+              "source",
+              "encoding"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

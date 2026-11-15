@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/dependentRequired/modern",
+  "description": "A card number requires a billing address, and a billing address a street and a city.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "creditCard": {
+      "type": "string"
+    },
+    "billingAddress": {
+      "type": "string"
+    },
+    "street": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    }
+  },
+  "dependentRequired": {
+    "creditCard": [
+      "billingAddress"
+    ],
+    "billingAddress": [
+      "street",
+      "city"
+    ],
+    "name": []
+  }
+}

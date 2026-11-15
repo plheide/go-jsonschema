@@ -8,7 +8,10 @@ import (
 
 // keywordUnevaluatedProperties is the keyword checksUnevaluatedProperties
 // decides on, as the fidelity warnings name it.
-const keywordUnevaluatedProperties = "unevaluatedProperties"
+const (
+	keywordUnevaluatedProperties = "unevaluatedProperties"
+	keywordUnevaluatedItems      = "unevaluatedItems"
+)
 
 // checksUnevaluatedProperties reports whether the struct generated for s checks
 // its `unevaluatedProperties: false` the way it checks `additionalProperties:
@@ -49,12 +52,31 @@ func (g *schemaGenerator) checksUnevaluatedProperties(s *schemas.Type) bool {
 // whose URIs all begin json-schema.org/draft-0. Later drafts' URIs are
 // json-schema.org/draft/<year>-<month>.
 func (g *schemaGenerator) declaresDraftBefore2019(s *schemas.Type) bool {
-	version := s.Version
-	if version == "" && g.schema.ObjectAsType != nil {
-		version = g.schema.Version
+	return strings.Contains(g.declaredVersion(s), "json-schema.org/draft-0")
+}
+
+// declaresDraft2019OrLater reports whether s, or else the document s is in,
+// names in its `$schema` draft 2019-09 or a later one.
+func (g *schemaGenerator) declaresDraft2019OrLater(s *schemas.Type) bool {
+	return strings.Contains(g.declaredVersion(s), "json-schema.org/draft/")
+}
+
+// declaredDraftName names the draft that s, or else the document s is in,
+// declares, such as draft-07 or 2020-12.
+func (g *schemaGenerator) declaredDraftName(s *schemas.Type) string {
+	_, path, _ := strings.Cut(g.declaredVersion(s), "json-schema.org/")
+	name, _, _ := strings.Cut(strings.TrimPrefix(path, "draft/"), "/")
+
+	return name
+}
+
+// declaredVersion returns the `$schema` of s, or else of the document s is in.
+func (g *schemaGenerator) declaredVersion(s *schemas.Type) string {
+	if s.Version == "" && g.schema.ObjectAsType != nil {
+		return g.schema.Version
 	}
 
-	return strings.Contains(version, "json-schema.org/draft-0")
+	return s.Version
 }
 
 // evaluatesStatically reports whether the properties that s evaluates are known

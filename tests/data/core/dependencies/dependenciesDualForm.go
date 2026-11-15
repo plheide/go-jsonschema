@@ -2,6 +2,10 @@
 
 package test
 
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+
 type DependenciesDualForm struct {
 	// Step corresponds to the JSON schema field "step".
 	Step *Step `json:"step,omitempty,omitzero" yaml:"step,omitempty" mapstructure:"step,omitempty"`
@@ -19,4 +23,54 @@ type Step struct {
 
 	// WorkingDirectory corresponds to the JSON schema field "working-directory".
 	WorkingDirectory *string `json:"working-directory,omitempty,omitzero" yaml:"working-directory,omitempty" mapstructure:"working-directory,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Step) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw Step: %w", err)
+	}
+	if _, ok := raw["shell"]; ok {
+		if _, ok := raw["run"]; !ok {
+			return fmt.Errorf("field run in Step: required when shell is present")
+		}
+	}
+	if _, ok := raw["working-directory"]; ok {
+		if _, ok := raw["run"]; !ok {
+			return fmt.Errorf("field run in Step: required when working-directory is present")
+		}
+	}
+	type Plain Step
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Step: %w", err)
+	}
+	*j = Step(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Step) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw Step: %w", err)
+	}
+	if _, ok := raw["shell"]; ok {
+		if _, ok := raw["run"]; !ok {
+			return fmt.Errorf("field run in Step: required when shell is present")
+		}
+	}
+	if _, ok := raw["working-directory"]; ok {
+		if _, ok := raw["run"]; !ok {
+			return fmt.Errorf("field run in Step: required when working-directory is present")
+		}
+	}
+	type Plain Step
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal Step: %w", err)
+	}
+	*j = Step(plain)
+	return nil
 }

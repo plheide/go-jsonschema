@@ -308,12 +308,73 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		t.Parallel()
 
 		warnings := filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/conditionalDiscriminator/thenUnchecked/thenUnchecked.json"))
+
+		assert.Equal(t, []string{
+			"schema fidelity: type ThenUnchecked does not enforce all it declares: " +
+				"if/then/else not compiled (in allOf branch)",
+		}, warnings, "the decline says why; the fidelity warning says what goes unchecked")
+	})
+
+	t.Run("a partly compiled conditional discriminator names what its clauses leave unchecked", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := filterFidelityWarnings(generateWithWarnerCapture(t,
 			"./data/conditionalDiscriminator/thenConstraints/thenConstraints.json"))
 
 		assert.Equal(t, []string{
 			"schema fidelity: type ThenConstraints does not enforce all it declares: " +
-				"if/then/else not compiled (in allOf branch)",
-		}, warnings, "the decline says why; the fidelity warning says what goes unchecked")
+				"allOf[0]'s then: properties (x) not checked",
+		}, warnings, "the then's required compiles, and only its bound is reported")
+
+		warnings = filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/conditionalDiscriminator/partlyCompiled/partlyCompiled.json"))
+
+		assert.Equal(t, []string{
+			"schema fidelity: type PartlyCompiled does not enforce all it declares: " +
+				"allOf[0]'s then: properties (x) not checked; " +
+				"allOf[1]'s then: $ref not checked; " +
+				"allOf[2]'s if/then/else not compiled; " +
+				`allOf[3]'s if/then/else not compiled (keyed on "mode", not "kind"); ` +
+				`allOf[5]'s then: "not" not checked`,
+		}, warnings, "each clause says what it leaves unchecked")
+
+		warnings = filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/conditionalDiscriminator/shapes/shapes.json"))
+
+		assert.NotContains(t, strings.Join(warnings, "\n"), "type Rule ",
+			"both of Rule's branches compile, the narrowed enum too")
+	})
+
+	t.Run("keywords beside a $ref are reported where the declared draft applies them", func(t *testing.T) {
+		t.Parallel()
+
+		assert.ElementsMatch(t, []string{
+			"schema fidelity: type RefSiblingsBounded does not enforce all it declares: " +
+				"minimum beside $ref not checked",
+			"schema fidelity: type RefSiblingsExtended does not enforce all it declares: " +
+				"properties (extra), unevaluatedProperties beside $ref not checked",
+			"schema fidelity: type RefSiblingsMerged does not enforce all it declares: " +
+				"required beside $ref not checked",
+			"schema fidelity: type RefSiblingsNested does not enforce all it declares: " +
+				"required beside $ref not checked",
+		}, filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/refSiblings/refSiblings.json")),
+			"a type that the target declares too, and annotations, are left out")
+
+		assert.Empty(t, filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/refSiblingsDraft07/refSiblingsDraft07.json")),
+			"draft-07 ignores the keywords beside a $ref, as the generated type does")
+
+		// A wrapper of one $ref that becomes an alias of the target is reported as well.
+		cfg := basicConfig
+		cfg.AliasSingleAllOfAnyOfRefs = true
+
+		assert.ElementsMatch(t, []string{
+			"schema fidelity: type EveryCount does not enforce all it declares: maximum beside $ref not checked",
+			"schema fidelity: type SomeCount does not enforce all it declares: minimum beside $ref not checked",
+		}, filterFidelityWarnings(generateWithConfigAndWarnerCapture(t, cfg,
+			"./data/fidelityWarnings/refSiblingsAlias/refSiblingsAlias.json")))
 	})
 
 	t.Run("conditionals that lose nothing stay silent", func(t *testing.T) {
@@ -353,10 +414,10 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 			notEnforced("UnenforcedKeywordsLabels", "patternProperties not checked"),
 			notEnforced("UnenforcedKeywordsMerged", "maxProperties, minProperties not checked"),
 			notEnforced("UnenforcedKeywordsMode", "if/then/else not compiled"),
-			notEnforced("UnenforcedKeywordsRows", "unevaluatedItems not checked"),
+			notEnforced("UnenforcedKeywordsRows", "unevaluatedItems (not in draft-07) not checked"),
 			notEnforced("UnenforcedKeywordsShape", "minProperties not checked"),
-			notEnforced("UnenforcedKeywordsShipping", "dependentRequired, dependentSchemas not checked"),
-			notEnforced("UnenforcedKeywordsStrict", "unevaluatedProperties not checked"),
+			notEnforced("UnenforcedKeywordsShipping", "dependentSchemas not checked"),
+			notEnforced("UnenforcedKeywordsStrict", "unevaluatedProperties (not in draft-07) not checked"),
 			notEnforced("UnenforcedKeywordsTags", "contains, maxContains, minContains not checked"),
 		}, filterFidelityWarnings(generateWithWarnerCapture(t, schema)))
 

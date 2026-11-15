@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/allOfNots",
+  "description": "Two exclusions, written as an allOf of nots; the third not forbids a value, which no check compiles.",
+  "type": "object",
+  "properties": {
+    "a": {
+      "type": "string"
+    },
+    "b": {
+      "type": "string"
+    },
+    "c": {
+      "type": "string"
+    },
+    "d": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "not": {
+        "required": [
+          "a",
+          "b"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "c",
+          "d"
+        ]
+      }
+    },
+    {
+      "not": {
+        "properties": {
+          "mode": {
+            "const": "off"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      }
+    }
+  ]
+}

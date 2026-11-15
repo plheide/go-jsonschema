@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/narrowedConst",
+  "description": "A then narrows unit with a const and the else with an enum. kind is optional and the if does not require it, so the then applies where kind is absent.",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "time",
+        "length"
+      ]
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "s",
+        "ms",
+        "m",
+        "km"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "time"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "unit": {
+            "const": "s"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "unit": {
+            "type": "string",
+            "enum": [
+              "m",
+              "km"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

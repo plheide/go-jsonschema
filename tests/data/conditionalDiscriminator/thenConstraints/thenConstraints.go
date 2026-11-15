@@ -11,8 +11,8 @@ import "reflect"
 import "strconv"
 import "strings"
 
-// The then branch also bounds x, which the validator would not enforce, so
-// detection declines with a warning.
+// The then branch also bounds x, which the validator does not check: it checks
+// that x is present, and a warning reports the bound.
 type ThenConstraints struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind ThenConstraintsKind `json:"kind" yaml:"kind" mapstructure:"kind"`
@@ -80,6 +80,18 @@ func (j *ThenConstraints) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in ThenConstraints: required")
 	}
+	rawDisc, hasDisc := raw["kind"]
+	if hasDisc {
+		discStr, isStr := rawDisc.(string)
+		if !isStr {
+			return fmt.Errorf("field kind in ThenConstraints: must be a string for discriminator dispatch")
+		}
+		if discStr == "a" {
+			if _, ok := raw["x"]; !ok {
+				return fmt.Errorf("field x in ThenConstraints (when kind='a'): required")
+			}
+		}
+	}
 	type Plain ThenConstraints
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -101,6 +113,18 @@ func (j *ThenConstraints) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in ThenConstraints: required")
+	}
+	rawDisc, hasDisc := raw["kind"]
+	if hasDisc {
+		discStr, isStr := rawDisc.(string)
+		if !isStr {
+			return fmt.Errorf("field kind in ThenConstraints: must be a string for discriminator dispatch")
+		}
+		if discStr == "a" {
+			if _, ok := raw["x"]; !ok {
+				return fmt.Errorf("field x in ThenConstraints (when kind='a'): required")
+			}
+		}
 	}
 	type Plain ThenConstraints
 	var plain Plain
