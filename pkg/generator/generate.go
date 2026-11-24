@@ -182,10 +182,8 @@ func New(config Config) (*Generator, error) {
 // generateReferencedType) — otherwise the dup check mis-categorizes and two
 // imports for the same package end up emitted.
 func (g *Generator) resolveImportAlias(qualifiedName string) string {
-	for _, m := range g.config.SchemaMappings {
-		if m.PackageName == qualifiedName && m.ImportAlias != "" {
-			return m.ImportAlias
-		}
+	if alias := g.importAliasOf(qualifiedName); alias != "" {
+		return alias
 	}
 
 	if i := strings.LastIndex(qualifiedName, "/"); i != -1 && i < len(qualifiedName)-1 {
@@ -193,6 +191,18 @@ func (g *Generator) resolveImportAlias(qualifiedName string) string {
 	}
 
 	return qualifiedName
+}
+
+// importAliasOf returns the ImportAlias a SchemaMapping gives the package, or "" when none gives it one. New()
+// rejects two different aliases for one package, so the first one found is the only one.
+func (g *Generator) importAliasOf(qualifiedName string) string {
+	for _, m := range g.config.SchemaMappings {
+		if m.PackageName == qualifiedName && m.ImportAlias != "" {
+			return m.ImportAlias
+		}
+	}
+
+	return ""
 }
 
 func (g *Generator) Sources() (map[string][]byte, error) {
@@ -307,19 +317,23 @@ func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
 		return o, nil
 	}
 
+	// Every file of a package declares the name the package is imported by: the alias a mapping gives it, if any,
+	// so `import headerv1 "…/header/v1"` meets `package headerv1`, also in a file whose own mapping has no alias.
 	for _, m := range g.config.SchemaMappings {
 		if m.SchemaID == id {
-			return g.beginOutput(id, m.OutputName, m.PackageName)
+			return g.beginOutput(id, m.OutputName, m.PackageName, g.importAliasOf(m.PackageName))
 		}
 	}
 
-	return g.beginOutput(id, g.config.DefaultOutputName, g.config.DefaultPackageName)
+	return g.beginOutput(id, g.config.DefaultOutputName, g.config.DefaultPackageName,
+		g.importAliasOf(g.config.DefaultPackageName))
 }
 
 func (g *Generator) beginOutput(
 	id string,
 	outputName,
-	packageName string,
+	packageName,
+	declaredName string,
 ) (*output, error) {
 	if packageName == "" {
 		return nil, fmt.Errorf("%w: %q", errMapURIToPackageName, id)
@@ -340,6 +354,7 @@ func (g *Generator) beginOutput(
 
 	pkg := codegen.Package{
 		QualifiedName: packageName,
+		DeclaredName:  declaredName,
 	}
 
 	output := &output{
@@ -411,9 +426,13 @@ func (g *Generator) renameConstantsShadowingImports(o *output) {
 // IsValidImportAlias reports whether alias can name an import in generated
 // code: a Go identifier, other than a keyword, the blank identifier `_` (a
 // blank import cannot be referred to) and `init` (which Go reserves for
-// functions).
+// functions). The alias is also the name the package's own files declare, so
+// `main` and `documentation` are refused too: a package named main is a
+// program, which can't be imported, and the go command skips the files of a
+// package named documentation.
 func IsValidImportAlias(alias string) bool {
-	return token.IsIdentifier(alias) && !token.IsKeyword(alias) && alias != "_" && alias != "init"
+	return token.IsIdentifier(alias) && !token.IsKeyword(alias) &&
+		alias != "_" && alias != "init" && alias != "main" && alias != "documentation"
 }
 
 // importNameCollision returns two import paths that Go would bind to the same

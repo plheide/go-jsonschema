@@ -43,9 +43,12 @@ func (p *File) Generate(out *Emitter) error {
 // Package is a "package <name>; <body>".
 type Package struct {
 	QualifiedName string
-	Comment       string
-	Decls         []Decl
-	Imports       []Import
+	// DeclaredName is the name the package clause declares. When empty, it is the last segment of
+	// QualifiedName.
+	DeclaredName string
+	Comment      string
+	Decls        []Decl
+	Imports      []Import
 }
 
 func (p *Package) AddDecl(d Decl) {
@@ -91,6 +94,10 @@ func (p *Package) hasImport(q string) bool {
 }
 
 func (p *Package) Name() string {
+	if p.DeclaredName != "" {
+		return p.DeclaredName
+	}
+
 	s := p.QualifiedName
 	if i := strings.LastIndex(s, "/"); i != -1 && i < len(s)-1 {
 		return s[i+1:]

@@ -78,7 +78,8 @@ var (
 		"--strict-additional-properties: invalid mode (expected one of: off, respect-schema, strict)",
 	)
 	errInvalidImportAlias = errors.New(
-		"--schema-package: text after the final ':' must be a valid Go identifier" +
+		"--schema-package: text after the final ':' must be a Go identifier" +
+			" other than a keyword, _, init, main or documentation" +
 			" (use the library API if your package path legitimately contains ':')",
 	)
 	errKnownSchemaLoad      = errors.New("--known-schema: failed to load file")
@@ -263,9 +264,11 @@ func main() {
 	rootCmd.PersistentFlags().StringSliceVar(&schemaPackages, "schema-package", nil,
 		`Name of package to declare Go files for a specific schema ID under;
 must be in the format URI=PACKAGE or URI=PACKAGE:ALIAS. The optional :ALIAS
-suffix overrides the import alias used in generated code (defaults to the
-package path's last segment); set it when two referenced packages share a
-last segment (e.g. both end in /v1) to avoid an import-alias collision.`)
+suffix overrides the import alias used in generated code and the package name
+that every file generated into the package declares, those of mappings of the
+same package without an alias included (both default to the package path's
+last segment); set it when two referenced packages share a last segment (e.g.
+both end in /v1) to avoid an import-alias collision.`)
 	rootCmd.PersistentFlags().StringSliceVar(&knownSchemas, "known-schema", nil,
 		`Pre-populate the loader cache from a local file so that any $ref to URL
 resolves to the file's contents without an HTTP fetch (or, for URLs with
@@ -530,7 +533,7 @@ func loadKnownSchemas(entries, yamlExtensions []string) (map[string]*schemas.Sch
 
 // splitPackageAlias parses the value side of a --schema-package mapping.
 // Grammar: PACKAGE[:ALIAS] (split on the LAST colon). When the suffix is
-// present, it must be a valid non-keyword Go identifier; otherwise the
+// present, it must pass generator.IsValidImportAlias; otherwise the
 // caller gets errInvalidImportAlias and is told to use the library API
 // for the rare case of a package path that legitimately contains ':'.
 // When no colon is present, alias is empty and the entire input is the

@@ -63,6 +63,9 @@ Not offered upstream yet:
   * checking an object's own `not` of `required`, and the `not`s of its `allOf`;
   * checking `dependentRequired` and draft-07's lists of property `dependencies`, each in the drafts that define it;
   * warning about keywords beside a `$ref` from 2019-09 on, and naming the draft that lacks a keyword;
+* the changes made on `main` for v0.31.0:
+  * declaring a package by the `:ALIAS` that `--schema-package` gives it, in every file generated into it, so that a
+    package's own files name it as the files that import it do, and refusing `main` and `documentation` as aliases;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

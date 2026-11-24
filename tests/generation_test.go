@@ -423,12 +423,97 @@ func TestSchemaPackageWithAlias(t *testing.T) {
 	testExampleFile(t, cfg, "./data/schemaPackageAlias/consumer/consumer.json")
 }
 
+// TestSchemaPackageDeclaresImportAlias: every file generated into a package
+// declares the alias a mapping gives the package, as the files that import it
+// name it, also where the file's own mapping has no alias or the package is
+// the default one. Otherwise one directory would hold `package headerv1` and
+// `package v1`.
+func TestSchemaPackageDeclaresImportAlias(t *testing.T) {
+	t.Parallel()
+
+	const headerPackage = "github.com/plheide/go-jsonschema/tests/data/schemaPackageAlias/header/v1"
+
+	headerMapping := generator.SchemaMapping{
+		SchemaID:    "https://example.com/header",
+		PackageName: headerPackage,
+		OutputName:  "../header/v1/header.go",
+		ImportAlias: "headerv1",
+	}
+
+	for _, tc := range []struct {
+		name           string
+		jobs           generator.SchemaMapping
+		defaultPackage string
+		declaring      []string
+		importing      string
+	}{
+		{
+			name: "a mapping without an alias",
+			jobs: generator.SchemaMapping{
+				SchemaID:    "https://example.com/jobs",
+				PackageName: headerPackage,
+				OutputName:  "../header/v1/jobs.go",
+			},
+			declaring: []string{"../header/v1/header.go", "../header/v1/jobs.go"},
+			importing: "-",
+		},
+		{
+			name: "the default package",
+			jobs: generator.SchemaMapping{
+				SchemaID:    "https://example.com/jobs",
+				PackageName: "github.com/plheide/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
+				OutputName:  "../jobs/v1/jobs.go",
+				ImportAlias: "jobsv1",
+			},
+			defaultPackage: headerPackage,
+			declaring:      []string{"../header/v1/header.go", "-"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := basicConfig
+			cfg.SchemaMappings = []generator.SchemaMapping{headerMapping, tc.jobs}
+
+			if tc.defaultPackage != "" {
+				cfg.DefaultPackageName = tc.defaultPackage
+			}
+
+			g, err := generator.New(cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := g.DoFile("./data/schemaPackageAlias/consumer/consumer.json"); err != nil {
+				t.Fatal(err)
+			}
+
+			sources, err := g.Sources()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for _, name := range tc.declaring {
+				if !strings.Contains(string(sources[name]), "\npackage headerv1\n") {
+					t.Errorf("%s does not declare package headerv1:\n%s", name, sources[name])
+				}
+			}
+
+			if tc.importing != "" && !strings.Contains(string(sources[tc.importing]), `headerv1 "`+headerPackage+`"`) {
+				t.Errorf("%s does not import %s as headerv1:\n%s", tc.importing, headerPackage, sources[tc.importing])
+			}
+		})
+	}
+}
+
 func TestSchemaPackageRejectsInvalidImportAlias(t *testing.T) {
 	t.Parallel()
 
-	// "1bad" is not a Go identifier. "_" and "init" are, but a blank import
-	// cannot be referred to and Go reserves init for functions.
-	for _, alias := range []string{"1bad", "_", "init"} {
+	// "1bad" is not a Go identifier. "_", "init", "main" and "documentation"
+	// are, but a blank import cannot be referred to, Go reserves init for
+	// functions, and the package would declare itself main, which can't be
+	// imported, or documentation, whose files the go command skips.
+	for _, alias := range []string{"1bad", "_", "init", "main", "documentation"} {
 		t.Run(alias, func(t *testing.T) {
 			t.Parallel()
 

@@ -155,7 +155,8 @@ var ErrInvalidStrictAdditionalPropertiesMode = errors.New(
 // that cannot name an import (see IsValidImportAlias). Caught at startup so a
 // typo (e.g. "v 1") doesn't silently propagate into broken `import` statements.
 var ErrInvalidImportAlias = errors.New(
-	"invalid ImportAlias on SchemaMapping (must be a Go identifier other than a keyword, _ or init)",
+	"invalid ImportAlias on SchemaMapping" +
+		" (must be a Go identifier other than a keyword, _, init, main or documentation)",
 )
 
 // ErrConflictingImportAlias is returned when two SchemaMappings declare the
@@ -257,10 +258,13 @@ type SchemaMapping struct {
 	RootType    string
 	OutputName  string
 	// ImportAlias overrides the import alias used in generated code for this
-	// mapping's PackageName. When empty, the alias is derived from the last
-	// path segment via Package.Name() (the historical behavior). Set this when
-	// two mapped packages share a last path segment (e.g. both end in "/v1")
-	// to avoid an `import v1 "..." / import v1 "..."` collision.
+	// mapping's PackageName, and is the name every file generated into that
+	// package declares, those of mappings without an alias included, so the
+	// two agree. When no mapping of the package sets one, both are derived
+	// from the last path segment via Package.Name() (the historical behavior).
+	// Set this when two mapped packages share a last path segment (e.g. both
+	// end in "/v1") to avoid an `import v1 "..." / import v1 "..."` collision,
+	// or when the package's name should differ from its directory's.
 	ImportAlias string
 }
 
