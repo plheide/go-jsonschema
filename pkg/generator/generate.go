@@ -426,9 +426,13 @@ func (g *Generator) renameConstantsShadowingImports(o *output) {
 // IsValidImportAlias reports whether alias can name an import in generated
 // code: a Go identifier, other than a keyword, the blank identifier `_` (a
 // blank import cannot be referred to) and `init` (which Go reserves for
-// functions).
+// functions). The alias is also the name the package's own files declare, so
+// `main` and `documentation` are refused too: a package named main is a
+// program, which can't be imported, and the go command skips the files of a
+// package named documentation.
 func IsValidImportAlias(alias string) bool {
-	return token.IsIdentifier(alias) && !token.IsKeyword(alias) && alias != "_" && alias != "init"
+	return token.IsIdentifier(alias) && !token.IsKeyword(alias) &&
+		alias != "_" && alias != "init" && alias != "main" && alias != "documentation"
 }
 
 // importNameCollision returns two import paths that Go would bind to the same

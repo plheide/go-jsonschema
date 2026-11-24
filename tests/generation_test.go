@@ -509,9 +509,11 @@ func TestSchemaPackageDeclaresImportAlias(t *testing.T) {
 func TestSchemaPackageRejectsInvalidImportAlias(t *testing.T) {
 	t.Parallel()
 
-	// "1bad" is not a Go identifier. "_" and "init" are, but a blank import
-	// cannot be referred to and Go reserves init for functions.
-	for _, alias := range []string{"1bad", "_", "init"} {
+	// "1bad" is not a Go identifier. "_", "init", "main" and "documentation"
+	// are, but a blank import cannot be referred to, Go reserves init for
+	// functions, and the package would declare itself main, which can't be
+	// imported, or documentation, whose files the go command skips.
+	for _, alias := range []string{"1bad", "_", "init", "main", "documentation"} {
 		t.Run(alias, func(t *testing.T) {
 			t.Parallel()
 

@@ -117,9 +117,9 @@ the name that every file generated into the package declares, so a package
 generated in the same run is declared as `package headerv1` where it is
 imported as `headerv1`. Set it when two referenced packages share a last
 segment (e.g. both end in `/v1`) so the generated file doesn't get an
-`import v1 "..."` collision. The alias
-must be a valid non-keyword Go identifier; the parser splits the value on
-the **last** colon. Library callers can set the same overrides via
+`import v1 "..."` collision. The alias must be a Go identifier other than
+a keyword, `_`, `init`, `main` or `documentation`; the parser splits the
+value on the **last** colon. Library callers can set the same overrides via
 `generator.Config.Cache` and `generator.SchemaMapping.ImportAlias`.
 
 ### Regenerating tests' golden files

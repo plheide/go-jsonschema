@@ -78,7 +78,8 @@ var (
 		"--strict-additional-properties: invalid mode (expected one of: off, respect-schema, strict)",
 	)
 	errInvalidImportAlias = errors.New(
-		"--schema-package: text after the final ':' must be a valid Go identifier" +
+		"--schema-package: text after the final ':' must be a Go identifier" +
+			" other than a keyword, _, init, main or documentation" +
 			" (use the library API if your package path legitimately contains ':')",
 	)
 	errKnownSchemaLoad      = errors.New("--known-schema: failed to load file")
@@ -531,7 +532,7 @@ func loadKnownSchemas(entries, yamlExtensions []string) (map[string]*schemas.Sch
 
 // splitPackageAlias parses the value side of a --schema-package mapping.
 // Grammar: PACKAGE[:ALIAS] (split on the LAST colon). When the suffix is
-// present, it must be a valid non-keyword Go identifier; otherwise the
+// present, it must pass generator.IsValidImportAlias; otherwise the
 // caller gets errInvalidImportAlias and is told to use the library API
 // for the rare case of a package path that legitimately contains ':'.
 // When no colon is present, alias is empty and the entire input is the

@@ -155,7 +155,8 @@ var ErrInvalidStrictAdditionalPropertiesMode = errors.New(
 // that cannot name an import (see IsValidImportAlias). Caught at startup so a
 // typo (e.g. "v 1") doesn't silently propagate into broken `import` statements.
 var ErrInvalidImportAlias = errors.New(
-	"invalid ImportAlias on SchemaMapping (must be a Go identifier other than a keyword, _ or init)",
+	"invalid ImportAlias on SchemaMapping" +
+		" (must be a Go identifier other than a keyword, _, init, main or documentation)",
 )
 
 // ErrConflictingImportAlias is returned when two SchemaMappings declare the
