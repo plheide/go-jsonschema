@@ -257,10 +257,13 @@ type SchemaMapping struct {
 	RootType    string
 	OutputName  string
 	// ImportAlias overrides the import alias used in generated code for this
-	// mapping's PackageName. When empty, the alias is derived from the last
-	// path segment via Package.Name() (the historical behavior). Set this when
-	// two mapped packages share a last path segment (e.g. both end in "/v1")
-	// to avoid an `import v1 "..." / import v1 "..."` collision.
+	// mapping's PackageName, and is the name every file generated into that
+	// package declares, those of mappings without an alias included, so the
+	// two agree. When no mapping of the package sets one, both are derived
+	// from the last path segment via Package.Name() (the historical behavior).
+	// Set this when two mapped packages share a last path segment (e.g. both
+	// end in "/v1") to avoid an `import v1 "..." / import v1 "..."` collision,
+	// or when the package's name should differ from its directory's.
 	ImportAlias string
 }
 
