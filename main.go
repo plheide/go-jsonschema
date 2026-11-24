@@ -265,9 +265,10 @@ func main() {
 		`Name of package to declare Go files for a specific schema ID under;
 must be in the format URI=PACKAGE or URI=PACKAGE:ALIAS. The optional :ALIAS
 suffix overrides the import alias used in generated code and the package name
-the files generated into the package declare (both default to the package
-path's last segment); set it when two referenced packages share a last segment
-(e.g. both end in /v1) to avoid an import-alias collision.`)
+that every file generated into the package declares, those of mappings of the
+same package without an alias included (both default to the package path's
+last segment); set it when two referenced packages share a last segment (e.g.
+both end in /v1) to avoid an import-alias collision.`)
 	rootCmd.PersistentFlags().StringSliceVar(&knownSchemas, "known-schema", nil,
 		`Pre-populate the loader cache from a local file so that any $ref to URL
 resolves to the file's contents without an HTTP fetch (or, for URLs with
