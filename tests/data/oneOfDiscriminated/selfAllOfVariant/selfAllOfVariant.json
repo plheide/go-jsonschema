@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/selfAllOfVariant",
+  "description": "A variant whose allOf names itself has no merge to read, so neither discriminator detection nor try-each takes the oneOf, which stays interface{}. Reading it used to recurse until the stack ran out.",
+  "type": "object",
+  "$defs": {
+    "Looped": {
+      "type": "object",
+      "properties": { "loop": { "type": "string" } },
+      "allOf": [{ "$ref": "#/$defs/Looped" }]
+    },
+    "Plain": {
+      "type": "object",
+      "properties": { "plain": { "type": "string" } },
+      "required": ["plain"]
+    }
+  },
+  "properties": {
+    "either": { "oneOf": [{ "$ref": "#/$defs/Plain" }, { "$ref": "#/$defs/Looped" }] }
+  }
+}

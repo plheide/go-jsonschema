@@ -431,13 +431,16 @@ func unenforcedKeywords(t *schemas.Type) []string {
 
 // constrains reports whether s is present and may reject a value: a schema
 // that declares nothing but annotations, such as a default, readOnly or x-
-// extensions, admits every value.
+// extensions, admits every value. What the generator records on a schema, that
+// a $ref led to it or that it is a copy it generates from, rejects nothing
+// either.
 func constrains(s *schemas.Type) bool {
 	if s == nil {
 		return false
 	}
 
-	rest := *s
+	rest := *s.WithoutMarks()
+	rest.Dereferenced = false
 	rest.Default, rest.ReadOnly, rest.Version = nil, false, ""
 	rest.Definitions, rest.Extensions, rest.XEnumVarnames = nil, nil, nil
 

@@ -47,6 +47,9 @@ type Generator struct {
 	// anyOfBranches holds the copies generateAnyOfType reads anyOf branches
 	// as, by branch and types.
 	anyOfBranches map[anyOfBranchKey]*schemas.Type
+	// enumUnions holds, for each anyOf or oneOf schema asEnumUnion has read,
+	// the enum it is generated as, or nil for one that is no enum union.
+	enumUnions map[*schemas.Type]*schemas.Type
 	// resolvingRefs holds the $ref schemas alreadyDeclaredType is resolving in
 	// place of their placeholder declarations.
 	resolvingRefs map[*schemas.Type]struct{}
@@ -139,6 +142,7 @@ func New(config Config) (*Generator, error) {
 		inScope:                map[qualifiedDefinition]struct{}{},
 		mergingAllOf:           map[*schemas.Type]*schemas.Type{},
 		anyOfBranches:          map[anyOfBranchKey]*schemas.Type{},
+		enumUnions:             map[*schemas.Type]*schemas.Type{},
 		resolvingRefs:          map[*schemas.Type]struct{}{},
 		reportedConditionals:   map[*schemas.Type]struct{}{},
 		reportedKeywords:       map[*schemas.Type]struct{}{},
@@ -340,16 +344,25 @@ func (g *Generator) beginOutput(
 	}
 
 	for _, o := range g.outputs {
-		if o.file.FileName == outputName && o.file.Package.QualifiedName != packageName {
-			return nil, fmt.Errorf(
-				"%w (%s) mapped to two different Go packages (%q and %q) for schema %q",
-				errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id,
-			)
+		if o.file.FileName != outputName {
+			continue
 		}
 
-		if o.file.FileName == outputName && o.file.Package.QualifiedName == packageName {
+		if o.file.Package.QualifiedName == packageName {
 			return o, nil
 		}
+
+		// An output with no name is written nowhere, for a package another run
+		// writes: each such package has one of its own, which two packages
+		// cannot conflict over.
+		if outputName == "" {
+			continue
+		}
+
+		return nil, fmt.Errorf(
+			"%w (%s) mapped to two different Go packages (%q and %q) for schema %q",
+			errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id,
+		)
 	}
 
 	pkg := codegen.Package{

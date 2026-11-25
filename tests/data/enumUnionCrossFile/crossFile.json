@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "The branches of an enum union may $ref another file: the enum is this file's, and the other file's types are not used, so none is generated.",
+  "properties": {
+    "level": { "anyOf": [{ "$ref": "levels.json#/$defs/Alert" }, { "$ref": "levels.json#/$defs/Notice" }] }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "An anyOf of $refs to string enums admits the strings either lists, so it is one enum of them: inline, as level and the items of levels, declared, as Severity, and with a type of string of its own, as typed.",
+  "$defs": {
+    "Alert": { "type": "string", "enum": ["warning", "error"] },
+    "Notice": { "type": "string", "enum": ["info", "debug"] },
+    "Severity": {
+      "description": "How much a message matters.",
+      "anyOf": [{ "$ref": "#/$defs/Alert" }, { "$ref": "#/$defs/Notice" }]
+    }
+  },
+  "properties": {
+    "level": { "anyOf": [{ "$ref": "#/$defs/Alert" }, { "$ref": "#/$defs/Notice" }] },
+    "levels": {
+      "type": "array",
+      "items": { "anyOf": [{ "$ref": "#/$defs/Alert" }, { "$ref": "#/$defs/Notice" }] }
+    },
+    "severity": { "$ref": "#/$defs/Severity" },
+    "typed": { "type": "string", "anyOf": [{ "$ref": "#/$defs/Alert" }, { "const": "trace" }] }
+  },
+  "required": ["level"]
+}

@@ -143,6 +143,50 @@ func TestSplitPackageAlias(t *testing.T) {
 	}
 }
 
+// TestSchemaMappings: a schema named by --schema-package, --schema-output or
+// --schema-root-type gets the defaults for what the others don't say, and an
+// empty --schema-output writes it nowhere, for a package another run writes.
+func TestSchemaMappings(t *testing.T) {
+	t.Parallel()
+
+	got, err := schemaMappings(
+		map[string]string{
+			"https://example.com/common": "example.com/common/v1:commonv1",
+			"https://example.com/run":    "example.com/run/v1",
+		},
+		map[string]string{
+			"https://example.com/common": "",
+			"https://example.com/run":    "run/v1/types.go",
+			"https://example.com/output": "elsewhere.go",
+		},
+		map[string]string{"https://example.com/root": "Root"},
+		"example.com/main", "-",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/common",
+			PackageName: "example.com/common/v1",
+			ImportAlias: "commonv1",
+		},
+		{SchemaID: "https://example.com/output", PackageName: "example.com/main", OutputName: "elsewhere.go"},
+		{SchemaID: "https://example.com/root", PackageName: "example.com/main", OutputName: "-", RootType: "Root"},
+		{SchemaID: "https://example.com/run", PackageName: "example.com/run/v1", OutputName: "run/v1/types.go"},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+
+	_, err = schemaMappings(map[string]string{"x": "example.com/x:main"}, nil, nil, "p", "-")
+	if !errors.Is(err, errInvalidImportAlias) {
+		t.Fatalf("expected error wrapping %v, got %v", errInvalidImportAlias, err)
+	}
+}
+
 func TestLoadKnownSchemas(t *testing.T) {
 	t.Parallel()
 

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/refAllOfVariant",
+  "description": "A variant named by a $ref to an allOf, closed with unevaluatedProperties, is tried as its merge: its shape has the properties of every branch.",
+  "type": "object",
+  "$defs": {
+    "Identity": {
+      "type": "object",
+      "properties": { "name": { "type": "string" }, "unit": { "type": "string" } },
+      "required": ["name"]
+    },
+    "Fixed": {
+      "type": "object",
+      "properties": { "value": { "type": "number" } },
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "Measured": {
+      "allOf": [
+        { "$ref": "#/$defs/Identity" },
+        { "properties": { "sensor": { "type": "string" } }, "required": ["sensor"] }
+      ],
+      "unevaluatedProperties": false
+    },
+    "Source": { "oneOf": [{ "$ref": "#/$defs/Fixed" }, { "$ref": "#/$defs/Measured" }] }
+  },
+  "properties": {
+    "source": { "$ref": "#/$defs/Source" }
+  }
+}

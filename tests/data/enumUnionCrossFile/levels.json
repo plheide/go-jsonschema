@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/levels",
+  "$defs": {
+    "Alert": { "type": "string", "enum": ["warning", "error"] },
+    "Notice": { "type": "string", "enum": ["info", "debug"] }
+  }
+}

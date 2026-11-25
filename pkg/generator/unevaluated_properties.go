@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/plheide/go-jsonschema/pkg/schemas"
@@ -84,14 +85,17 @@ func (g *schemaGenerator) declaredVersion(s *schemas.Type) string {
 // unevaluatedProperties, and each of its allOf branches, at every depth,
 // evaluate only the properties they declare.
 //
-// A keyword that evaluates properties depending on the value does not: anyOf,
-// oneOf, not, if/then/else and dependentSchemas. Nor does one that evaluates
-// every property, additionalProperties and patternProperties, or a branch's own
-// unevaluatedProperties, which sees only the branch's. A $ref branch is
-// followed into the document that holds it, doc of the file docFile. Beside a
-// $ref, generation ignores other keywords, which from draft 2019-09 on apply as
-// well, and may evaluate properties the struct has no field for, such as
-// additionalProperties: true. So a $ref with any keyword beside it but
+// A keyword whose subschemas evaluate properties depending on the value does
+// not: anyOf, oneOf, if/then/else and dependentSchemas, unless none of their
+// subschemas evaluates a property at all, as branches that only list required
+// don't (evaluatesNoProperty). A not never evaluates one: its subschema must
+// fail, and a subschema that fails keeps no annotation. Nor does a keyword that
+// evaluates every property, additionalProperties and patternProperties, or a
+// branch's own unevaluatedProperties, which sees only the branch's. A $ref
+// branch is followed into the document that holds it, doc of the file docFile.
+// Beside a $ref, generation ignores other keywords, which from draft 2019-09 on
+// apply as well, and may evaluate properties the struct has no field for, such
+// as additionalProperties: true. So a $ref with any keyword beside it but
 // annotations, the root's included, leaves the properties unknown.
 func (g *schemaGenerator) evaluatesStatically(
 	s *schemas.Type,
@@ -123,14 +127,79 @@ func (g *schemaGenerator) evaluatesStatically(
 	visited[s] = true
 
 	if s.AdditionalProperties != nil || len(s.PatternProperties) > 0 ||
-		len(s.AnyOf) > 0 || len(s.OneOf) > 0 || s.Not != nil ||
-		s.If != nil || s.Then != nil || s.Else != nil || len(s.DependentSchemas) > 0 ||
 		(!root && s.UnevaluatedProperties != nil) {
 		return false
 	}
 
+	for _, sub := range valueDependentSubschemas(s) {
+		if !g.evaluatesNoProperty(sub, doc, docFile, map[*schemas.Type]bool{}) {
+			return false
+		}
+	}
+
 	for _, branch := range s.AllOf {
 		if !g.evaluatesStatically(branch, doc, docFile, false, visited) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// valueDependentSubschemas returns the subschemas of s that apply depending on
+// the value: those of its anyOf, oneOf, if, then, else and dependentSchemas,
+// nil ones among them. A not's is left out, as it keeps no annotation.
+func valueDependentSubschemas(s *schemas.Type) []*schemas.Type {
+	subschemas := slices.Concat(s.AnyOf, s.OneOf, []*schemas.Type{s.If, s.Then, s.Else})
+
+	for _, name := range sortedKeys(s.DependentSchemas) {
+		subschemas = append(subschemas, s.DependentSchemas[name])
+	}
+
+	return subschemas
+}
+
+// evaluatesNoProperty reports whether sub evaluates no property, whatever the
+// value: neither it nor, at any depth, its allOf and the subschemas
+// valueDependentSubschemas returns declare properties, patternProperties,
+// additionalProperties or unevaluatedProperties. Its $refs are followed as
+// evaluatesStatically follows them, from doc of the file docFile, and its not
+// is left out. A nil sub evaluates none.
+func (g *schemaGenerator) evaluatesNoProperty(
+	sub *schemas.Type,
+	doc *schemas.Schema,
+	docFile string,
+	visited map[*schemas.Type]bool,
+) bool {
+	if sub == nil {
+		return true
+	}
+
+	for hops := 0; sub.Ref != ""; hops++ {
+		var ok bool
+
+		if hops == maxNullCheckRefHops || hasRefSiblings(sub) {
+			return false
+		}
+
+		if sub, doc, docFile, ok = g.refTargetIn(sub, doc, docFile); !ok {
+			return false
+		}
+	}
+
+	if visited[sub] {
+		return true
+	}
+
+	visited[sub] = true
+
+	if len(sub.Properties) > 0 || len(sub.PatternProperties) > 0 ||
+		sub.AdditionalProperties != nil || sub.UnevaluatedProperties != nil {
+		return false
+	}
+
+	for _, nested := range slices.Concat(sub.AllOf, valueDependentSubschemas(sub)) {
+		if !g.evaluatesNoProperty(nested, doc, docFile, visited) {
 			return false
 		}
 	}

@@ -413,6 +413,17 @@ func (value *Type) SetSubSchemaTypeElem() {
 	value.subSchemaTypeElem = true
 }
 
+// WithoutMarks returns a copy of value without the marks that SetSubSchemaType,
+// SetSubSchemasCount and SetSubSchemaTypeElem leave, so that comparing the copy
+// compares the keywords the schema declares. A generator marks the copies it
+// generates from, such as the variants of a oneOf, and a mark is no keyword.
+func (value *Type) WithoutMarks() *Type {
+	c := *value
+	c.subSchemaType, c.subSchemasCount, c.subSchemaTypeElem = "", 0, false
+
+	return &c
+}
+
 func (value *Type) ConvertAllRefs(absolutePath string) error {
 	val := reflect.ValueOf(value).Elem()
 
@@ -874,6 +885,26 @@ func extractExtensions(raw []byte) map[string]any {
 
 func AllOf(types []*Type, baseType *Type) (*Type, error) {
 	typ, err := MergeTypes(types, baseType)
+	if err != nil {
+		return nil, err
+	}
+
+	typ.subSchemaType = SubSchemaTypeAllOf
+
+	return typ, nil
+}
+
+// AllOfIsolated merges types into baseType as AllOf does, but on copies, so it
+// changes none of the schemas it reads: AllOf writes the keywords of a
+// property that two of them declare into the schema of the first, which other
+// schemas can share. It suits reading what an allOf declares without
+// generating it.
+func AllOfIsolated(types []*Type, baseType *Type) (*Type, error) {
+	if len(types) == 0 {
+		return nil, ErrEmptyTypesList
+	}
+
+	typ, err := mergeIsolated(types, baseType)
 	if err != nil {
 		return nil, err
 	}

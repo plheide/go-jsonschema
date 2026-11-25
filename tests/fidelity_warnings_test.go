@@ -366,6 +366,10 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 			"./data/fidelityWarnings/refSiblingsDraft07/refSiblingsDraft07.json")),
 			"draft-07 ignores the keywords beside a $ref, as the generated type does")
 
+		assert.Empty(t, filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/refVariants/refVariants.json")),
+			"a oneOf's variants are copies of bare $refs, and what marks a copy is no keyword beside its $ref")
+
 		// A wrapper of one $ref that becomes an alias of the target is reported as well.
 		cfg := basicConfig
 		cfg.AliasSingleAllOfAnyOfRefs = true

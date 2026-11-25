@@ -66,6 +66,17 @@ Not offered upstream yet:
 * the changes made on `main` for v0.31.0:
   * declaring a package by the `:ALIAS` that `--schema-package` gives it, in every file generated into it, so that a
     package's own files name it as the files that import it do, and refusing `main` and `documentation` as aliases;
+* the changes made on `main` for v0.32.0:
+  * generating an `anyOf` or `oneOf` whose branches only list strings, inline or through a `$ref`, as one enum, and
+    checking a conditional that narrows a property through a `$ref` to one, with no warning about keywords beside
+    the `$ref`s of a `oneOf`'s variants;
+  * writing nothing for a schema whose `--schema-output` is empty, for any number of packages that another run
+    writes;
+  * checking `unevaluatedProperties: false` beside an `anyOf`, `oneOf`, conditional or `dependentSchemas` whose
+    subschemas evaluate no property, such as branches that only list `required`, and beside a `not`;
+  * trying each variant of a `oneOf` of objects that `$ref`s name or `allOf`s build, as one of inline objects is,
+    reading a variant closed with `unevaluatedProperties: false` as closed, and trying no `oneOf` with a variant
+    whose type cannot check its `not` or conditional;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

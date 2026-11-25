@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "A branch that admits only null adds null to the enum, which the field holds as nil: in an anyOf, and in a oneOf with one such branch. Two of them in a oneOf both match a null, so twoNulls admits none. A type of string beside the composition rejects null whatever a branch admits, so typedLevel admits none either.",
+  "$defs": {
+    "Alert": { "type": "string", "enum": ["warning", "error"] },
+    "Notice": { "type": "string", "enum": ["info", "debug"] }
+  },
+  "properties": {
+    "anyLevel": { "anyOf": [{ "$ref": "#/$defs/Alert" }, { "$ref": "#/$defs/Notice" }, { "type": "null" }] },
+    "oneLevel": { "oneOf": [{ "$ref": "#/$defs/Alert" }, { "$ref": "#/$defs/Notice" }, { "const": null }] },
+    "twoNulls": {
+      "oneOf": [{ "$ref": "#/$defs/Alert" }, { "$ref": "#/$defs/Notice" }, { "type": "null" }, { "enum": [null] }]
+    },
+    "typedLevel": {
+      "type": "string",
+      "anyOf": [{ "$ref": "#/$defs/Alert" }, { "$ref": "#/$defs/Notice" }, { "type": "null" }]
+    }
+  },
+  "required": ["anyLevel", "oneLevel", "typedLevel"]
+}

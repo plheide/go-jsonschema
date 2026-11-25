@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/variantNot",
+  "description": "Try-each counts the variants whose types decode a value, so it takes a oneOf only where each variant's type checks what can rule the variant out. checked: the not of Unfiled, an object declared on its own, forbids a property, which its struct checks, so the oneOf is tried. inline: a variant written inline is generated as a copy, which checks no not of its own; tried, {\"file\": \"x\"} would match both variants and be rejected as ambiguous. merged: a variant whose allOf merges checks no not beside it either. Neither is tried.",
+  "type": "object",
+  "$defs": {
+    "Filed": {
+      "type": "object",
+      "properties": { "file": { "type": "string" } },
+      "required": ["file"],
+      "additionalProperties": false
+    },
+    "Unfiled": {
+      "type": "object",
+      "properties": { "note": { "type": "string" } },
+      "not": { "required": ["file"] }
+    },
+    "Named": { "type": "object", "properties": { "name": { "type": "string" } } },
+    "Anonymous": {
+      "allOf": [{ "$ref": "#/$defs/Named" }],
+      "not": { "required": ["file"] }
+    }
+  },
+  "properties": {
+    "checked": { "oneOf": [{ "$ref": "#/$defs/Filed" }, { "$ref": "#/$defs/Unfiled" }] },
+    "inline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "file": { "type": "string" } },
+          "required": ["file"],
+          "additionalProperties": false
+        },
+        { "type": "object", "not": { "required": ["file"] } }
+      ]
+    },
+    "merged": { "oneOf": [{ "$ref": "#/$defs/Filed" }, { "$ref": "#/$defs/Anonymous" }] }
+  }
+}

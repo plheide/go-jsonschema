@@ -75,6 +75,8 @@ changes.
    - `oneof_primitive.go`, `oneof_discriminator.go`, `oneof_tryeach.go`: `oneOf` compiled into typed wrappers and
      holders that own their whole decode flow. `conditional_discriminator.go` does the same for the
      `allOf` + `if`/`then[/else]` tagged-union pattern.
+   - `enum_union.go`: an `anyOf` or `oneOf` whose branches only list strings, inline or through a `$ref`, is
+     generated as one enum of the strings it admits, wherever it is generated.
    - `fidelity.go`: warnings when a composition falls back to `interface{}` and drops keywords, and for keywords
      that no generated code checks, such as `minProperties`.
    - `enum_varnames.go`, `extension_tags.go`: `x-enum-varnames` constant names and `x-` extensions as struct tags.

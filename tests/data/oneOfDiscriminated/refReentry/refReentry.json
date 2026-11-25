@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/refReentry",
+  "description": "Choosing how to generate the oneOf entryOrFallback reads its variants without generating them. Generating fallback first would follow its items back to entryOrFallback, still undeclared, and declare that a second time, as EntryOrFallback_1. No strategy compiles this oneOf, whose first variant is a oneOf too, so it stays interface{}, once.",
+  "type": "object",
+  "definitions": {
+    "entry": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+    "fallback": { "type": "array", "items": { "$ref": "#/definitions/entryOrFallback" } },
+    "entryOrFallback": { "oneOf": [{ "$ref": "#/definitions/entry" }, { "$ref": "#/definitions/fallback" }] }
+  },
+  "properties": {
+    "exports": { "$ref": "#/definitions/entryOrFallback" }
+  }
+}

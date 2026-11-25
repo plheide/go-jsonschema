@@ -48,7 +48,8 @@ func (j *Email) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // A oneOf of $refs without a discriminator, under type: object and with no
-// properties of its own. No strategy compiles it, so the type is a map, which
+// properties of its own, whose variants declare patternProperties, which no
+// variant type can hold. No strategy compiles it, so the type is a map, which
 // checks no branch, and the oneOf is reported.
 type OneOfObjectMap map[string]interface{}
 

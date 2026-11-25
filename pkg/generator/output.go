@@ -267,8 +267,16 @@ func (o *output) warnNameCollision(collided bool, scope nameScope, uniqueName st
 		return
 	}
 
-	o.warner(fmt.Sprintf(
-		"Multiple types map to the name %q; declaring duplicate as %q instead",
-		scope.string(), uniqueName,
-	))
+	message := fmt.Sprintf("Multiple types map to the name %q; declaring duplicate as %q instead",
+		scope.string(), uniqueName)
+
+	// A package this run writes no file for is written by another run, whose
+	// names the files here refer to. That run may resolve the collision
+	// otherwise, having generated the package's schemas in another order.
+	if o.file.FileName == "" {
+		message += fmt.Sprintf(". This run writes no file for package %q, so the run that writes it "+
+			"must give the type the same name", o.file.Package.QualifiedName)
+	}
+
+	o.warner(message)
 }
