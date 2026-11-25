@@ -279,10 +279,16 @@ func withParentObjectKeywords(parent, variant *schemas.Type) *schemas.Type {
 // `additionalProperties: false` only narrows the parent's and is kept.
 //
 // exempt names the discriminator property: each variant's const narrows the
-// parent's schema for it rather than replacing it.
+// parent's schema for it rather than replacing it. A variant is read as
+// readVariant reads it: a $ref as the schema it names, and an allOf as the
+// merge of its branches, whose properties the variant declares as well.
 func (g *schemaGenerator) variantRedefinesParent(t *schemas.Type, exempt string) bool {
 	for _, variant := range t.OneOf {
-		if variant.Ref != "" {
+		// A variant readVariant cannot read, such as a $ref with keywords
+		// beside it, is read as before: a $ref as its target.
+		if read, ok := g.readVariant(variant); ok {
+			variant = read
+		} else if variant.Ref != "" {
 			if variant = g.lookupRef(variant); variant == nil {
 				continue
 			}

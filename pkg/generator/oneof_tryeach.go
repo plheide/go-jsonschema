@@ -63,16 +63,17 @@ func isTryEachOneOfCandidate(variants []*schemas.Type) bool {
 	return true
 }
 
-// isTryEachCandidate reports whether the `oneOf` of t qualifies for the
-// try-each fallback in either of its forms: object variants dispatched on the
-// top-level key-set, or array variants dispatched on their element key-sets.
-// Callers should only reach this once detectDiscriminator has declined.
+// isTryEachCandidate reports whether the `oneOf` of t, whose variants
+// tryEachVariants read as variants, qualifies for the try-each fallback in
+// either of its forms: object variants dispatched on the top-level key-set, or
+// array variants dispatched on their element key-sets. Callers should only
+// reach this once detectDiscriminator has declined.
 //
 // A t declaring patternProperties is declined for the same reason as a variant
 // declaring them: oneOfVariantSchema folds t's patterns into every variant. A t
 // declaring its own element schemas is declined too: the holder replaces the
 // field that checked them, and only t's length bounds reach the shape check.
-func isTryEachCandidate(t *schemas.Type) bool {
+func isTryEachCandidate(t *schemas.Type, variants []*schemas.Type) bool {
 	if len(t.PatternProperties) > 0 {
 		return false
 	}
@@ -81,34 +82,151 @@ func isTryEachCandidate(t *schemas.Type) bool {
 		return false
 	}
 
-	return isTryEachOneOfCandidate(t.OneOf) || isTryEachArrayCandidate(t.OneOf)
+	return isTryEachOneOfCandidate(variants) || isTryEachArrayCandidate(variants)
+}
+
+// tryEachVariants returns the variants of t's oneOf as try-each reads them
+// (readVariant). The variants are still generated from t's oneOf as written, a
+// $ref as the type it names. It returns false when a variant cannot be read so,
+// which declines try-each.
+func (g *schemaGenerator) tryEachVariants(t *schemas.Type) ([]*schemas.Type, bool) {
+	variants := make([]*schemas.Type, len(t.OneOf))
+
+	for i, variant := range t.OneOf {
+		read, ok := g.readVariant(variant)
+		if !ok {
+			return nil, false
+		}
+
+		variants[i] = read
+	}
+
+	return variants, true
+}
+
+// readVariant returns a oneOf variant as the choice between strategies reads
+// it: a $ref followed to the schema it names, and an allOf merged into one
+// schema, at every depth, as flattenForDiscriminator merges one. Unlike that,
+// it generates nothing and changes no schema. Deciding on a strategy for the
+// oneOf must not generate a variant's type, which can refer back to the oneOf
+// before the oneOf is declared, and so declare it twice; nor write into a
+// schema that others share, as the merge AllOf does. It returns false for a
+// variant it cannot read so: a nil one, a $ref that leads nowhere or has
+// keywords beside it, and an allOf that does not merge.
+func (g *schemaGenerator) readVariant(variant *schemas.Type) (*schemas.Type, bool) {
+	return g.readVariantIn(variant, g.schema, g.schemaFileName)
+}
+
+// readVariantIn is readVariant for a variant in the document doc of the file
+// docFile, which its $refs are read in.
+func (g *schemaGenerator) readVariantIn(
+	variant *schemas.Type,
+	doc *schemas.Schema,
+	docFile string,
+) (*schemas.Type, bool) {
+	if variant == nil {
+		return nil, false
+	}
+
+	for hops := 0; variant.Ref != ""; hops++ {
+		var ok bool
+
+		if hops == maxNullCheckRefHops || hasRefSiblings(variant) {
+			return nil, false
+		}
+
+		if variant, doc, docFile, ok = g.refTargetIn(variant, doc, docFile); !ok || variant == nil {
+			return nil, false
+		}
+	}
+
+	if len(variant.AllOf) == 0 {
+		return variant, true
+	}
+
+	parts := make([]*schemas.Type, 0, len(variant.AllOf))
+
+	for _, branch := range variant.AllOf {
+		part, ok := g.readVariantIn(branch, doc, docFile)
+		if !ok {
+			return nil, false
+		}
+
+		parts = append(parts, part)
+	}
+
+	merged, err := schemas.AllOfIsolated(parts, variant)
+	if err != nil {
+		return nil, false
+	}
+
+	merged.AllOf = nil
+
+	return merged, true
 }
 
 // useTryEach reports whether t's oneOf gets the try-each holder: it must be a
-// candidate, every variant must generate as a named type, no variant may
-// redefine what t declares (variantRedefinesParent), and its decode must not be
-// able to blow up (tryEachCanBlowUp).
+// candidate, every variant must generate as a named type that checks its own
+// keywords (variantTypeChecksKeywords), no variant may redefine what t declares
+// (variantRedefinesParent), and its decode must not be able to blow up
+// (tryEachCanBlowUp).
 func (g *schemaGenerator) useTryEach(t *schemas.Type) bool {
-	return isTryEachCandidate(t) && !g.variantGeneratesInlineMap(t) &&
-		!g.variantRedefinesParent(t, "") && !g.tryEachCanBlowUp(t)
-}
-
-// variantGeneratesInlineMap reports whether an object variant of t's oneOf has
-// no properties, even with t's folded in, while DisableCustomTypesForMaps is
-// set. Such a variant generates as an inline map rather than a named type, and
-// the holder needs one named type per variant.
-func (g *schemaGenerator) variantGeneratesInlineMap(t *schemas.Type) bool {
-	if !g.config.DisableCustomTypesForMaps || isTryEachArrayCandidate(t.OneOf) {
+	variants, ok := g.tryEachVariants(t)
+	if !ok || !isTryEachCandidate(t, variants) {
 		return false
 	}
 
-	for _, variant := range t.OneOf {
-		if variant.Ref != "" {
-			if variant = g.lookupRef(variant); variant == nil {
-				continue
-			}
+	for i, variant := range variants {
+		if !g.variantTypeChecksKeywords(t.OneOf[i], variant) {
+			return false
 		}
+	}
 
+	return !g.variantGeneratesInlineMap(t, variants) && !g.variantRedefinesParent(t, "") &&
+		!g.tryEachCanBlowUp(t, variants)
+}
+
+// variantTypeChecksKeywords reports whether the type generated for variant, a
+// variant of a oneOf that read is as tryEachVariants reads it, checks the
+// keywords besides its shape and its properties that can make a value fail
+// it. Try-each counts the variants whose types decode a value, so a type that
+// let through a value its variant rejects could make a valid value ambiguous,
+// and have it rejected.
+//
+// A variant's not is checked only where it forbids sets of properties and the
+// struct of an object declared on its own holds it, which a $ref names
+// (ownForbiddenSets): a variant written inline generates as a copy, and a merge
+// checks no not of its own. No variant type checks if, then, else or
+// dependentSchemas whole.
+func (g *schemaGenerator) variantTypeChecksKeywords(variant, read *schemas.Type) bool {
+	if read.If != nil || read.Then != nil || read.Else != nil || len(read.DependentSchemas) > 0 {
+		return false
+	}
+
+	if read.Not == nil {
+		return true
+	}
+
+	target, ok := g.followRefsQuietly(variant)
+	if !ok || variant.Ref == "" || len(target.AllOf) > 0 {
+		return false
+	}
+
+	_, checked := g.ownForbiddenSets(target)
+
+	return checked
+}
+
+// variantGeneratesInlineMap reports whether an object variant of t's oneOf,
+// read as variants, has no properties, even with t's folded in, while
+// DisableCustomTypesForMaps is set. Such a variant generates as an inline map
+// rather than a named type, and the holder needs one named type per variant.
+func (g *schemaGenerator) variantGeneratesInlineMap(t *schemas.Type, variants []*schemas.Type) bool {
+	if !g.config.DisableCustomTypesForMaps || isTryEachArrayCandidate(variants) {
+		return false
+	}
+
+	for _, variant := range variants {
 		if len(withParentObjectKeywords(t, variant).Properties) == 0 {
 			return true
 		}
@@ -123,31 +241,19 @@ func (g *schemaGenerator) variantGeneratesInlineMap(t *schemas.Type) bool {
 // nesting: 285 bytes nested 18 deep took four seconds to reject. Such a oneOf
 // keeps the generic representation.
 //
-// Variants that cannot both pass, because one requires a key the other's
-// `additionalProperties: false` refuses, decode at most one way per level and
-// are kept, recursive or not.
-func (g *schemaGenerator) tryEachCanBlowUp(t *schemas.Type) bool {
-	arrayMode := isTryEachArrayCandidate(t.OneOf)
-	shapes := make([]variantShape, 0, len(t.OneOf))
+// Variants that cannot both pass, because one requires a key the other refuses,
+// being closed, decode at most one way per level and are kept, recursive or not.
+// variants are t's variants as tryEachVariants reads them.
+func (g *schemaGenerator) tryEachCanBlowUp(t *schemas.Type, variants []*schemas.Type) bool {
+	arrayMode := isTryEachArrayCandidate(variants)
+	shapes := make([]variantShape, 0, len(variants))
 
-	for _, variant := range t.OneOf {
-		if variant.Ref != "" {
-			if variant = g.lookupRef(variant); variant == nil {
-				continue
-			}
-		}
-
-		merged := withParentObjectKeywords(t, variant)
-		if !g.reachesSchema(merged, t, map[*schemas.Type]bool{}) {
+	for i, variant := range variants {
+		if !g.reachesSchema(withParentObjectKeywords(t, variant), t, map[*schemas.Type]bool{}) {
 			continue
 		}
 
-		shapeSource := merged
-		if arrayMode {
-			shapeSource = arrayElementSchema(merged)
-		}
-
-		shape := variantShapeFor(shapeSource)
+		shape := g.tryEachShape(t, t.OneOf[i], variant, arrayMode)
 
 		for _, other := range shapes {
 			if !shapesExclude(shape, other) {
@@ -385,6 +491,31 @@ func variantShapeFor(v *schemas.Type) variantShape {
 	}
 }
 
+// tryEachShape returns the shape check of variant, a variant of t's oneOf, from
+// read, the variant as tryEachVariants reads it, with t's object keywords
+// folded in; in arrayMode, the shape of its elements. An object variant that
+// closes itself with `unevaluatedProperties: false` is strict as one with
+// `additionalProperties: false` is, where its draft has the keyword and the
+// properties it evaluates are known without the value: those it declares.
+// Otherwise two variants, one declaring a property the other refuses, would
+// both decode an object that has it, and the input be rejected as ambiguous.
+func (g *schemaGenerator) tryEachShape(t, variant, read *schemas.Type, arrayMode bool) variantShape {
+	source := withParentObjectKeywords(t, read)
+	if arrayMode {
+		return variantShapeFor(arrayElementSchema(source))
+	}
+
+	shape := variantShapeFor(source)
+
+	if !shape.strict && len(shape.patterns) == 0 {
+		target, doc, docFile, ok := g.followRefsQuietlyIn(variant)
+		shape.strict = ok && isFalseSchema(target.UnevaluatedProperties) && !g.declaresDraftBefore2019(target) &&
+			g.evaluatesStatically(target, doc, docFile, true, map[*schemas.Type]bool{})
+	}
+
+	return shape
+}
+
 // tighterMaxItems returns the smaller of the length caps two schemas imply, and
 // whether either implies one.
 func tighterMaxItems(a, b *schemas.Type) (int, bool) {
@@ -451,7 +582,14 @@ func (g *schemaGenerator) generateOneOfTryEach(t *schemas.Type, scope nameScope)
 	g.output.declsBySchema[t] = holderDecl
 	g.output.declsByName[holderDecl.Name] = holderDecl
 
-	arrayMode := isTryEachArrayCandidate(t.OneOf)
+	// The shapes come from the variants as read, a $ref's from the schema it
+	// names, while each variant is generated from the oneOf as written.
+	read, ok := g.tryEachVariants(t)
+	if !ok {
+		return nil, fmt.Errorf("%w (try-each variant not readable)", ErrUnexpectedVariantType)
+	}
+
+	arrayMode := isTryEachArrayCandidate(read)
 	bindings := make([]variantBinding, len(t.OneOf))
 	shapes := make([]variantShape, len(t.OneOf))
 
@@ -488,12 +626,7 @@ func (g *schemaGenerator) generateOneOfTryEach(t *schemas.Type, scope nameScope)
 		// In array mode the discriminating key-set belongs to the elements,
 		// not to the array itself, so the shape check is built from the
 		// element schema and applied to each decoded element in turn.
-		shapeSource := variantClone
-		if arrayMode {
-			shapeSource = arrayElementSchema(variantClone)
-		}
-
-		shapes[i] = variantShapeFor(shapeSource)
+		shapes[i] = g.tryEachShape(t, variant, read[i], arrayMode)
 
 		// The variant's own declared type does not check the array's length,
 		// so its bounds go into the shape check: otherwise `[]` would match a
@@ -501,8 +634,8 @@ func (g *schemaGenerator) generateOneOfTryEach(t *schemas.Type, scope nameScope)
 		// number of elements. The bounds of the array holding the oneOf apply
 		// too; the holder replaces the field that used to check them.
 		if arrayMode {
-			shapes[i].minItems = max(variantClone.MinItems, t.MinItems)
-			shapes[i].maxItems, shapes[i].hasMaxItems = tighterMaxItems(variantClone, t)
+			shapes[i].minItems = max(read[i].MinItems, t.MinItems)
+			shapes[i].maxItems, shapes[i].hasMaxItems = tighterMaxItems(read[i], t)
 		}
 	}
 

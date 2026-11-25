@@ -242,7 +242,7 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 | `"type": ["number", "null"]` | `type FooRate *float64`, a named pointer type, which can have no methods | `*float64` |
 | `oneOf` of `string`, `number`, `boolean` and `null` variants, or `"type": ["string", "number"]` | `interface{}` | A struct holding one of the values, decoded by its JSON kind. Accessors such as `AsString()` read the value, and constructors such as `NewFooString(v)` build one |
 | `oneOf` of objects told apart by a `const` property | `interface{}` | A struct with a field per variant, decoded by that property |
-| Any other `oneOf` of objects | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches |
+| Any other `oneOf` of objects, written inline, named by `$ref`s or built with `allOf`s | `interface{}` | A struct that tries each variant, and accepts the input only when exactly one matches. A variant that a `$ref` names is its type. Where a variant's type cannot check its `not`, `if`/`then`/`else` or `dependentSchemas`, two variants could both take a valid value, so the `oneOf` stays `interface{}` |
 | `oneOf` or `anyOf` of a `$ref`, an object or an array, and `{"type": "null"}` | `interface{}` for a `oneOf`, a copy of the schema for an `anyOf` | A pointer to the schema's own type |
 | `anyOf` of an object with properties and a primitive or an array | The first branch's type: a primitive such as `*string`, which rejects every object, or a struct, which rejects the primitive | `interface{}`, with a fidelity warning |
 | An `anyOf` on a `string`, a number or a `boolean` whose branches only check its values, such as `{"type": "string", "anyOf": [{"enum": ["a", "b"]}, {"pattern": "^x-"}]}` | `interface{}`, and a type for each `enum` branch, which no field uses | The type, such as `*string` |
@@ -490,11 +490,11 @@ and on a schema that only the release generates and builds, if a second run of t
       the object it is declared on, except on a property a branch declares as well; a mix of object and non-object
       branches is `interface{}`; branches that only list `required` need at least one of their property sets present;
       branches that only list strings, inline or through a `$ref`, are one enum of them)
-    * [x] `oneOf` (primitive variants — `string`, `number`, `boolean`, `null` — become a wrapper; object variants
-      become a holder that dispatches on a `const` discriminator or tries each variant; branches that only list
-      `required` need exactly one of their property sets present; branches that only list strings are one enum of
-      those that just one of them lists; **note**: `integer`-typed variants are not currently routed through the
-      wrapper)
+    * [x] `oneOf` (primitive variants — `string`, `number`, `boolean`, `null` — become a wrapper; object variants,
+      inline, named by a `$ref` or built with an `allOf`, become a holder that dispatches on a `const` discriminator
+      or tries each variant; branches that only list `required` need exactly one of their property sets present;
+      branches that only list strings are one enum of those that just one of them lists; **note**: `integer`-typed
+      variants are not currently routed through the wrapper)
     * [ ] `not` (checked as a `not` of `required` on an object, in its `allOf` and in a conditional's `then` or `else`;
       any other is reported by a [fidelity warning](#fidelity-warnings))
   * [x] Multi-type unions (§4.2.1) — `{"type": ["string", "number", "boolean", "null"]}` is wire-equivalent to a primitive `oneOf` and routes through the same wrapper. Same primitive set as `oneOf`; same `integer` exclusion. The `["X", "null"]` shape continues to use `*X` for ergonomics; non-primitive types in the union (`object`, `array`) and per-value validation keywords on the union (`format`, `minimum`, etc.) decline detection and fall back to `interface{}`.

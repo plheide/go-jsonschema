@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/refNoDiscriminator",
+  "description": "A oneOf of objects named by $refs, which no const tells apart, tries each, as one of inline objects does: declared, as Schedule, and as a property, as inline. The holder's fields are the named types.",
+  "type": "object",
+  "definitions": {
+    "Daily": {
+      "type": "object",
+      "properties": { "at": { "type": "string" } },
+      "required": ["at"],
+      "additionalProperties": false
+    },
+    "Interval": {
+      "type": "object",
+      "properties": { "every": { "type": "integer", "minimum": 1, "maximum": 86400 } },
+      "required": ["every"],
+      "additionalProperties": false
+    },
+    "Schedule": { "oneOf": [{ "$ref": "#/definitions/Daily" }, { "$ref": "#/definitions/Interval" }] }
+  },
+  "properties": {
+    "schedule": { "$ref": "#/definitions/Schedule" },
+    "inline": { "oneOf": [{ "$ref": "#/definitions/Daily" }, { "$ref": "#/definitions/Interval" }] }
+  }
+}

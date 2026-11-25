@@ -204,19 +204,28 @@ func unionValues(lists [][]string, isOneOf bool) []string {
 // constrain a value, which generation would ignore. It returns false where a
 // $ref leads nowhere or past those bounds.
 func (g *schemaGenerator) followRefsQuietly(t *schemas.Type) (*schemas.Type, bool) {
+	t, _, _, ok := g.followRefsQuietlyIn(t)
+
+	return t, ok
+}
+
+// followRefsQuietlyIn is followRefsQuietly that also returns the document the
+// schema it ends at is in, with that document's file, which that schema's own
+// $refs are read in.
+func (g *schemaGenerator) followRefsQuietlyIn(t *schemas.Type) (*schemas.Type, *schemas.Schema, string, bool) {
 	doc, docFile := g.schema, g.schemaFileName
 
 	for hops := 0; t != nil && t.Ref != ""; hops++ {
 		var ok bool
 
 		if hops == maxNullCheckRefHops || hasRefSiblings(t) {
-			return nil, false
+			return nil, nil, "", false
 		}
 
 		if t, doc, docFile, ok = g.refTargetIn(t, doc, docFile); !ok {
-			return nil, false
+			return nil, nil, "", false
 		}
 	}
 
-	return t, t != nil
+	return t, doc, docFile, t != nil
 }

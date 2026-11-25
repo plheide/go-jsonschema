@@ -8,9 +8,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 673 (380 fixtures, 293 definitions), 25 skipped; documents: 17633
-json: 16446 agree, 704 missing checks (105 silent), 483 wrong rejections, 0 panics
-yaml: 15755 agree, 1377 missing checks (544 silent), 501 wrong rejections, 0 panics
+schemas: 699 (386 fixtures, 313 definitions), 25 skipped; documents: 18069
+json: 16863 agree, 723 missing checks (110 silent), 483 wrong rejections, 0 panics
+yaml: 16144 agree, 1424 missing checks (571 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -2020,12 +2020,72 @@ json missing check type: null ×2, e.g. /withNull = null
 yaml missing check type: null ×2, e.g. /withNull = null
 yaml missing check type: wrong type ×2, e.g. /withNull/a = 12345
 
+== oneOfDiscriminated/refAllOfVariant/refAllOfVariant.json
+json missing check (silent) type: null ×1, e.g. /source = null
+yaml missing check (silent) type: null ×1, e.g. /source = null
+
+== oneOfDiscriminated/refAllOfVariant/refAllOfVariant.json#/$defs/Identity
+yaml missing check (silent) type: wrong type ×3, e.g. /name = 12345
+
+== oneOfDiscriminated/refAllOfVariant/refAllOfVariant.json#/$defs/Measured
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×5, e.g. /name = 12345
+
+== oneOfDiscriminated/refAllOfVariant/refAllOfVariant.json#/$defs/Source
+yaml missing check (silent) type: null ×1, e.g. / = null
+
+== oneOfDiscriminated/refClosedOverlap/refClosedOverlap.json
+json missing check (silent) type: null ×1, e.g. /message = null
+yaml missing check (silent) type: null ×1, e.g. /message = null
+yaml missing check (silent) type: wrong type ×1, e.g. /message/code = 12345
+
+== oneOfDiscriminated/refClosedOverlap/refClosedOverlap.json#/$defs/Long
+yaml missing check (silent) type: wrong type ×2, e.g. /code = 12345
+
+== oneOfDiscriminated/refClosedOverlap/refClosedOverlap.json#/$defs/Short
+yaml missing check (silent) type: wrong type ×1, e.g. /code = 12345
+
 == oneOfDiscriminated/refDiscriminator/refDiscriminator.json
 yaml missing check (silent) type: null ×1, e.g. /event = null
 yaml missing check (silent) type: wrong type ×3, e.g. /event/target = 12345
 
 == oneOfDiscriminated/refDiscriminator/refDiscriminator.json#/$defs/Common
 yaml missing check (silent) type: wrong type ×1, e.g. /timestamp = 12345
+
+== oneOfDiscriminated/refNoDiscriminator/refNoDiscriminator.json
+json missing check (silent) type: null ×2, e.g. /inline = null
+yaml missing check (silent) type: null ×2, e.g. /inline = null
+yaml missing check (silent) type: wrong type ×2, e.g. /inline/at = 12345
+
+== oneOfDiscriminated/refNoDiscriminator/refNoDiscriminator.json#/definitions/Daily
+yaml missing check (silent) type: wrong type ×1, e.g. /at = 12345
+
+== oneOfDiscriminated/refNoDiscriminator/refNoDiscriminator.json#/definitions/Schedule
+yaml missing check (silent) type: null ×1, e.g. / = null
+yaml missing check (silent) type: wrong type ×1, e.g. /at = 12345
+
+== oneOfDiscriminated/refRecursive/refRecursive.json
+json missing check (silent) type: null ×1, e.g. /condition = null
+yaml missing check (silent) type: null ×1, e.g. /condition = null
+
+== oneOfDiscriminated/refRecursive/refRecursive.json#/$defs/Combined
+yaml missing check (silent) type: append null ×1, e.g. /conditions = [{"after":1},null]
+yaml missing check (silent) type: null ×1, e.g. /conditions/0 = null
+
+== oneOfDiscriminated/refRecursive/refRecursive.json#/$defs/Condition
+yaml missing check (silent) type: null ×1, e.g. / = null
+
+== oneOfDiscriminated/refReentry/refReentry.json
+json missing check type: wrong type ×1, e.g. /exports = 12345
+yaml missing check type: wrong type ×1, e.g. /exports = 12345
+
+== oneOfDiscriminated/refReentry/refReentry.json#/definitions/entryOrFallback
+json missing check type: wrong type ×1, e.g. / = 12345
+yaml missing check type: wrong type ×1, e.g. / = 12345
+
+== oneOfDiscriminated/refReentry/refReentry.json#/definitions/fallback
+json missing check type: wrong type ×1, e.g. /0 = 12345
+yaml missing check type: wrong type ×1, e.g. /0 = 12345
 
 == oneOfDiscriminated/selfReference/selfReference.json
 json missing check (silent) type: null ×1, e.g. /friend = null
@@ -2124,6 +2184,33 @@ yaml missing check (silent) type: wrong type ×1, e.g. /leaf = 12345
 == oneOfDiscriminated/tryEachSelfReference/tryEachSelfReference.json#/definitions/Node
 yaml missing check (silent) type: null ×1, e.g. / = null
 yaml missing check (silent) type: wrong type ×1, e.g. /leaf = 12345
+
+== oneOfDiscriminated/variantNot/variantNot.json
+json missing check (no keyword): add unknown key ×1, e.g. /merged = {"file":"a","zzUnknown":"x"}
+json missing check (no keyword): null ×2, e.g. /merged = null
+json missing check (no keyword): wrong type ×2, e.g. /merged = "x"
+json missing check additionalProperties: add unknown key ×1, e.g. /inline = {"file":"a","zzUnknown":"x"}
+json missing check type: null ×3, e.g. /checked = null
+json missing check type: wrong type ×2, e.g. /inline = "x"
+yaml missing check (no keyword): add unknown key ×1, e.g. /merged = {"file":"a","zzUnknown":"x"}
+yaml missing check (no keyword): null ×2, e.g. /merged = null
+yaml missing check (no keyword): wrong type ×2, e.g. /merged = "x"
+yaml missing check additionalProperties: add unknown key ×1, e.g. /inline = {"file":"a","zzUnknown":"x"}
+yaml missing check type: null ×3, e.g. /checked = null
+yaml missing check type: wrong type ×3, e.g. /inline = "x"
+
+== oneOfDiscriminated/variantNot/variantNot.json#/$defs/Anonymous
+yaml missing check (no keyword): null ×1, e.g. / = null
+yaml missing check type: wrong type ×1, e.g. /name = 12345
+
+== oneOfDiscriminated/variantNot/variantNot.json#/$defs/Filed
+yaml missing check type: wrong type ×1, e.g. /file = 12345
+
+== oneOfDiscriminated/variantNot/variantNot.json#/$defs/Named
+yaml missing check type: wrong type ×1, e.g. /name = 12345
+
+== oneOfDiscriminated/variantNot/variantNot.json#/$defs/Unfiled
+yaml missing check type: wrong type ×1, e.g. /note = 12345
 
 == oneOfInlineMaps/propertylessVariants/propertylessVariants.json
 json missing check type: null ×1, e.g. /kernel = null

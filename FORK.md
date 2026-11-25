@@ -74,6 +74,9 @@ Not offered upstream yet:
     writes;
   * checking `unevaluatedProperties: false` beside an `anyOf`, `oneOf`, conditional or `dependentSchemas` whose
     subschemas evaluate no property, such as branches that only list `required`, and beside a `not`;
+  * trying each variant of a `oneOf` of objects that `$ref`s name or `allOf`s build, as one of inline objects is,
+    reading a variant closed with `unevaluatedProperties: false` as closed, and trying no `oneOf` with a variant
+    whose type cannot check its `not` or conditional;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

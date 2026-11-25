@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/refRecursive",
+  "description": "A variant whose items $ref the oneOf that holds it: the holder is declared before its variants, so the items resolve to it.",
+  "type": "object",
+  "$defs": {
+    "Timer": {
+      "type": "object",
+      "properties": { "after": { "type": "number" } },
+      "required": ["after"],
+      "additionalProperties": false
+    },
+    "Threshold": {
+      "type": "object",
+      "properties": { "above": { "type": "number" } },
+      "required": ["above"],
+      "additionalProperties": false
+    },
+    "Combined": {
+      "type": "object",
+      "properties": {
+        "join": { "type": "string", "enum": ["all", "any"] },
+        "conditions": { "type": "array", "items": { "$ref": "#/$defs/Condition" } }
+      },
+      "required": ["join", "conditions"],
+      "additionalProperties": false
+    },
+    "Condition": {
+      "oneOf": [{ "$ref": "#/$defs/Timer" }, { "$ref": "#/$defs/Threshold" }, { "$ref": "#/$defs/Combined" }]
+    }
+  },
+  "properties": {
+    "condition": { "$ref": "#/$defs/Condition" }
+  }
+}

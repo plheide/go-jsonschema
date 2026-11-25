@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/refClosedOverlap",
+  "description": "Two variants closed with unevaluatedProperties, one declaring a property the other lacks: an object that has it matches only the one that declares it, so the shape of the other refuses it, as additionalProperties: false would. Otherwise both would decode it, and it be rejected as ambiguous.",
+  "type": "object",
+  "$defs": {
+    "Short": {
+      "type": "object",
+      "properties": { "code": { "type": "string" } },
+      "required": ["code"],
+      "unevaluatedProperties": false
+    },
+    "Long": {
+      "type": "object",
+      "properties": { "code": { "type": "string" }, "detail": { "type": "string" } },
+      "required": ["code", "detail"],
+      "unevaluatedProperties": false
+    }
+  },
+  "properties": {
+    "message": { "oneOf": [{ "$ref": "#/$defs/Short" }, { "$ref": "#/$defs/Long" }] }
+  }
+}

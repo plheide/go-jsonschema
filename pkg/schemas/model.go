@@ -894,6 +894,26 @@ func AllOf(types []*Type, baseType *Type) (*Type, error) {
 	return typ, nil
 }
 
+// AllOfIsolated merges types into baseType as AllOf does, but on copies, so it
+// changes none of the schemas it reads: AllOf writes the keywords of a
+// property that two of them declare into the schema of the first, which other
+// schemas can share. It suits reading what an allOf declares without
+// generating it.
+func AllOfIsolated(types []*Type, baseType *Type) (*Type, error) {
+	if len(types) == 0 {
+		return nil, ErrEmptyTypesList
+	}
+
+	typ, err := mergeIsolated(types, baseType)
+	if err != nil {
+		return nil, err
+	}
+
+	typ.subSchemaType = SubSchemaTypeAllOf
+
+	return typ, nil
+}
+
 // AnyOf merges the branches of an anyOf and the schema it is declared on into
 // the schema of the struct that holds an instance. The struct holds what any
 // branch can, but binds every instance, so it has every property, and requires
