@@ -109,7 +109,9 @@ func (j *Notice) UnmarshalYAML(value *yaml.Node) error {
 
 // A branch that admits only null adds null to the enum, which the field holds as
 // nil: in an anyOf, and in a oneOf with one such branch. Two of them in a oneOf
-// both match a null, so twoNulls admits none.
+// both match a null, so twoNulls admits none. A type of string beside the
+// composition rejects null whatever a branch admits, so typedLevel admits none
+// either.
 type Nullable struct {
 	// AnyLevel corresponds to the JSON schema field "anyLevel".
 	AnyLevel *NullableAnyLevel `json:"anyLevel" yaml:"anyLevel" mapstructure:"anyLevel"`
@@ -119,6 +121,9 @@ type Nullable struct {
 
 	// TwoNulls corresponds to the JSON schema field "twoNulls".
 	TwoNulls *NullableTwoNulls `json:"twoNulls,omitempty,omitzero" yaml:"twoNulls,omitempty" mapstructure:"twoNulls,omitempty"`
+
+	// TypedLevel corresponds to the JSON schema field "typedLevel".
+	TypedLevel NullableTypedLevel `json:"typedLevel" yaml:"typedLevel" mapstructure:"typedLevel"`
 }
 
 type NullableAnyLevel string
@@ -285,6 +290,60 @@ func (j *NullableTwoNulls) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+type NullableTypedLevel string
+
+const NullableTypedLevelDebug NullableTypedLevel = "debug"
+const NullableTypedLevelError NullableTypedLevel = "error"
+const NullableTypedLevelInfo NullableTypedLevel = "info"
+const NullableTypedLevelWarning NullableTypedLevel = "warning"
+
+var enumValues_NullableTypedLevel = []interface{}{
+	"warning",
+	"error",
+	"info",
+	"debug",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *NullableTypedLevel) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_NullableTypedLevel {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_NullableTypedLevel, v)
+	}
+	*j = NullableTypedLevel(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NullableTypedLevel) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_NullableTypedLevel {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_NullableTypedLevel, v)
+	}
+	*j = NullableTypedLevel(v)
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Nullable) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -296,6 +355,9 @@ func (j *Nullable) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["oneLevel"]; raw != nil && !ok {
 		return fmt.Errorf("field oneLevel in Nullable: required")
+	}
+	if _, ok := raw["typedLevel"]; raw != nil && !ok {
+		return fmt.Errorf("field typedLevel in Nullable: required")
 	}
 	type Plain Nullable
 	var plain Plain
@@ -317,6 +379,9 @@ func (j *Nullable) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["oneLevel"]; raw != nil && !ok {
 		return fmt.Errorf("field oneLevel in Nullable: required")
+	}
+	if _, ok := raw["typedLevel"]; raw != nil && !ok {
+		return fmt.Errorf("field typedLevel in Nullable: required")
 	}
 	type Plain Nullable
 	var plain Plain

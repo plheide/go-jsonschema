@@ -62,7 +62,8 @@ func (g *schemaGenerator) enumUnion(t *schemas.Type) *schemas.Type {
 	rest := t.WithoutMarks()
 	rest.AnyOf, rest.OneOf = nil, nil
 
-	if len(rest.Type) == 1 && rest.Type[0] == schemas.TypeNameString {
+	declaresString := len(rest.Type) == 1 && rest.Type[0] == schemas.TypeNameString
+	if declaresString {
 		rest.Type = nil
 	}
 
@@ -113,8 +114,9 @@ func (g *schemaGenerator) enumUnion(t *schemas.Type) *schemas.Type {
 
 	// A null passes an anyOf with a branch that admits only null, and a oneOf
 	// with one such branch: the others list strings. With null listed, the
-	// enum takes its type from the strings, as `"enum": ["a", null]` does.
-	if nulls > 0 && (!isOneOf || nulls == 1) {
+	// enum takes its type from the strings, as `"enum": ["a", null]` does. A
+	// type of string beside the composition rejects null whatever it says.
+	if nulls > 0 && (!isOneOf || nulls == 1) && !declaresString {
 		union.Enum = append(union.Enum, nil)
 	} else {
 		union.Type = schemas.TypeList{schemas.TypeNameString}

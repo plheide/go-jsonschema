@@ -1,7 +1,10 @@
 package tests_test
 
 import (
+	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	testNarrowedRef "github.com/plheide/go-jsonschema/tests/data/conditionalDiscriminator/narrowedRef"
 	testAnyOfRefs "github.com/plheide/go-jsonschema/tests/data/enumUnion/anyOfRefs"
@@ -63,13 +66,22 @@ func TestEnumUnionDecode(t *testing.T) {
 		t.Parallel()
 
 		checkDecode[testNullable.Nullable](t, []decodeCase{
-			{`{"anyLevel": "warning", "oneLevel": "info"}`, ""},
-			{`{"anyLevel": null, "oneLevel": null}`, ""},
-			{`{"anyLevel": "loud", "oneLevel": null}`, enumInvalid},
-			{`{"anyLevel": null, "oneLevel": "quiet"}`, enumInvalid},
-			{`{"oneLevel": null}`, "field anyLevel in Nullable: required"},
-			{`{"anyLevel": null, "oneLevel": null, "twoNulls": "error"}`, ""},
+			{`{"anyLevel": "warning", "oneLevel": "info", "typedLevel": "debug"}`, ""},
+			{`{"anyLevel": null, "oneLevel": null, "typedLevel": "info"}`, ""},
+			{`{"anyLevel": "loud", "oneLevel": null, "typedLevel": "info"}`, enumInvalid},
+			{`{"anyLevel": null, "oneLevel": "quiet", "typedLevel": "info"}`, enumInvalid},
+			{`{"oneLevel": null, "typedLevel": "info"}`, "field anyLevel in Nullable: required"},
+			{`{"anyLevel": null, "oneLevel": null, "twoNulls": "error", "typedLevel": "info"}`, ""},
 		})
+
+		// The type of string beside the composition rejects null. Only JSON
+		// says so: yaml.v3 decodes a null into the zero value without asking
+		// the type.
+		var v testNullable.Nullable
+
+		require.ErrorContains(t, json.Unmarshal(
+			[]byte(`{"anyLevel": null, "oneLevel": null, "typedLevel": null}`), &v,
+		), enumInvalid)
 	})
 
 	t.Run("branches that $ref another file", func(t *testing.T) {
