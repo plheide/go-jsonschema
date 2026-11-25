@@ -320,7 +320,7 @@ json missing check: invalid object 4
 yaml missing check: invalid object 4
 
 -- dependent subschema incompatible with root
-warning: schema fidelity: type Root does not enforce all it declares: dependencies not checked
+warning: schema fidelity: type Root does not enforce all it declares: dependencies (foo) not checked
 json missing check: matches root
 yaml missing check: matches root
 json missing check: matches both

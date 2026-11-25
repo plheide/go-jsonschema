@@ -208,17 +208,18 @@ When generated code doesn't check something a schema declares, the generator say
 * `schema fidelity: type X does not enforce all it declares: <reason>` means the type kept its shape but dropped a
   `oneOf`, an `anyOf` with a branch that is `interface{}`, an `if`/`then`/`else`, a `not` or a `false` schema. A
   reason such as `minProperties, propertyNames not checked` names keywords that no generated code checks: `contains`
-  (with `minContains` and `maxContains`), `dependentSchemas`, `maxProperties`, `minProperties`, `patternProperties`,
-  `propertyNames`, `unevaluatedItems` and `unevaluatedProperties`, unless `--strict-additional-properties` checks it, as
-  described [below](#opt-in-additionalproperties-false-enforcement). `dependentRequired` and draft-07's `dependencies`
-  are named where no struct of the object's own checks them, as on a type merged from a composition, or where the
-  declared draft does not define them; where the lists of a `dependencies` are checked, the reason names the properties
-  whose schemas are not, as in `dependencies (zip) not checked`. A keyword whose subschemas admit every value, such as
-  `"patternProperties": {"^x-": {}}`, checks nothing and is not reported. A keyword that the draft the document declares
-  does not define is named so, as in `unevaluatedProperties (not in draft-07) not checked`. A reason such as `minimum
-  beside $ref not checked` names the keywords beside a `$ref`, which apply from 2019-09 on, while the type generated for
-  the `$ref` is its target's; put them in an `allOf` beside the `$ref` instead. A document that declares draft-07 or an
-  earlier draft, which ignores them as well, is not warned.
+  (with `minContains` and `maxContains`), `maxProperties`, `minProperties`, `patternProperties`, `propertyNames`,
+  `unevaluatedItems` and `unevaluatedProperties`, unless `--strict-additional-properties` checks it, as described
+  [below](#opt-in-additionalproperties-false-enforcement). `dependentRequired`, `dependentSchemas` and draft-07's
+  `dependencies` are named where no struct of the object's own checks them, as on a type merged from a composition, or
+  where the declared draft does not define them. Where the struct checks them, an entry of `dependentSchemas` or
+  `dependencies` that compiles into no check is named by its property, as in `dependencies (zip) not checked`, and one
+  checked in part names what it leaves out, as in `dependentSchemas (zip): minProperties not checked`. A keyword whose
+  subschemas admit every value, such as `"patternProperties": {"^x-": {}}`, checks nothing and is not reported. A
+  keyword that the draft the document declares does not define is named so, as in `unevaluatedProperties (not in
+  draft-07) not checked`. A reason such as `minimum beside $ref not checked` names the keywords beside a `$ref`, which
+  apply from 2019-09 on, while the type generated for the `$ref` is its target's; put them in an `allOf` beside the
+  `$ref` instead. A document that declares draft-07 or an earlier draft, which ignores them as well, is not warned.
 * `schema fidelity: root of F does not enforce all it declares` means the file F is the schema `false`, which no
   value meets, or has no `type` and keywords that are checked only on a value of some type. Nothing is generated
   for it.
@@ -278,6 +279,15 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
   properties it lists must be too. Each is checked where the draft the document declares defines it: 2019-09 brought
   `dependentRequired` and dropped `dependencies`. A document that declares no draft has both checked, together where
   an object declares both.
+* `dependentSchemas`, the schemas of draft-07's `dependencies`, and an `if`/`then`/`else` whose `if` only lists
+  `required`, on the object or in its `allOf`, apply where those properties are present: the entry's schema or the
+  `then` where they all are, the `else` where they are not. Each checks its `required`, a `not` of `required`, a
+  `oneOf` or `anyOf` of `required`, a property narrowed to `false`, which must be absent, and what it asks of a
+  property's value: its `type`, `const` or `enum`, bounds, `multipleOf`, lengths and `pattern`, and the same of an
+  object value's properties, at every depth, written there or through a `$ref`. The checks read the input as written,
+  so `{"end": {"properties": {"value": {"minimum": 1}}}}` holds for the value of `end` whatever its own type allows.
+  Each keyword is checked where the draft the document declares defines it, as `dependentRequired` is, and a warning
+  names what a subschema leaves unchecked. Upstream checked none.
 * An array type declared in `$defs` checks its own `minItems` and `maxItems`.
 * A property whose `type` admits `null` but whose `enum` does not list it rejects a `null`.
 * The keywords of the values an array or a map holds are checked, at every depth: `minLength`, `maxLength`,
@@ -474,12 +484,14 @@ and on a schema that only the release generates and builds, if a second run of t
     * [ ] `patternProperties`
     * [x] `dependentRequired`, and the lists of properties of draft-07's `dependencies`, each where the draft the
       document declares defines it, or where it declares none
-    * [ ] `dependentSchemas`, and the schemas of draft-07's `dependencies`
+    * [x] `dependentSchemas`, and the schemas of draft-07's `dependencies`, each where the draft the document declares
+      defines it, where a struct of the object's own holds them and their subschemas ask only what the
+      [presence-keyed checks](#checks-the-fork-adds) take
     * [ ] `propertyNames`
     * [ ] `maxProperties`
     * [ ] `minProperties`
     * [x] `unevaluatedProperties: false` (opt-in via `Config.StrictAdditionalProperties`, for `allOf` branches)
-  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property, which may be declared through a `$ref` and may be held by nested objects, such as `meta.status`; an `if`/`then`/`else` on the object itself counts as one more `allOf` element; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's checks: its `required`, a `not` of `required` (`not: {required: [a, b]}` forbids both together, `not: {anyOf: [{required: [a]}, {required: [b]}]}` either), and a property it narrows to some strings with a `const` or an `enum` (`then: {properties: {operator: {enum: [GT, LT]}}}`), written there or through a `$ref`, or with an `anyOf` or `oneOf` of them. Each clause compiles what it can: a `then` or `else` that declares other keywords as well still checks these, and a [fidelity warning](#fidelity-warnings) names the rest, as it names a clause that compiles into no check, because its `if` is no such check or is keyed on another property. A `then` or `else` with a `$ref` checks nothing, since draft-07 ignores the keywords beside a `$ref`, and an `allOf` element that declares anything besides its `if`/`then`/`else` declines detection for the object. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check, which it may also list in its `required` (other `required`/composition/validation keywords decline detection). Where the discriminator, or an object holding it, is absent, an if that requires it is false, so its `else` applies, and one that does not is true, vacuously, so its `then` applies. Other conditionals
+  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property, which may be declared through a `$ref` and may be held by nested objects, such as `meta.status`; an `if`/`then`/`else` on the object itself counts as one more `allOf` element; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's checks: its `required`, a `not` of `required` (`not: {required: [a, b]}` forbids both together, `not: {anyOf: [{required: [a]}, {required: [b]}]}` either), and a property it narrows to some strings with a `const` or an `enum` (`then: {properties: {operator: {enum: [GT, LT]}}}`), written there or through a `$ref`, or with an `anyOf` or `oneOf` of them. Each clause compiles what it can: a `then` or `else` that declares other keywords as well still checks these, and a [fidelity warning](#fidelity-warnings) names the rest, as it names a clause that compiles into no check, because its `if` is no such check or is keyed on another property. A `then` or `else` with a `$ref` checks nothing, since draft-07 ignores the keywords beside a `$ref`, and an `allOf` element that declares anything besides its `if`/`then`/`else` declines detection for the object. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check, which it may also list in its `required` (other `required`/composition/validation keywords decline detection). Where the discriminator, or an object holding it, is absent, an if that requires it is false, so its `else` applies, and one that does not is true, vacuously, so its `then` applies. An `if` that only lists `required` is keyed on those properties' presence instead: its `then` applies where they are all present, its `else` where they are not, and both are checked as `dependentSchemas` is. Other conditionals
     are not compiled, and a [fidelity warning](#fidelity-warnings) reports them
     * [x] `if`
     * [x] `then`

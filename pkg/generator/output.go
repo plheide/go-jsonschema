@@ -49,6 +49,10 @@ type output struct {
 	// uniqueKeyHelperName is the name of the file's helper that keys the
 	// items of a uniqueItems check, once declared.
 	uniqueKeyHelperName string
+	// rawNumberHelperName and rawTypeHelperName are the names of the file's
+	// helpers that read a value of the raw map, once declared.
+	rawNumberHelperName string
+	rawTypeHelperName   string
 }
 
 func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.TypeDecl {

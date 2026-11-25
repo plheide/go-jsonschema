@@ -266,7 +266,7 @@ func (g *schemaGenerator) warnUncompiledConditional(t *schemas.Type, scope nameS
 	subject := t
 	if len(t.AllOf) == 0 && !g.config.OnlyModels && willDeclare {
 		if ownConditional(t) == conditionalIfThenElse {
-			if cd, ok := g.detectConditionalDiscriminator(t); ok && cd.compilesOwn {
+			if cd, ok := g.detectConditionalDiscriminator(t); ok && cd.compilesOwn || g.compilesOwnPresence(t) {
 				subject = withoutOwnConditional(t)
 			}
 		}
@@ -321,24 +321,66 @@ func (g *schemaGenerator) reportUnenforcedKeywords(t *schemas.Type, scope nameSc
 		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordDependentRequired })
 	}
 
-	// Where its property dependencies are checked, what a draft-07
-	// dependencies leaves unchecked is its schema dependencies, named by
-	// property, if any constrains.
-	if len(checkedDependencies) > 0 {
-		_, schemaDeps := schemaDependencies(t)
-		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keywordDependencies })
-
-		if names := constrainingNames(schemaDeps); len(names) > 0 {
-			keywords = append(keywords, keywordDependencies+" ("+strings.Join(names, ", ")+")")
-			slices.Sort(keywords)
-		}
-	}
+	keywords = g.namePresenceDependencies(t, keywords, len(checkedDependencies) > 0)
 
 	g.markNotInDeclaredDraft(t, keywords)
 
 	if len(keywords) > 0 {
 		g.warnNotEnforced(scope, strings.Join(keywords, ", ")+" not checked")
 	}
+
+	g.reportCheckGaps(t, g.presenceGaps(t), scope)
+}
+
+// namePresenceDependencies narrows, in keywords, a dependentSchemas or a
+// draft-07 dependencies to what nothing checks of it. The struct checks the
+// entries that compile into presence-keyed clauses; the others are named by
+// property. A dependencies whose property dependencies are left unchecked,
+// which propertiesChecked says they are not, stays as it is.
+func (g *schemaGenerator) namePresenceDependencies(
+	t *schemas.Type, keywords []string, propertiesChecked bool,
+) []string {
+	dependentSchemas, dependencies := g.checkedSchemaDependencies(t)
+	_, uncovered := g.presenceClauseGaps(t)
+	_, requiredDeps := propertyDependencies(t)
+
+	rename := func(keyword string, names []string) {
+		if !slices.Contains(keywords, keyword) {
+			return
+		}
+
+		keywords = slices.DeleteFunc(keywords, func(k string) bool { return k == keyword })
+
+		if len(names) > 0 {
+			keywords = append(keywords, keyword+" ("+strings.Join(names, ", ")+")")
+		}
+
+		slices.Sort(keywords)
+	}
+
+	if len(dependentSchemas) > 0 {
+		rename(keywordDependentSchemas, uncovered[keywordDependentSchemas])
+	}
+
+	// Where its property dependencies are checked, or it has none, what a
+	// draft-07 dependencies leaves unchecked is its schema dependencies that
+	// compile into no check, named by property.
+	switch {
+	case len(dependencies) > 0 && (propertiesChecked || len(requiredDeps) == 0):
+		rename(keywordDependencies, uncovered[keywordDependencies])
+	case propertiesChecked:
+		_, schemaDeps := schemaDependencies(t)
+		rename(keywordDependencies, constrainingNames(schemaDeps))
+	}
+
+	return keywords
+}
+
+// presenceGaps returns what the presence-keyed clauses of t leave unchecked.
+func (g *schemaGenerator) presenceGaps(t *schemas.Type) []string {
+	gaps, _ := g.presenceClauseGaps(t)
+
+	return gaps
 }
 
 // markNotInDeclaredDraft marks, in keywords, those that the draft the document

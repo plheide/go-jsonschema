@@ -16,10 +16,9 @@ import (
 // beside an anyOf or oneOf whose branches only list required, a not, and an
 // if/then that only lists required, under respect-schema: none evaluates a
 // property, so a property that the object and its allOf branches don't
-// declare is rejected. The presence counts and the not are checked as before;
-// the if/then itself is not, and is reported, as a conditional keyed on
-// presence rather than a value is. An if that declares a property evaluates
-// it when it matches, so beside one the keyword is not checked.
+// declare is rejected. The presence counts, the not and the if/then, keyed on
+// presence, are checked as well. An if that declares a property evaluates it
+// when it matches, so beside one the keyword is not checked.
 func TestUnevaluatedPropertiesBesidePresence(t *testing.T) {
 	t.Parallel()
 
@@ -35,6 +34,8 @@ func TestUnevaluatedPropertiesBesidePresence(t *testing.T) {
 		{`{"window": {"count": 1, "until": "x"}}`, "fields count, until in UnevaluatedPresenceWindow: must not all be present"},
 		{`{"window": {"zz": 1}}`, `fields ["zz"] in UnevaluatedPresenceWindow: ` + notAllowed},
 		{`{"paired": {"a": "x", "b": "y"}}`, ""},
+		{`{"paired": {"b": "y"}}`, ""},
+		{`{"paired": {"a": "x"}}`, "field b in UnevaluatedPresencePaired (when a is present): required"},
 		{`{"paired": {"c": 1}}`, `fields ["c"] in UnevaluatedPresencePaired: ` + notAllowed},
 		{`{"keyed": {"kind": "a", "x": 1, "zz": 2}}`, ""},
 	})

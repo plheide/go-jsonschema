@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "math"
 
 type DependenciesDualForm struct {
 	// Step corresponds to the JSON schema field "step".
@@ -41,6 +42,16 @@ func (j *Step) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("field run in Step: required when working-directory is present")
 		}
 	}
+	if _, ok := raw["credit-card"]; ok {
+		if _, ok := raw["billing-address"]; !ok {
+			return fmt.Errorf("field billing-address in Step (when credit-card is present): required")
+		}
+		if v1, present := raw["billing-address"]; present {
+			if !rawIsType_Step(v1, "string") {
+				return fmt.Errorf("field billing-address in Step (when credit-card is present): must be of type string")
+			}
+		}
+	}
 	type Plain Step
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -66,6 +77,16 @@ func (j *Step) UnmarshalYAML(value *yaml.Node) error {
 			return fmt.Errorf("field run in Step: required when working-directory is present")
 		}
 	}
+	if _, ok := raw["credit-card"]; ok {
+		if _, ok := raw["billing-address"]; !ok {
+			return fmt.Errorf("field billing-address in Step (when credit-card is present): required")
+		}
+		if v1, present := raw["billing-address"]; present {
+			if !rawIsType_Step(v1, "string") {
+				return fmt.Errorf("field billing-address in Step (when credit-card is present): must be of type string")
+			}
+		}
+	}
 	type Plain Step
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
@@ -73,4 +94,63 @@ func (j *Step) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = Step(plain)
 	return nil
+}
+
+// rawIsType_Step reports whether v, as JSON or YAML decodes a value into an
+// interface{}, is of one of the JSON types names. An integer is a number with no
+// fraction.
+func rawIsType_Step(v interface{}, names ...string) bool {
+	for _, name := range names {
+		switch name {
+		case "null":
+			if v == nil {
+				return true
+			}
+		case "boolean":
+			if _, ok := v.(bool); ok {
+				return true
+			}
+		case "string":
+			if _, ok := v.(string); ok {
+				return true
+			}
+		case "array":
+			if _, ok := v.([]interface{}); ok {
+				return true
+			}
+		case "object":
+			if _, ok := v.(map[string]interface{}); ok {
+				return true
+			}
+		case "number":
+			if _, ok := rawNumber_Step(v); ok {
+				return true
+			}
+		case "integer":
+			if n, ok := rawNumber_Step(v); ok && n == math.Trunc(n) && !math.IsInf(n, 0) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// rawNumber_Step returns the number v holds, as JSON or YAML decodes one into an
+// interface{}, as a float64. Every presence-keyed check in this file calls it; it
+// is named after the first, so that no other file of the package declares it.
+func rawNumber_Step(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case uint64:
+		return float64(n), true
+	case json.Number:
+		f, err := n.Float64()
+		return f, err == nil
+	}
+	return 0, false
 }

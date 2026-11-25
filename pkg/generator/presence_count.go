@@ -41,11 +41,29 @@ func (v *presenceCountValidator) desc() *validatorDesc {
 // generate counts the branches whose properties are all present, then
 // compares the count with what the keyword allows.
 func (v *presenceCountValidator) generate(out *codegen.Emitter, _ string) error {
-	counter := v.keyword + "Matches"
+	emitPresenceCount(out, v.declName, v.keyword, v.branches, "")
+
+	return nil
+}
+
+// emitPresenceCount writes the count of keyword's branches, of declName's
+// raw map, whose properties are all present, and its check. contextLabel, if
+// any, says when the count applies, such as "when a is present"; the count is
+// then written in a block of its own, so that one count can follow another.
+func emitPresenceCount(out *codegen.Emitter, declName, keyword string, branches [][]string, contextLabel string) {
+	counter := keyword + "Matches"
+
+	subject := declName
+	if contextLabel != "" {
+		subject += " (" + goStringText(contextLabel) + ")"
+
+		out.Printlnf("{")
+		out.Indent(1)
+	}
 
 	out.Printlnf("%s := 0", counter)
 
-	for _, names := range v.branches {
+	for _, names := range branches {
 		for _, name := range names {
 			out.Printlnf("if _, ok := %s[%q]; ok {", varNameRawMap, name)
 			out.Indent(1)
@@ -59,9 +77,9 @@ func (v *presenceCountValidator) generate(out *codegen.Emitter, _ string) error 
 		}
 	}
 
-	sets := make([]string, len(v.branches))
+	sets := make([]string, len(branches))
 
-	for i, names := range v.branches {
+	for i, names := range branches {
 		escaped := make([]string, len(names))
 		for j, name := range names {
 			escaped[j] = goStringText(name)
@@ -72,22 +90,25 @@ func (v *presenceCountValidator) generate(out *codegen.Emitter, _ string) error 
 
 	// A null decodes to a nil raw map, which the required checks let
 	// through, and so does the count.
-	if v.keyword == keywordOneOf {
+	if keyword == keywordOneOf {
 		out.Printlnf("if %s != nil && %s != 1 {", varNameRawMap, counter)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("%s: exactly one of %s must be present, got %%d", %s)`,
-			v.declName, strings.Join(sets, ", "), counter)
+			subject, strings.Join(sets, ", "), counter)
 	} else {
 		out.Printlnf("if %s != nil && %s == 0 {", varNameRawMap, counter)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("%s: at least one of %s must be present")`,
-			v.declName, strings.Join(sets, ", "))
+			subject, strings.Join(sets, ", "))
 	}
 
 	out.Indent(-1)
 	out.Printlnf("}")
 
-	return nil
+	if contextLabel != "" {
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
 }
 
 // presenceBranches returns the properties each of branches requires, when
@@ -98,6 +119,16 @@ func (v *presenceCountValidator) generate(out *codegen.Emitter, _ string) error 
 func presenceBranches(t *schemas.Type, branches []*schemas.Type) ([][]string, bool) {
 	if len(branches) == 0 || len(t.Properties) == 0 ||
 		len(t.Type) != 1 || t.Type[0] != schemas.TypeNameObject {
+		return nil, false
+	}
+
+	return requiredSets(branches)
+}
+
+// requiredSets returns the properties each of branches requires, when there
+// are some, and every one of them lists only required, besides annotations.
+func requiredSets(branches []*schemas.Type) ([][]string, bool) {
+	if len(branches) == 0 {
 		return nil, false
 	}
 

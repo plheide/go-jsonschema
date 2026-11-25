@@ -41,8 +41,9 @@ func TestDependentRequired(t *testing.T) {
 		checkDecode[testDepReqDraft07.Draft07](t, []decodeCase{
 			{`{"shell": "sh", "run": "x"}`, ""},
 			{`{"shell": "sh"}`, "field run in Draft07: required when shell is present"},
-			// A schema dependency is reported, not checked.
-			{`{"creditCard": "1"}`, ""},
+			// A schema dependency is checked as a presence-keyed clause.
+			{`{"creditCard": "1"}`, "field billingAddress in Draft07 (when creditCard is present): required"},
+			{`{"creditCard": "1", "billingAddress": "a"}`, ""},
 		})
 	})
 
@@ -103,7 +104,7 @@ func TestDependentRequired(t *testing.T) {
 			// Where its property lists are checked, what a dependencies leaves
 			// unchecked is named by property.
 			"bothDraft07": "schema fidelity: type BothDraft07 does not enforce all it declares: " +
-				"dependencies (city), dependentRequired (not in draft-07), dependentSchemas (not in draft-07) not checked",
+				"dependentRequired (not in draft-07), dependentSchemas (not in draft-07) not checked",
 			"bothModern": "schema fidelity: type BothModern does not enforce all it declares: " +
 				"dependencies (not in 2020-12) not checked",
 			// A dependencies is named as written where a then leaves it unchecked.

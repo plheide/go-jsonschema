@@ -68,9 +68,11 @@ func (g *schemaGenerator) structChecks(t *schemas.Type) (allOfChecks, bool) {
 // allOfAsChecks decides whether t's allOf compiles into checks on the struct
 // built from t alone, instead of being merged: each of its elements is an
 // if/then/else or a not, which add no fields, and the conditional
-// discriminator compiles, or a not forbids property sets. A not that
-// forbidden sets do not express, and the conditionals when the discriminator
-// compiles none, are left unchecked, and named in the gaps.
+// discriminator compiles, a not forbids property sets, or a conditional keyed
+// on presence compiles. A not that forbidden sets do not express, and the
+// value-keyed conditionals when the discriminator compiles none, are left
+// unchecked, and named in the gaps; what the presence-keyed ones leave is
+// reported with the presence validator's gaps.
 func (g *schemaGenerator) allOfAsChecks(t *schemas.Type) (allOfChecks, bool) {
 	if len(t.AllOf) == 0 || !isObjectWithProperties(t) {
 		return allOfChecks{}, false
@@ -90,6 +92,9 @@ func (g *schemaGenerator) allOfAsChecks(t *schemas.Type) (allOfChecks, bool) {
 				checks.gaps = append(checks.gaps, fmt.Sprintf(`allOf[%d]'s "not" not compiled`, i))
 			}
 
+		case isPresenceElement(elem):
+			// The presence validator checks it; see allOfPresenceClauses.
+
 		case elem.If != nil || elem.Then != nil || elem.Else != nil:
 			conditions = append(conditions, i)
 
@@ -108,7 +113,9 @@ func (g *schemaGenerator) allOfAsChecks(t *schemas.Type) (allOfChecks, bool) {
 		return checks, true
 	}
 
-	if len(checks.forbidden) == 0 || slices.ContainsFunc(conditions, func(i int) bool {
+	presence := slices.ContainsFunc(g.allOfPresenceClauses(t), presenceClause.compiles)
+
+	if len(checks.forbidden) == 0 && !presence || slices.ContainsFunc(conditions, func(i int) bool {
 		return !onlyConditional(t.AllOf[i])
 	}) {
 		return allOfChecks{}, false

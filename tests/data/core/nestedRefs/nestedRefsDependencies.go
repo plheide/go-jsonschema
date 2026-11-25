@@ -2,6 +2,11 @@
 
 package test
 
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "math"
+
 type DepHolder struct {
 	// Flag corresponds to the JSON schema field "flag".
 	Flag *string `json:"flag,omitempty,omitzero" yaml:"flag,omitempty" mapstructure:"flag,omitempty"`
@@ -12,10 +17,113 @@ type DepHolderNeedsFlag struct {
 	Extra *string `json:"extra,omitempty,omitzero" yaml:"extra,omitempty" mapstructure:"extra,omitempty"`
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *DepHolder) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw DepHolder: %w", err)
+	}
+	if _, ok := raw["needsFlag"]; ok {
+		if v1, present := raw["extra"]; present {
+			if !rawIsType_DepHolder(v1, "string") {
+				return fmt.Errorf("field extra in DepHolder (when needsFlag is present): must be of type string")
+			}
+		}
+	}
+	type Plain DepHolder
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal DepHolder: %w", err)
+	}
+	*j = DepHolder(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *DepHolder) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw DepHolder: %w", err)
+	}
+	if _, ok := raw["needsFlag"]; ok {
+		if v1, present := raw["extra"]; present {
+			if !rawIsType_DepHolder(v1, "string") {
+				return fmt.Errorf("field extra in DepHolder (when needsFlag is present): must be of type string")
+			}
+		}
+	}
+	type Plain DepHolder
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal DepHolder: %w", err)
+	}
+	*j = DepHolder(plain)
+	return nil
+}
+
 type NestedRefsDependencies struct {
 	// Draft-07 `dependencies` is dual-form; the schema form parses into
 	// DependentSchemas, so a $ref descending through it resolves there. A
 	// property-name dependency lands in DependentRequired instead, is not a schema,
 	// and correctly finds nothing.
 	ViaDependencies *DepHolderNeedsFlag `json:"viaDependencies,omitempty,omitzero" yaml:"viaDependencies,omitempty" mapstructure:"viaDependencies,omitempty"`
+}
+
+// rawIsType_DepHolder reports whether v, as JSON or YAML decodes a value into an
+// interface{}, is of one of the JSON types names. An integer is a number with no
+// fraction.
+func rawIsType_DepHolder(v interface{}, names ...string) bool {
+	for _, name := range names {
+		switch name {
+		case "null":
+			if v == nil {
+				return true
+			}
+		case "boolean":
+			if _, ok := v.(bool); ok {
+				return true
+			}
+		case "string":
+			if _, ok := v.(string); ok {
+				return true
+			}
+		case "array":
+			if _, ok := v.([]interface{}); ok {
+				return true
+			}
+		case "object":
+			if _, ok := v.(map[string]interface{}); ok {
+				return true
+			}
+		case "number":
+			if _, ok := rawNumber_DepHolder(v); ok {
+				return true
+			}
+		case "integer":
+			if n, ok := rawNumber_DepHolder(v); ok && n == math.Trunc(n) && !math.IsInf(n, 0) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// rawNumber_DepHolder returns the number v holds, as JSON or YAML decodes one into
+// an interface{}, as a float64. Every presence-keyed check in this file calls it;
+// it is named after the first, so that no other file of the package declares it.
+func rawNumber_DepHolder(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case uint64:
+		return float64(n), true
+	case json.Number:
+		f, err := n.Float64()
+		return f, err == nil
+	}
+	return 0, false
 }

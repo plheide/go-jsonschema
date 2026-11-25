@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/presenceConditional/ifRequired",
+  "description": "An if that only lists required is keyed on those properties' presence: its then applies where they are all present, and its else where they are not. The object's own one, keyed on two properties, and one in its allOf are checked beside a conditional keyed on a value.",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["file", "url"] },
+    "path": { "type": "string" },
+    "user": { "type": "string" },
+    "password": { "type": "string" },
+    "anonymous": { "type": "boolean" },
+    "mirror": { "type": "string" },
+    "timeout": { "type": "number" }
+  },
+  "required": ["kind"],
+  "if": { "required": ["user", "password"] },
+  "then": { "properties": { "anonymous": { "const": false } } },
+  "else": { "properties": { "anonymous": { "const": true } }, "required": ["anonymous"] },
+  "allOf": [
+    { "if": { "properties": { "kind": { "const": "file" } } }, "then": { "required": ["path"] } },
+    {
+      "if": { "required": ["mirror"] },
+      "then": { "properties": { "timeout": { "type": "number", "minimum": 1 } }, "required": ["timeout"] }
+    }
+  ]
+}

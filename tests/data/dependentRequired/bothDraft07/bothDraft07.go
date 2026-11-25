@@ -40,6 +40,11 @@ func (j *BothDraft07) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("field billingAddress in BothDraft07: required when creditCard is present")
 		}
 	}
+	if _, ok := raw["city"]; ok {
+		if _, ok := raw["zip"]; !ok {
+			return fmt.Errorf("field zip in BothDraft07 (when city is present): required")
+		}
+	}
 	type Plain BothDraft07
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -58,6 +63,11 @@ func (j *BothDraft07) UnmarshalYAML(value *yaml.Node) error {
 	if _, ok := raw["creditCard"]; ok {
 		if _, ok := raw["billingAddress"]; !ok {
 			return fmt.Errorf("field billingAddress in BothDraft07: required when creditCard is present")
+		}
+	}
+	if _, ok := raw["city"]; ok {
+		if _, ok := raw["zip"]; !ok {
+			return fmt.Errorf("field zip in BothDraft07 (when city is present): required")
 		}
 	}
 	type Plain BothDraft07

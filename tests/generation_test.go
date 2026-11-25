@@ -757,6 +757,12 @@ func TestDependentRequiredGolden(t *testing.T) {
 	testExamples(t, basicConfig, "./data/dependentRequired")
 }
 
+func TestPresenceConditionalGolden(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/presenceConditional")
+}
+
 func TestIntegralNumbersGolden(t *testing.T) {
 	t.Parallel()
 

@@ -2,6 +2,11 @@
 
 package test
 
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "math"
+
 // A $ref into the dependencies of a definition finds its schema, not the
 // dependentSchemas entry of the same name beside it.
 type DependenciesBesideDependentSchemas struct {
@@ -17,4 +22,121 @@ type Payment struct {
 type PaymentCard struct {
 	// FromDependencies corresponds to the JSON schema field "fromDependencies".
 	FromDependencies *string `json:"fromDependencies,omitempty,omitzero" yaml:"fromDependencies,omitempty" mapstructure:"fromDependencies,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Payment) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw Payment: %w", err)
+	}
+	if _, ok := raw["card"]; ok {
+		if v1, present := raw["fromDependentSchemas"]; present {
+			if !rawIsType_Payment(v1, "string") {
+				return fmt.Errorf("field fromDependentSchemas in Payment (when card is present): must be of type string")
+			}
+		}
+	}
+	if _, ok := raw["card"]; ok {
+		if v1, present := raw["fromDependencies"]; present {
+			if !rawIsType_Payment(v1, "string") {
+				return fmt.Errorf("field fromDependencies in Payment (when card is present): must be of type string")
+			}
+		}
+	}
+	type Plain Payment
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Payment: %w", err)
+	}
+	*j = Payment(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Payment) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw Payment: %w", err)
+	}
+	if _, ok := raw["card"]; ok {
+		if v1, present := raw["fromDependentSchemas"]; present {
+			if !rawIsType_Payment(v1, "string") {
+				return fmt.Errorf("field fromDependentSchemas in Payment (when card is present): must be of type string")
+			}
+		}
+	}
+	if _, ok := raw["card"]; ok {
+		if v1, present := raw["fromDependencies"]; present {
+			if !rawIsType_Payment(v1, "string") {
+				return fmt.Errorf("field fromDependencies in Payment (when card is present): must be of type string")
+			}
+		}
+	}
+	type Plain Payment
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal Payment: %w", err)
+	}
+	*j = Payment(plain)
+	return nil
+}
+
+// rawIsType_Payment reports whether v, as JSON or YAML decodes a value into an
+// interface{}, is of one of the JSON types names. An integer is a number with no
+// fraction.
+func rawIsType_Payment(v interface{}, names ...string) bool {
+	for _, name := range names {
+		switch name {
+		case "null":
+			if v == nil {
+				return true
+			}
+		case "boolean":
+			if _, ok := v.(bool); ok {
+				return true
+			}
+		case "string":
+			if _, ok := v.(string); ok {
+				return true
+			}
+		case "array":
+			if _, ok := v.([]interface{}); ok {
+				return true
+			}
+		case "object":
+			if _, ok := v.(map[string]interface{}); ok {
+				return true
+			}
+		case "number":
+			if _, ok := rawNumber_Payment(v); ok {
+				return true
+			}
+		case "integer":
+			if n, ok := rawNumber_Payment(v); ok && n == math.Trunc(n) && !math.IsInf(n, 0) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// rawNumber_Payment returns the number v holds, as JSON or YAML decodes one into
+// an interface{}, as a float64. Every presence-keyed check in this file calls it;
+// it is named after the first, so that no other file of the package declares it.
+func rawNumber_Payment(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case uint64:
+		return float64(n), true
+	case json.Number:
+		f, err := n.Float64()
+		return f, err == nil
+	}
+	return 0, false
 }

@@ -313,6 +313,11 @@ func (j *UnevaluatedPresencePaired) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("fields %q in UnevaluatedPresencePaired: additional properties not allowed", extraKeys)
 		}
 	}
+	if _, ok := raw["a"]; ok {
+		if _, ok := raw["b"]; !ok {
+			return fmt.Errorf("field b in UnevaluatedPresencePaired (when a is present): required")
+		}
+	}
 	type Plain UnevaluatedPresencePaired
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -340,6 +345,11 @@ func (j *UnevaluatedPresencePaired) UnmarshalYAML(value *yaml.Node) error {
 		if len(extraKeys) > 0 {
 			sort.Strings(extraKeys)
 			return fmt.Errorf("fields %q in UnevaluatedPresencePaired: additional properties not allowed", extraKeys)
+		}
+	}
+	if _, ok := raw["a"]; ok {
+		if _, ok := raw["b"]; !ok {
+			return fmt.Errorf("field b in UnevaluatedPresencePaired (when a is present): required")
 		}
 	}
 	type Plain UnevaluatedPresencePaired

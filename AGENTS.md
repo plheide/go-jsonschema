@@ -77,6 +77,9 @@ changes.
      `allOf` + `if`/`then[/else]` tagged-union pattern.
    - `enum_union.go`: an `anyOf` or `oneOf` whose branches only list strings, inline or through a `$ref`, is
      generated as one enum of the strings it admits, wherever it is generated.
+   - `presence_conditional.go`: `dependentSchemas`, the schemas of draft-07 `dependencies` and an `if` that only
+     lists `required`, checked where their properties are present. `raw_narrowing.go` compiles what such a
+     subschema asks of a property's value into checks on the raw map.
    - `fidelity.go`: warnings when a composition falls back to `interface{}` and drops keywords, and for keywords
      that no generated code checks, such as `minProperties`.
    - `enum_varnames.go`, `extension_tags.go`: `x-enum-varnames` constant names and `x-` extensions as struct tags.
