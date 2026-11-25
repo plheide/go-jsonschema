@@ -510,6 +510,10 @@ func variantShapeFor(v *schemas.Type) variantShape {
 // properties it evaluates are known without the value: those it declares.
 // Otherwise two variants, one declaring a property the other refuses, would
 // both decode an object that has it, and the input be rejected as ambiguous.
+//
+// Such a variant knows only its own properties: its unevaluatedProperties sees
+// what the variant evaluates, and t's properties are evaluated by t, so a
+// value that has one of them matches no such variant.
 func (g *schemaGenerator) tryEachShape(t, variant, read *schemas.Type, arrayMode bool) variantShape {
 	source := withParentObjectKeywords(t, read)
 	if arrayMode {
@@ -520,8 +524,11 @@ func (g *schemaGenerator) tryEachShape(t, variant, read *schemas.Type, arrayMode
 
 	if !shape.strict && len(shape.patterns) == 0 {
 		target, doc, docFile, ok := g.followRefsQuietlyIn(variant)
-		shape.strict = ok && isFalseSchema(target.UnevaluatedProperties) && !g.declaresDraftBefore2019(target) &&
-			g.evaluatesStatically(target, doc, docFile, true, map[*schemas.Type]bool{})
+		if ok && isFalseSchema(target.UnevaluatedProperties) && !g.declaresDraftBefore2019(target) &&
+			g.evaluatesStatically(target, doc, docFile, true, map[*schemas.Type]bool{}) {
+			shape.strict = true
+			shape.knownProperties = variantShapeFor(read).knownProperties
+		}
 	}
 
 	return shape

@@ -8,9 +8,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 702 (387 fixtures, 315 definitions), 25 skipped; documents: 18117
-json: 16899 agree, 735 missing checks (110 silent), 483 wrong rejections, 0 panics
-yaml: 16178 agree, 1438 missing checks (571 silent), 501 wrong rejections, 0 panics
+schemas: 705 (388 fixtures, 317 definitions), 25 skipped; documents: 18164
+json: 16946 agree, 735 missing checks (110 silent), 483 wrong rejections, 0 panics
+yaml: 16222 agree, 1441 missing checks (574 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -2043,6 +2043,12 @@ yaml missing check (silent) type: wrong type ×1, e.g. /message/code = 12345
 yaml missing check (silent) type: wrong type ×2, e.g. /code = 12345
 
 == oneOfDiscriminated/refClosedOverlap/refClosedOverlap.json#/$defs/Short
+yaml missing check (silent) type: wrong type ×1, e.g. /code = 12345
+
+== oneOfDiscriminated/refClosedParent/refClosedParent.json#/$defs/Long
+yaml missing check (silent) type: wrong type ×2, e.g. /code = 12345
+
+== oneOfDiscriminated/refClosedParent/refClosedParent.json#/$defs/Short
 yaml missing check (silent) type: wrong type ×1, e.g. /code = 12345
 
 == oneOfDiscriminated/refDiscriminator/refDiscriminator.json

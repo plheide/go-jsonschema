@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/refClosedParent",
+  "description": "A variant closed with unevaluatedProperties sees only the properties it evaluates itself, not those of the schema holding the oneOf. A message that has the parent's channel matches neither variant, as a validator finds, though the variant types carry a field for it.",
+  "type": "object",
+  "$defs": {
+    "Short": {
+      "type": "object",
+      "properties": { "code": { "type": "string" } },
+      "required": ["code"],
+      "unevaluatedProperties": false
+    },
+    "Long": {
+      "type": "object",
+      "properties": { "code": { "type": "string" }, "detail": { "type": "string" } },
+      "required": ["code", "detail"],
+      "unevaluatedProperties": false
+    }
+  },
+  "properties": {
+    "message": {
+      "properties": { "channel": { "type": "string" } },
+      "oneOf": [{ "$ref": "#/$defs/Short" }, { "$ref": "#/$defs/Long" }]
+    }
+  }
+}

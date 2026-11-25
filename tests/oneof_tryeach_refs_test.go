@@ -9,6 +9,7 @@ import (
 
 	testRefAllOfVariant "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refAllOfVariant"
 	testRefClosedOverlap "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refClosedOverlap"
+	testRefClosedParent "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refClosedParent"
 	testRefNoDiscriminator "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refNoDiscriminator"
 	testRefRecursive "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refRecursive"
 	testVariantNot "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/variantNot"
@@ -91,6 +92,18 @@ func TestOneOfTryEachRefVariants(t *testing.T) {
 		require.NoError(t, json.Unmarshal([]byte(`{"message": {"code": "c", "detail": "d"}}`), &v))
 		require.NotNil(t, v.Message.Variant1)
 		assert.Nil(t, v.Message.Variant0)
+	})
+
+	t.Run("the parent's properties beside variants closed with unevaluatedProperties", func(t *testing.T) {
+		t.Parallel()
+
+		// A variant's unevaluatedProperties sees only what the variant
+		// evaluates, so the parent's channel matches neither variant.
+		checkDecode[testRefClosedParent.RefClosedParent](t, []decodeCase{
+			{`{"message": {"code": "c"}}`, ""},
+			{`{"message": {"code": "c", "detail": "d"}}`, ""},
+			{`{"message": {"code": "c", "channel": "z"}}`, "RefClosedParentMessage: no oneOf variant matched"},
+		})
 	})
 
 	t.Run("a variant's not, tried only where its type checks it", func(t *testing.T) {
