@@ -513,7 +513,9 @@ func variantShapeFor(v *schemas.Type) variantShape {
 //
 // Such a variant knows only its own properties: its unevaluatedProperties sees
 // what the variant evaluates, and t's properties are evaluated by t, so a
-// value that has one of them matches no such variant.
+// value that has one of them matches no such variant. So does a variant that
+// closes itself with `additionalProperties: false`, which sees only the
+// properties of the schema that declares it (see closingProperties).
 func (g *schemaGenerator) tryEachShape(t, variant, read *schemas.Type, arrayMode bool) variantShape {
 	source := withParentObjectKeywords(t, read)
 	if arrayMode {
@@ -521,6 +523,12 @@ func (g *schemaGenerator) tryEachShape(t, variant, read *schemas.Type, arrayMode
 	}
 
 	shape := variantShapeFor(source)
+
+	if shape.strict && len(shape.patterns) == 0 {
+		if known, ok := g.closingProperties(variant); ok {
+			shape.knownProperties = known
+		}
+	}
 
 	if !shape.strict && len(shape.patterns) == 0 {
 		target, doc, docFile, ok := g.followRefsQuietlyIn(variant)
@@ -532,6 +540,56 @@ func (g *schemaGenerator) tryEachShape(t, variant, read *schemas.Type, arrayMode
 	}
 
 	return shape
+}
+
+// closingProperties returns the properties that a variant closed by its own
+// `additionalProperties: false` admits: those of the schema that declares it,
+// the variant where a $ref leads, or each element of the variant's allOf that
+// declares it, all of whose properties a value must keep to. ok is false where
+// no such schema closes the variant, as where the parent's
+// additionalProperties, folded into each variant, does, or where one of them
+// has patternProperties, which the shape check leaves lenient.
+func (g *schemaGenerator) closingProperties(variant *schemas.Type) ([]string, bool) {
+	target, doc, docFile, ok := g.followRefsQuietlyIn(variant)
+	if !ok {
+		return nil, false
+	}
+
+	closing := []*schemas.Type{}
+
+	if isFalseSchema(target.AdditionalProperties) {
+		closing = append(closing, target)
+	}
+
+	for _, elem := range target.AllOf {
+		elem, _, _, ok := g.followRefsQuietlyFrom(elem, doc, docFile)
+		if ok && isFalseSchema(elem.AdditionalProperties) {
+			closing = append(closing, elem)
+		}
+	}
+
+	if len(closing) == 0 {
+		return nil, false
+	}
+
+	var known []string
+
+	for i, c := range closing {
+		if len(c.PatternProperties) > 0 {
+			return nil, false
+		}
+
+		names := sortedKeys(c.Properties)
+		if i == 0 {
+			known = names
+
+			continue
+		}
+
+		known = slices.DeleteFunc(known, func(name string) bool { return !slices.Contains(names, name) })
+	}
+
+	return known, true
 }
 
 // tighterMaxItems returns the smaller of the length caps two schemas imply, and

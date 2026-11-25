@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/refClosedAdditional",
+  "description": "A variant closed with additionalProperties: false admits only the properties of the schema that closes it: not those of the schema holding the oneOf, and, for an allOf variant, not those of its other elements. A message that has the parent's channel matches no variant, as a validator finds.",
+  "type": "object",
+  "$defs": {
+    "Short": {
+      "type": "object",
+      "properties": { "code": { "type": "string" } },
+      "required": ["code"],
+      "additionalProperties": false
+    },
+    "Base": {
+      "type": "object",
+      "properties": { "id": { "type": "string" } }
+    }
+  },
+  "properties": {
+    "message": {
+      "properties": { "channel": { "type": "string" } },
+      "oneOf": [
+        { "$ref": "#/$defs/Short" },
+        {
+          "type": "object",
+          "properties": { "code": { "type": "string" }, "detail": { "type": "string" } },
+          "required": ["code", "detail"],
+          "additionalProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/Base" },
+            {
+              "type": "object",
+              "properties": { "text": { "type": "string" } },
+              "required": ["text"],
+              "additionalProperties": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
