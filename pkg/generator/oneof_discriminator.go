@@ -167,6 +167,17 @@ func (g *schemaGenerator) detectDiscriminator(variants []*schemas.Type) discrimi
 // try-each fallback handles them correctly even without discriminator
 // detection.
 func (g *schemaGenerator) flattenForDiscriminator(v *schemas.Type) (*schemas.Type, bool) {
+	return g.flattenForDiscriminatorOn(v, map[*schemas.Type]bool{})
+}
+
+// flattenForDiscriminatorOn is flattenForDiscriminator with onPath, the allOfs
+// being flattened around v. An allOf that a branch leads back to, through a
+// $ref, has no merge: following it would recurse until the stack runs out.
+// Only the path counts, so sibling branches may name the same schema.
+func (g *schemaGenerator) flattenForDiscriminatorOn(
+	v *schemas.Type,
+	onPath map[*schemas.Type]bool,
+) (*schemas.Type, bool) {
 	if v.Ref != "" {
 		resolved, err := g.resolveRef(v)
 		if err != nil {
@@ -180,12 +191,19 @@ func (g *schemaGenerator) flattenForDiscriminator(v *schemas.Type) (*schemas.Typ
 		return v, true
 	}
 
+	if onPath[v] {
+		return nil, false
+	}
+
+	onPath[v] = true
+	defer delete(onPath, v)
+
 	parts := make([]*schemas.Type, 0, len(v.AllOf))
 
 	for _, child := range v.AllOf {
 		// Recursively resolve each branch's ref so the merged result
 		// includes their Properties / Required.
-		f, ok := g.flattenForDiscriminator(child)
+		f, ok := g.flattenForDiscriminatorOn(child, onPath)
 		if !ok {
 			return nil, false
 		}

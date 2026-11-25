@@ -112,17 +112,21 @@ func (g *schemaGenerator) tryEachVariants(t *schemas.Type) ([]*schemas.Type, boo
 // before the oneOf is declared, and so declare it twice; nor write into a
 // schema that others share, as the merge AllOf does. It returns false for a
 // variant it cannot read so: a nil one, a $ref that leads nowhere or has
-// keywords beside it, and an allOf that does not merge.
+// keywords beside it, an allOf that does not merge, and one that leads back to
+// itself.
 func (g *schemaGenerator) readVariant(variant *schemas.Type) (*schemas.Type, bool) {
-	return g.readVariantIn(variant, g.schema, g.schemaFileName)
+	return g.readVariantIn(variant, g.schema, g.schemaFileName, map[*schemas.Type]bool{})
 }
 
 // readVariantIn is readVariant for a variant in the document doc of the file
-// docFile, which its $refs are read in.
+// docFile, which its $refs are read in. onPath holds the allOfs being merged
+// around it: one that a branch leads back to, through a $ref, has no merge.
+// Only the path counts, so sibling branches may name the same schema.
 func (g *schemaGenerator) readVariantIn(
 	variant *schemas.Type,
 	doc *schemas.Schema,
 	docFile string,
+	onPath map[*schemas.Type]bool,
 ) (*schemas.Type, bool) {
 	if variant == nil {
 		return nil, false
@@ -144,10 +148,17 @@ func (g *schemaGenerator) readVariantIn(
 		return variant, true
 	}
 
+	if onPath[variant] {
+		return nil, false
+	}
+
+	onPath[variant] = true
+	defer delete(onPath, variant)
+
 	parts := make([]*schemas.Type, 0, len(variant.AllOf))
 
 	for _, branch := range variant.AllOf {
-		part, ok := g.readVariantIn(branch, doc, docFile)
+		part, ok := g.readVariantIn(branch, doc, docFile, onPath)
 		if !ok {
 			return nil, false
 		}

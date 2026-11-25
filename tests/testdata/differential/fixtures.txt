@@ -8,9 +8,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 699 (386 fixtures, 313 definitions), 25 skipped; documents: 18081
-json: 16875 agree, 723 missing checks (110 silent), 483 wrong rejections, 0 panics
-yaml: 16156 agree, 1424 missing checks (571 silent), 501 wrong rejections, 0 panics
+schemas: 702 (387 fixtures, 315 definitions), 25 skipped; documents: 18117
+json: 16899 agree, 735 missing checks (110 silent), 483 wrong rejections, 0 panics
+yaml: 16178 agree, 1438 missing checks (571 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -2086,6 +2086,34 @@ yaml missing check type: wrong type ×1, e.g. / = 12345
 == oneOfDiscriminated/refReentry/refReentry.json#/definitions/fallback
 json missing check type: wrong type ×1, e.g. /0 = 12345
 yaml missing check type: wrong type ×1, e.g. /0 = 12345
+
+== oneOfDiscriminated/selfAllOfVariant/selfAllOfVariant.json
+json missing check (no keyword): delete key ×1, e.g. /either/plain deleted
+json missing check (no keyword): null ×1, e.g. /either/plain = null
+json missing check (no keyword): wrong type ×1, e.g. /either/plain = 12345
+json missing check type: null ×1, e.g. /either = null
+json missing check type: wrong type ×1, e.g. /either = "x"
+yaml missing check (no keyword): delete key ×1, e.g. /either/plain deleted
+yaml missing check (no keyword): null ×1, e.g. /either/plain = null
+yaml missing check (no keyword): wrong type ×1, e.g. /either/plain = 12345
+yaml missing check type: null ×1, e.g. /either = null
+yaml missing check type: wrong type ×1, e.g. /either = "x"
+
+== oneOfDiscriminated/selfAllOfVariant/selfAllOfVariant.json#/$defs/Looped
+json missing check (no keyword): 5000 characters ×1, e.g. /loop = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+json missing check (no keyword): add unknown key ×2, e.g. / = {"loop":"a","zzUnknown":"x"}
+json missing check (no keyword): empty string ×1, e.g. /loop = ""
+json missing check (no keyword): off-enum string ×1, e.g. /loop = "zzOffEnum"
+json missing check (no keyword): seed ×2, e.g. seed 0
+yaml missing check (no keyword): 5000 characters ×1, e.g. /loop = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…
+yaml missing check (no keyword): add unknown key ×2, e.g. / = {"loop":"a","zzUnknown":"x"}
+yaml missing check (no keyword): empty string ×1, e.g. /loop = ""
+yaml missing check (no keyword): off-enum string ×1, e.g. /loop = "zzOffEnum"
+yaml missing check (no keyword): seed ×2, e.g. seed 0
+yaml missing check (no keyword): wrong type ×1, e.g. /loop = 12345
+
+== oneOfDiscriminated/selfAllOfVariant/selfAllOfVariant.json#/$defs/Plain
+yaml missing check type: wrong type ×1, e.g. /plain = 12345
 
 == oneOfDiscriminated/selfReference/selfReference.json
 json missing check (silent) type: null ×1, e.g. /friend = null
