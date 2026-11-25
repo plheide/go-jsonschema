@@ -344,16 +344,25 @@ func (g *Generator) beginOutput(
 	}
 
 	for _, o := range g.outputs {
-		if o.file.FileName == outputName && o.file.Package.QualifiedName != packageName {
-			return nil, fmt.Errorf(
-				"%w (%s) mapped to two different Go packages (%q and %q) for schema %q",
-				errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id,
-			)
+		if o.file.FileName != outputName {
+			continue
 		}
 
-		if o.file.FileName == outputName && o.file.Package.QualifiedName == packageName {
+		if o.file.Package.QualifiedName == packageName {
 			return o, nil
 		}
+
+		// An output with no name is written nowhere, for a package another run
+		// writes: each such package has one of its own, which two packages
+		// cannot conflict over.
+		if outputName == "" {
+			continue
+		}
+
+		return nil, fmt.Errorf(
+			"%w (%s) mapped to two different Go packages (%q and %q) for schema %q",
+			errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id,
+		)
 	}
 
 	pkg := codegen.Package{

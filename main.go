@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -148,7 +149,6 @@ var (
 				Capitalizations:            capitalizations,
 				DefaultOutputName:          defaultOutput,
 				DefaultPackageName:         defaultPackage,
-				SchemaMappings:             []generator.SchemaMapping{},
 				ResolveExtensions:          resolveExtensions,
 				YAMLExtensions:             yamlExtensions,
 				StructNameFromTitle:        structNameFromTitle,
@@ -168,31 +168,11 @@ var (
 				Cache:                      knownSchemaCache,
 			}
 
-			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
-				mapping := generator.SchemaMapping{SchemaID: id}
-				if s, ok := schemaPackageMap[id]; ok {
-					pkg, alias, err := splitPackageAlias(s)
-					if err != nil {
-						abortWithErr(err)
-					}
-
-					mapping.PackageName = pkg
-					mapping.ImportAlias = alias
-				} else {
-					mapping.PackageName = defaultPackage
-				}
-
-				if s, ok := schemaOutputMap[id]; ok {
-					mapping.OutputName = s
-				} else {
-					mapping.OutputName = defaultOutput
-				}
-
-				if s, ok := schemaRootTypeMap[id]; ok {
-					mapping.RootType = s
-				}
-
-				cfg.SchemaMappings = append(cfg.SchemaMappings, mapping)
+			cfg.SchemaMappings, err = schemaMappings(
+				schemaPackageMap, schemaOutputMap, schemaRootTypeMap, defaultPackage, defaultOutput,
+			)
+			if err != nil {
+				abortWithErr(err)
 			}
 
 			generator, err := generator.New(cfg)
@@ -277,7 +257,13 @@ be in the format URL=PATH. The schema is loaded for ref resolution only —
 no Go code is emitted for it. Repeat for each cross-tree dependency.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaOutputs, "schema-output", nil,
 		`File to write (- for standard output) a specific schema ID to;
-must be in the format URI=FILENAME.`)
+must be in the format URI=FILENAME. An empty FILENAME, as in URI=, writes
+nothing for the schema: its types are taken to be in the package that
+--schema-package gives it, which another run writes, and the files that
+refer to them import it. That run and this one must name the types alike,
+which they do when both generate the same schemas into the package in the
+same order: give this run the package's schema files first, in the order
+its own run takes them, or use --collision-strategy qualify.`)
 	rootCmd.PersistentFlags().StringVar(&collisionStrategyRaw, "collision-strategy", "",
 		"The `strategy` for two schemas competing for one Go type name: positional "+
 			"(default, append _1/_2 — the schema processed first keeps the bare name) "+
@@ -550,6 +536,49 @@ func splitPackageAlias(value string) (string, string, error) {
 	}
 
 	return value[:i], candidate, nil
+}
+
+// schemaMappings returns a mapping for each schema ID that a --schema-package,
+// --schema-output or --schema-root-type entry names, in the order of the IDs.
+// A schema with no --schema-package is declared in the default package, and
+// one with no --schema-output is written to the default output. An empty
+// --schema-output, as in URI=, writes nothing for the schema: its types are in
+// a package that another run writes, and the files that refer to them import
+// it.
+func schemaMappings(
+	packages, outputs, rootTypes map[string]string,
+	defaultPackage, defaultOutput string,
+) ([]generator.SchemaMapping, error) {
+	ids := allKeys(packages, outputs, rootTypes)
+	slices.Sort(ids)
+
+	mappings := make([]generator.SchemaMapping, 0, len(ids))
+
+	for _, id := range ids {
+		mapping := generator.SchemaMapping{
+			SchemaID:    id,
+			PackageName: defaultPackage,
+			OutputName:  defaultOutput,
+			RootType:    rootTypes[id],
+		}
+
+		if s, ok := packages[id]; ok {
+			pkg, alias, err := splitPackageAlias(s)
+			if err != nil {
+				return nil, err
+			}
+
+			mapping.PackageName, mapping.ImportAlias = pkg, alias
+		}
+
+		if s, ok := outputs[id]; ok {
+			mapping.OutputName = s
+		}
+
+		mappings = append(mappings, mapping)
+	}
+
+	return mappings, nil
 }
 
 func allKeys(in ...map[string]string) []string {

@@ -70,6 +70,8 @@ Not offered upstream yet:
   * generating an `anyOf` or `oneOf` whose branches only list strings, inline or through a `$ref`, as one enum, and
     checking a conditional that narrows a property through a `$ref` to one, with no warning about keywords beside
     the `$ref`s of a `oneOf`'s variants;
+  * writing nothing for a schema whose `--schema-output` is empty, for any number of packages that another run
+    writes;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

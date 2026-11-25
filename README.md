@@ -91,6 +91,13 @@ Note the flag format:
                  schema $id                  full import URL
 ```
 
+An empty file name, as in `--schema-output=https://example.com/schema2=`, writes nothing for that schema: its types
+are taken to be in the package that `--schema-package` names, which another run writes, and the files that refer to
+them import it. That run and this one must name the types alike. They do when both generate the same schemas into
+the package in the same order, so give this run the package's schema files first, in the order its own run takes
+them, or use `--collision-strategy qualify`, which names each definition after its own schema. A name collision in
+such a package is reported with a reminder.
+
 ### Cross-tree `$ref`s without network access
 
 When a consumer schema `$ref`s a canonical schema by its `$id` URL (e.g.
