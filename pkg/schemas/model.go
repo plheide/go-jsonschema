@@ -413,6 +413,17 @@ func (value *Type) SetSubSchemaTypeElem() {
 	value.subSchemaTypeElem = true
 }
 
+// WithoutMarks returns a copy of value without the marks that SetSubSchemaType,
+// SetSubSchemasCount and SetSubSchemaTypeElem leave, so that comparing the copy
+// compares the keywords the schema declares. A generator marks the copies it
+// generates from, such as the variants of a oneOf, and a mark is no keyword.
+func (value *Type) WithoutMarks() *Type {
+	c := *value
+	c.subSchemaType, c.subSchemasCount, c.subSchemaTypeElem = "", 0, false
+
+	return &c
+}
+
 func (value *Type) ConvertAllRefs(absolutePath string) error {
 	val := reflect.ValueOf(value).Elem()
 

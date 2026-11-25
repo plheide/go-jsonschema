@@ -239,6 +239,7 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 | `oneOf` or `anyOf` of a `$ref`, an object or an array, and `{"type": "null"}` | `interface{}` for a `oneOf`, a copy of the schema for an `anyOf` | A pointer to the schema's own type |
 | `anyOf` of an object with properties and a primitive or an array | The first branch's type: a primitive such as `*string`, which rejects every object, or a struct, which rejects the primitive | `interface{}`, with a fidelity warning |
 | An `anyOf` on a `string`, a number or a `boolean` whose branches only check its values, such as `{"type": "string", "anyOf": [{"enum": ["a", "b"]}, {"pattern": "^x-"}]}` | `interface{}`, and a type for each `enum` branch, which no field uses | The type, such as `*string` |
+| An `anyOf` or `oneOf` whose branches only list strings, with `const` or `enum`, inline or through a `$ref`, such as `{"anyOf": [{"$ref": "#/$defs/Alert"}, {"$ref": "#/$defs/Notice"}]}` or `{"oneOf": [{"const": "fast"}, {"const": "safe"}]}` | `interface{}`, and for an `anyOf` an alias of each branch's type, which no field uses | One enum of the strings the composition admits, with a constant for each. A branch that admits only `null` makes the field a pointer that holds it as nil |
 | `format: duration` | `time.Duration`, which `encoding/json` reads only from a number of nanoseconds, so a document that gives an ISO 8601 duration is rejected | `types.Duration`, read and written as an ISO 8601 duration such as `PT1H30M`. JSON can also give a number of nanoseconds, and YAML a duration in Go's syntax, such as `1h30m`, as for a `time.Duration` |
 | An enum listing `null` beside values of one type, such as `"enum": ["a", "b", null]` | A struct holding an `interface{}` | A pointer to an enum of that type |
 | An enum with `x-enum-varnames: ["Low", "High"]` | Constants named after the type and the value, such as `FooLevelLo` | `Low` and `High` |
@@ -256,8 +257,12 @@ offered upstream, apart from the few changes [FORK.md](FORK.md) lists.
 
 * An `if`/`then`/`else` keyed on one property's `const` or `enum`, in an `allOf` or on the object itself, checks each
   branch's `required`, a `not` of `required` and a property it narrows to some strings with a `const` or an `enum`,
-  also where the property is optional or a nested object holds it, as described under [Validation](#validation). A
-  branch checks these whatever else it declares, and a warning names what it leaves unchecked.
+  written there or through a `$ref`, or with an `anyOf` or `oneOf` of them, also where the property is optional or a
+  nested object holds it, as described under [Validation](#validation). A branch checks these whatever else it
+  declares, and a warning names what it leaves unchecked.
+* An `anyOf` or a `oneOf` whose branches only list strings, with `const` or `enum`, inline or through a `$ref`, is an
+  enum of the strings it admits: those that a branch of the `anyOf` lists, and those that just one branch of the
+  `oneOf` lists, since a string two branches list matches both. Upstream checked neither.
 * A `oneOf` or `anyOf` whose branches only list `required` checks how many of the listed property sets an object
   has: exactly one for a `oneOf`, at least one for an `anyOf`.
 * A `not` of `required` on an object, of its own or in its `allOf`, forbids properties: `not: {required: [a, b]}`
@@ -467,7 +472,7 @@ and on a schema that only the release generates and builds, if a second run of t
     * [ ] `maxProperties`
     * [ ] `minProperties`
     * [x] `unevaluatedProperties: false` (opt-in via `Config.StrictAdditionalProperties`, for `allOf` branches)
-  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property, which may be declared through a `$ref` and may be held by nested objects, such as `meta.status`; an `if`/`then`/`else` on the object itself counts as one more `allOf` element; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's checks: its `required`, a `not` of `required` (`not: {required: [a, b]}` forbids both together, `not: {anyOf: [{required: [a]}, {required: [b]}]}` either), and a property it narrows to some strings with a `const` or an `enum` (`then: {properties: {operator: {enum: [GT, LT]}}}`). Each clause compiles what it can: a `then` or `else` that declares other keywords as well still checks these, and a [fidelity warning](#fidelity-warnings) names the rest, as it names a clause that compiles into no check, because its `if` is no such check or is keyed on another property. A `then` or `else` with a `$ref` checks nothing, since draft-07 ignores the keywords beside a `$ref`, and an `allOf` element that declares anything besides its `if`/`then`/`else` declines detection for the object. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check, which it may also list in its `required` (other `required`/composition/validation keywords decline detection). Where the discriminator, or an object holding it, is absent, an if that requires it is false, so its `else` applies, and one that does not is true, vacuously, so its `then` applies. Other conditionals
+  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property, which may be declared through a `$ref` and may be held by nested objects, such as `meta.status`; an `if`/`then`/`else` on the object itself counts as one more `allOf` element; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's checks: its `required`, a `not` of `required` (`not: {required: [a, b]}` forbids both together, `not: {anyOf: [{required: [a]}, {required: [b]}]}` either), and a property it narrows to some strings with a `const` or an `enum` (`then: {properties: {operator: {enum: [GT, LT]}}}`), written there or through a `$ref`, or with an `anyOf` or `oneOf` of them. Each clause compiles what it can: a `then` or `else` that declares other keywords as well still checks these, and a [fidelity warning](#fidelity-warnings) names the rest, as it names a clause that compiles into no check, because its `if` is no such check or is keyed on another property. A `then` or `else` with a `$ref` checks nothing, since draft-07 ignores the keywords beside a `$ref`, and an `allOf` element that declares anything besides its `if`/`then`/`else` declines detection for the object. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check, which it may also list in its `required` (other `required`/composition/validation keywords decline detection). Where the discriminator, or an object holding it, is absent, an if that requires it is false, so its `else` applies, and one that does not is true, vacuously, so its `then` applies. Other conditionals
     are not compiled, and a [fidelity warning](#fidelity-warnings) reports them
     * [x] `if`
     * [x] `then`
@@ -476,11 +481,13 @@ and on a schema that only the release generates and builds, if a second run of t
     * [x] `allOf` (merged into one type)
     * [x] `anyOf` (merged into one type that requires a match with at least one branch, and checks the keywords of
       the object it is declared on, except on a property a branch declares as well; a mix of object and non-object
-      branches is `interface{}`; branches that only list `required` need at least one of their property sets present)
+      branches is `interface{}`; branches that only list `required` need at least one of their property sets present;
+      branches that only list strings, inline or through a `$ref`, are one enum of them)
     * [x] `oneOf` (primitive variants — `string`, `number`, `boolean`, `null` — become a wrapper; object variants
       become a holder that dispatches on a `const` discriminator or tries each variant; branches that only list
-      `required` need exactly one of their property sets present; **note**: `integer`-typed variants are not
-      currently routed through the wrapper)
+      `required` need exactly one of their property sets present; branches that only list strings are one enum of
+      those that just one of them lists; **note**: `integer`-typed variants are not currently routed through the
+      wrapper)
     * [ ] `not` (checked as a `not` of `required` on an object, in its `allOf` and in a conditional's `then` or `else`;
       any other is reported by a [fidelity warning](#fidelity-warnings))
   * [x] Multi-type unions (§4.2.1) — `{"type": ["string", "number", "boolean", "null"]}` is wire-equivalent to a primitive `oneOf` and routes through the same wrapper. Same primitive set as `oneOf`; same `integer` exclusion. The `["X", "null"]` shape continues to use `*X` for ergonomics; non-primitive types in the union (`object`, `array`) and per-value validation keywords on the union (`format`, `minimum`, etc.) decline detection and fall back to `interface{}`.

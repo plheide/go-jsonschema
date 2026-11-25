@@ -725,6 +725,22 @@ func TestPresenceCountGolden(t *testing.T) {
 	testExamples(t, basicConfig, "./data/presenceCount")
 }
 
+// TestEnumUnion generates the anyOfs and oneOfs whose branches only list
+// strings, inline or through a $ref, as the enum of the strings they admit.
+func TestEnumUnion(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/enumUnion")
+}
+
+// TestEnumUnionCrossFile generates an enum union whose branches $ref another
+// file, which needs no type of its own.
+func TestEnumUnionCrossFile(t *testing.T) {
+	t.Parallel()
+
+	testExampleFile(t, basicConfig, "./data/enumUnionCrossFile/crossFile.json")
+}
+
 // TestForbiddenSetsGolden generates the objects whose own not, or whose allOf's
 // nots, forbid sets of properties.
 func TestForbiddenSetsGolden(t *testing.T) {

@@ -8,9 +8,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 651 (372 fixtures, 279 definitions), 25 skipped; documents: 17204
-json: 16019 agree, 702 missing checks (103 silent), 483 wrong rejections, 0 panics
-yaml: 15331 agree, 1372 missing checks (540 silent), 501 wrong rejections, 0 panics
+schemas: 671 (379 fixtures, 292 definitions), 25 skipped; documents: 17517
+json: 16330 agree, 704 missing checks (105 silent), 483 wrong rejections, 0 panics
+yaml: 15640 agree, 1376 missing checks (544 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -1364,6 +1364,16 @@ json wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: u
 yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: unmarshal Count: 1e300 is out of range for int
 yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: unmarshal Count: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into Plain
 yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: unmarshal Count: 18446744073709551616 is out of range for int
+
+== fidelityWarnings/refVariants/refVariants.json
+json missing check (silent) type: null ×2, e.g. /event = null
+yaml missing check (silent) type: null ×2, e.g. /event = null
+
+== fidelityWarnings/refVariants/refVariants.json#/$defs/Event
+yaml missing check (silent) type: null ×1, e.g. / = null
+
+== fidelityWarnings/refVariants/refVariants.json#/$defs/Stop
+yaml missing check (silent) type: wrong type ×1, e.g. /reason = 12345
 
 == fidelityWarnings/uncompiledConditionals/uncompiledConditionals.json
 json missing check (no keyword): empty string ×2, e.g. /either = ""

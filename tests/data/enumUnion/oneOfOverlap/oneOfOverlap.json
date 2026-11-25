@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A string that two branches list matches both: the anyOf admits it, as inclusive, and the oneOf rejects it, so the enum of exclusive leaves shared out.",
+  "properties": {
+    "exclusive": { "oneOf": [{ "enum": ["left", "shared"] }, { "enum": ["shared", "right"] }] },
+    "inclusive": { "anyOf": [{ "enum": ["left", "shared"] }, { "enum": ["shared", "right"] }] }
+  }
+}

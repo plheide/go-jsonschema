@@ -656,8 +656,8 @@ func (g *schemaGenerator) detectDiscriminatorIn(
 			continue
 		}
 
-		then, thenUnchecked := compileBranch(elem.Then)
-		els, elseUnchecked := compileBranch(elem.Else)
+		then, thenUnchecked := g.compileBranch(elem.Then)
+		els, elseUnchecked := g.compileBranch(elem.Else)
 
 		// A then or else that leaves nothing unchecked is a branch even with
 		// nothing to check, as it was before branches compiled on their own.
@@ -738,7 +738,7 @@ func appendNonEmpty(list []string, descriptions ...string) []string {
 // some strings; `type: object` holds already. A subschema with a $ref
 // checks nothing: draft-07 ignores the keywords beside a $ref, so checking
 // them could reject what the schema accepts.
-func compileBranch(sub *schemas.Type) (branchChecks, []string) {
+func (g *schemaGenerator) compileBranch(sub *schemas.Type) (branchChecks, []string) {
 	if sub == nil {
 		return branchChecks{}, nil
 	}
@@ -765,7 +765,7 @@ func compileBranch(sub *schemas.Type) (branchChecks, []string) {
 	rest.Properties = nil
 
 	for _, name := range sortedKeys(sub.Properties) {
-		if values, ok := narrowedValues(sub.Properties[name]); ok {
+		if values, ok := g.narrowedValues(sub.Properties[name]); ok {
 			checks.narrowed = append(checks.narrowed, narrowedProperty{name, values})
 
 			continue
@@ -787,8 +787,32 @@ func compileBranch(sub *schemas.Type) (branchChecks, []string) {
 
 // narrowedValues returns the values a then or else allows a property, when it
 // only narrows the property to strings: a `const` or an `enum` of strings,
-// besides at most `type: string` and annotations.
-func narrowedValues(p *schemas.Type) ([]string, bool) {
+// besides at most `type: string` and annotations, or an enum union of them,
+// written there or where a $ref leads. A union that admits null is no such
+// narrowing, since the check takes only strings.
+func (g *schemaGenerator) narrowedValues(p *schemas.Type) ([]string, bool) {
+	p, ok := g.followRefsQuietly(p)
+	if !ok {
+		return nil, false
+	}
+
+	if union := g.asEnumUnion(p); union != p {
+		if enumListsNull(union) {
+			return nil, false
+		}
+
+		strs, reason := stringEnumValues(union.Enum)
+
+		return strs, reason == ""
+	}
+
+	return listedStrings(p)
+}
+
+// listedStrings returns the strings p lists, when it lists only strings: a
+// `const` or an `enum` of strings, besides at most `type: string` and
+// annotations.
+func listedStrings(p *schemas.Type) ([]string, bool) {
 	hasConst := p != nil && (p.ConstIsSet || p.Const != nil)
 	if p == nil || p.Ref != "" || (hasConst && p.Enum != nil) {
 		return nil, false

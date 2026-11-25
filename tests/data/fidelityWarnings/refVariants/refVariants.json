@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The variants of a oneOf told apart by kind are bare $refs, which declare nothing beside them, so nothing is reported, whether the oneOf is a property's or a definition's.",
+  "type": "object",
+  "$defs": {
+    "Start": {
+      "type": "object",
+      "properties": { "kind": { "const": "start" }, "at": { "type": "number" } },
+      "required": ["kind", "at"]
+    },
+    "Stop": {
+      "type": "object",
+      "properties": { "kind": { "const": "stop" }, "reason": { "type": "string" } },
+      "required": ["kind", "reason"]
+    },
+    "Event": { "oneOf": [{ "$ref": "#/$defs/Start" }, { "$ref": "#/$defs/Stop" }] }
+  },
+  "properties": {
+    "event": { "$ref": "#/$defs/Event" },
+    "inline": { "oneOf": [{ "$ref": "#/$defs/Start" }, { "$ref": "#/$defs/Stop" }] }
+  }
+}

@@ -619,6 +619,8 @@ func (g *schemaGenerator) generateEnumOrOneOf(t *schemas.Type, scope nameScope) 
 }
 
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	t = g.asEnumUnion(t)
+
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		return g.alreadyDeclaredType(t, decl, scope)
 	}
@@ -1046,13 +1048,14 @@ func (g *schemaGenerator) schemaExcludesNullResolved(t *schemas.Type) bool {
 
 // declaresNoNull is schemaExcludesNull for a schema whose type may be the
 // object type that a root of a file a `$ref` names whole was given for want of
-// one, which does not count.
+// one, which does not count. An enum union is read as its enum, which has the
+// type string unless a branch admits null.
 func (g *schemaGenerator) declaresNoNull(t *schemas.Type) bool {
 	if _, guessed := g.objectByDefault[t]; guessed {
 		return false
 	}
 
-	return schemaExcludesNull(t)
+	return schemaExcludesNull(g.asEnumUnion(t))
 }
 
 // refTargetIn returns the schema that t's `$ref`, read in the document doc of
@@ -1754,6 +1757,8 @@ func isFalseSchema(t *schemas.Type) bool {
 }
 
 func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	t = g.asEnumUnion(t)
+
 	if ext := t.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
 			g.output.file.Package.AddImport(pkg, "")
@@ -2941,6 +2946,9 @@ func (g *schemaGenerator) generateInlineCompositionOrWrapper(
 }
 
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	// An enum union is generated as the enum it is, wherever it is generated.
+	t = g.asEnumUnion(t)
+
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
 	if t.Enum == nil && t.Ref == "" {

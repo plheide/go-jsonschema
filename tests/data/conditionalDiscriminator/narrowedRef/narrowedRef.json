@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "A then narrows operator by a $ref to an enum, compare and combine, or by an enum union, either. Each is checked as an inline enum is.",
+  "$defs": {
+    "Comparison": { "type": "string", "enum": ["EQ", "GT"] },
+    "Logical": { "type": "string", "enum": ["AND", "OR"] },
+    "Operator": { "anyOf": [{ "$ref": "#/$defs/Comparison" }, { "$ref": "#/$defs/Logical" }] }
+  },
+  "properties": {
+    "kind": { "type": "string", "enum": ["compare", "combine", "either"] },
+    "operator": { "$ref": "#/$defs/Operator" }
+  },
+  "required": ["kind"],
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "compare" } } },
+      "then": { "properties": { "operator": { "$ref": "#/$defs/Comparison" } } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "combine" } } },
+      "then": { "properties": { "operator": { "$ref": "#/$defs/Logical" } } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "either" } } },
+      "then": { "properties": { "operator": { "anyOf": [{ "$ref": "#/$defs/Comparison" }, { "$ref": "#/$defs/Logical" }] } } }
+    }
+  ]
+}

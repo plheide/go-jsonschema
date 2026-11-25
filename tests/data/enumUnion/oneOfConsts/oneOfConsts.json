@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A oneOf of documented consts and enums with no type of its own, the documented-enum pattern without type: string, is the enum of its strings.",
+  "properties": {
+    "mode": {
+      "oneOf": [
+        { "const": "fast", "description": "Skips the checks." },
+        { "const": "safe", "description": "Runs every check." },
+        { "enum": ["dry", "dry-run"], "description": "Changes nothing." }
+      ]
+    }
+  }
+}
