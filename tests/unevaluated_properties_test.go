@@ -16,9 +16,10 @@ import (
 // beside an anyOf or oneOf whose branches only list required, a not, and an
 // if/then that only lists required, under respect-schema: none evaluates a
 // property, so a property that the object and its allOf branches don't
-// declare is rejected, and the keywords themselves are checked as before. An
-// if that declares a property evaluates it when it matches, so beside one the
-// keyword is not checked.
+// declare is rejected. The presence counts and the not are checked as before;
+// the if/then itself is not, and is reported, as a conditional keyed on
+// presence rather than a value is. An if that declares a property evaluates
+// it when it matches, so beside one the keyword is not checked.
 func TestUnevaluatedPropertiesBesidePresence(t *testing.T) {
 	t.Parallel()
 
