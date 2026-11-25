@@ -9,7 +9,35 @@ import (
 
 	testUnevaluatedDraft07 "github.com/plheide/go-jsonschema/tests/data/strictAdditionalProperties/unevaluatedDraft07"
 	testUnevaluatedFalse "github.com/plheide/go-jsonschema/tests/data/strictAdditionalProperties/unevaluatedFalse"
+	testUnevaluatedPresence "github.com/plheide/go-jsonschema/tests/data/strictAdditionalProperties/unevaluatedPresence"
 )
+
+// TestUnevaluatedPropertiesBesidePresence covers unevaluatedProperties of false
+// beside an anyOf or oneOf whose branches only list required, a not, and an
+// if/then that only lists required, under respect-schema: none evaluates a
+// property, so a property that the object and its allOf branches don't
+// declare is rejected, and the keywords themselves are checked as before. An
+// if that declares a property evaluates it when it matches, so beside one the
+// keyword is not checked.
+func TestUnevaluatedPropertiesBesidePresence(t *testing.T) {
+	t.Parallel()
+
+	const notAllowed = "additional properties not allowed"
+
+	checkDecode[testUnevaluatedPresence.UnevaluatedPresence](t, []decodeCase{
+		{`{"target": {"name": "n", "component": "c"}}`, ""},
+		{`{"target": {"name": "n", "node": "x", "extra": 1}}`, `fields ["extra"] in UnevaluatedPresenceTarget: ` + notAllowed},
+		{`{"target": {"name": "n"}}`, "UnevaluatedPresenceTarget: at least one of [component], [node] must be present"},
+		{`{"contact": {"email": "e"}}`, ""},
+		{`{"contact": {"email": "e", "fax": "f"}}`, `fields ["fax"] in UnevaluatedPresenceContact: ` + notAllowed},
+		{`{"window": {"count": 1}}`, ""},
+		{`{"window": {"count": 1, "until": "x"}}`, "fields count, until in UnevaluatedPresenceWindow: must not all be present"},
+		{`{"window": {"zz": 1}}`, `fields ["zz"] in UnevaluatedPresenceWindow: ` + notAllowed},
+		{`{"paired": {"a": "x", "b": "y"}}`, ""},
+		{`{"paired": {"c": 1}}`, `fields ["c"] in UnevaluatedPresencePaired: ` + notAllowed},
+		{`{"keyed": {"kind": "a", "x": 1, "zz": 2}}`, ""},
+	})
+}
 
 // TestUnevaluatedPropertiesFalse covers unevaluatedProperties of false under
 // StrictAdditionalProperties respect-schema. Where the evaluated properties are

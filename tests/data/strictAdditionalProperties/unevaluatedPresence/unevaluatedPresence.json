@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "unevaluatedProperties: false beside keywords whose subschemas evaluate no property, such as branches that only list required: what the object evaluates is the same whatever they match, so the keyword is checked. A not evaluates none either. An if that declares properties evaluates them when it matches, so beside one the keyword stays unchecked.",
+  "type": "object",
+  "$defs": {
+    "Identity": {
+      "type": "object",
+      "properties": { "name": { "type": "string" } },
+      "required": ["name"]
+    }
+  },
+  "properties": {
+    "target": {
+      "description": "Names either a component or a node, beside the identity it extends.",
+      "allOf": [
+        { "$ref": "#/$defs/Identity" },
+        {
+          "properties": { "component": { "type": "string" }, "node": { "type": "string" } },
+          "anyOf": [{ "required": ["component"] }, { "required": ["node"] }]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "contact": {
+      "type": "object",
+      "properties": { "email": { "type": "string" }, "phone": { "type": "string" } },
+      "oneOf": [{ "required": ["email"] }, { "required": ["phone"] }],
+      "unevaluatedProperties": false
+    },
+    "window": {
+      "type": "object",
+      "properties": { "count": { "type": "integer" }, "until": { "type": "string" } },
+      "not": { "required": ["count", "until"] },
+      "unevaluatedProperties": false
+    },
+    "paired": {
+      "type": "object",
+      "properties": { "a": { "type": "string" }, "b": { "type": "string" } },
+      "if": { "required": ["a"] },
+      "then": { "required": ["b"] },
+      "unevaluatedProperties": false
+    },
+    "keyed": {
+      "type": "object",
+      "properties": { "kind": { "type": "string", "enum": ["a", "b"] }, "x": { "type": "integer" } },
+      "if": { "properties": { "kind": { "const": "a" } } },
+      "then": { "required": ["x"] },
+      "unevaluatedProperties": false
+    }
+  }
+}

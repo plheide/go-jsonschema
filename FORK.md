@@ -72,6 +72,8 @@ Not offered upstream yet:
     the `$ref`s of a `oneOf`'s variants;
   * writing nothing for a schema whose `--schema-output` is empty, for any number of packages that another run
     writes;
+  * checking `unevaluatedProperties: false` beside an `anyOf`, `oneOf`, conditional or `dependentSchemas` whose
+    subschemas evaluate no property, such as branches that only list `required`, and beside a `not`;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);

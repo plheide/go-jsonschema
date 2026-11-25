@@ -576,9 +576,11 @@ warning, since the generator has no first-class support for them yet.
 
 `unevaluatedProperties: false`, the draft 2019-09 and later way to close an object composed with `allOf`, rejects the
 fields that neither the object nor any of its `allOf` branches, inline or through a `$ref`, declares. An `anyOf`, a
-`oneOf`, an `if`/`then`/`else`, a `not`, `dependentSchemas`, `patternProperties`, or a branch's own
-`additionalProperties` or `unevaluatedProperties` evaluates properties in ways the generated code does not follow, so
-there the keyword is left unchecked, with a fidelity warning. So it is in a schema whose `$schema` names draft-07 or an
+`oneOf`, an `if`/`then`/`else` or `dependentSchemas` whose subschemas declare properties evaluates them depending on the
+value, and `patternProperties` or a branch's own `additionalProperties` or `unevaluatedProperties` evaluates properties
+the struct has no field for, so there the keyword is left unchecked, with a fidelity warning. Subschemas that evaluate
+no property, such as branches that only list `required`, change nothing, nor does a `not`, whose subschema must fail
+and so evaluates none. So it is in a schema whose `$schema` names draft-07 or an
 earlier draft, which doesn't have the keyword, as a validator of that draft doesn't. `additionalProperties: false`
 beside `allOf` is checked over the merged properties as well, which is more lenient than JSON Schema: there it sees only
 the properties declared beside it, so a validator rejects every property that the branches declare.
