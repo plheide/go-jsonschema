@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "https://example.com/presenceConditional/draft06",
+  "description": "A draft-06 document is read as draft-07, as the README says the generator reads every draft before it, so its if/then/else apply, as a value-keyed one's do, and as they do for the reference validator of the differential test.",
+  "type": "object",
+  "properties": {
+    "flag": {
+      "type": "boolean"
+    },
+    "extra": {
+      "type": "string"
+    }
+  },
+  "if": {
+    "required": [
+      "flag"
+    ]
+  },
+  "then": {
+    "required": [
+      "extra"
+    ]
+  }
+}

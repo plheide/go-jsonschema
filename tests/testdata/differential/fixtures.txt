@@ -8,9 +8,9 @@ validator rejects, for the keyword it names; a wrong rejection rejects one it ac
 check is silent when the generator gave no warning for the schema.
 Regenerate this file with OVERWRITE_EXPECTED_GO_FILE=true.
 
-schemas: 713 (392 fixtures, 321 definitions), 25 skipped; documents: 18495
-json: 17313 agree, 699 missing checks (110 silent), 483 wrong rejections, 0 panics
-yaml: 16594 agree, 1400 missing checks (584 silent), 501 wrong rejections, 0 panics
+schemas: 716 (394 fixtures, 322 definitions), 25 skipped; documents: 18560
+json: 17375 agree, 702 missing checks (110 silent), 483 wrong rejections, 0 panics
+yaml: 16653 agree, 1406 missing checks (585 silent), 501 wrong rejections, 0 panics
 
 == aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json
 skipped: the reference validator can't compile it: compile data/aliasSingleAllOfAnyOfRefs/externalRef/externalRef.json: json-pointer in "file://data/aliasSingleAllOfAnyOfRefs/allOf/allOf.json#/$defs/Thing" not found
@@ -2303,8 +2303,22 @@ yaml wrong rejection: 1e300 ×1, e.g. / = 1e300: unmarshal Wrap: field value: 1e
 yaml wrong rejection: 2^63 ×1, e.g. / = 9223372036854775808: unmarshal Wrap: yaml: unmarshal errors: line 1: cannot unmarshal !!int `9223372...` into int
 yaml wrong rejection: 2^64 ×1, e.g. / = 18446744073709551616: unmarshal Wrap: field value: 18446744073709551616 is out of range for int
 
+== presenceConditional/dependentSchemas/dependentSchemas.json#/$defs/Deny
+json missing check (no keyword): seed ×1, e.g. seed 0
+json missing check (no keyword): wrong type ×1, e.g. / = "x"
+yaml missing check (no keyword): seed ×1, e.g. seed 0
+yaml missing check (no keyword): wrong type ×1, e.g. / = "x"
+
 == presenceConditional/dependentSchemas/dependentSchemas.json#/$defs/Duration
 yaml missing check type: wrong type ×1, e.g. /unit = 12345
+
+== presenceConditional/draft06/draft06.json
+yaml missing check (silent) type: wrong type ×1, e.g. /extra = 12345
+
+== presenceConditional/gapsBesideConditional/gapsBesideConditional.json
+json missing check maxProperties: add unknown key ×1, e.g. / = {"kind":"a","x":"a","y":"a","zzUnknown":…
+yaml missing check maxProperties: add unknown key ×1, e.g. / = {"kind":"a","x":"a","y":"a","zzUnknown":…
+yaml missing check type: wrong type ×2, e.g. /x = 12345
 
 == presenceCount/anyOfRequiredOnly/anyOfRequiredOnly.json
 yaml missing check (silent) type: wrong type ×4, e.g. /email = 12345

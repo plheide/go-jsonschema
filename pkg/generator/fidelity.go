@@ -529,19 +529,35 @@ func (g *schemaGenerator) reportOwnConditional(t, subject *schemas.Type, scope n
 	}
 }
 
-// reportCheckGaps reports, once for t, what the checks compiled for t's allOf
-// and its own conditional leave unchecked, as gaps describes it.
+// reportCheckGaps reports what the checks compiled for t's allOf, its own
+// conditional and its presence-keyed clauses leave unchecked, as gaps
+// describes it: each gap once for t, since t is reported from more than one
+// place, such as a presence clause's gaps before its conditional's.
 func (g *schemaGenerator) reportCheckGaps(t *schemas.Type, gaps []string, scope nameScope) {
 	if g.config.OnlyModels || len(gaps) == 0 {
 		return
 	}
 
-	if _, reported := g.reportedGaps[t]; reported {
-		return
+	reported := g.reportedGaps[t]
+	if reported == nil {
+		reported = map[string]struct{}{}
+		g.reportedGaps[t] = reported
 	}
 
-	g.reportedGaps[t] = struct{}{}
-	g.warnNotEnforced(scope, strings.Join(gaps, "; "))
+	var fresh []string
+
+	for _, gap := range gaps {
+		if _, ok := reported[gap]; ok {
+			continue
+		}
+
+		reported[gap] = struct{}{}
+		fresh = append(fresh, gap)
+	}
+
+	if len(fresh) > 0 {
+		g.warnNotEnforced(scope, strings.Join(fresh, "; "))
+	}
 }
 
 // isDeclaring reports whether generateDeclaredType is generating t's type,

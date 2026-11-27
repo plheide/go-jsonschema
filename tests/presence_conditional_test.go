@@ -4,9 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	yamlv3 "gopkg.in/yaml.v3"
 
 	testPresenceDeps07 "github.com/plheide/go-jsonschema/tests/data/presenceConditional/dependenciesDraft07"
 	testPresenceDependent "github.com/plheide/go-jsonschema/tests/data/presenceConditional/dependentSchemas"
+	testPresenceDraft06 "github.com/plheide/go-jsonschema/tests/data/presenceConditional/draft06"
 	testPresenceIf "github.com/plheide/go-jsonschema/tests/data/presenceConditional/ifRequired"
 )
 
@@ -52,6 +55,24 @@ func TestPresenceConditional(t *testing.T) {
 		})
 	})
 
+	// A $ref to false forbids its property as false does, and so does a const
+	// and an enum with no value in common. A type: object that the schema
+	// declares, with no properties to infer it from, is checked.
+	t.Run("false through a $ref, an empty const and enum, and an explicit object type", func(t *testing.T) {
+		t.Parallel()
+
+		checkDecode[testPresenceDependent.DependentSchemas](t, []decodeCase{
+			{`{"beta": "b"}`, "field beta in DependentSchemas (when beta is present): must not be present"},
+			{`{"gamma": "g"}`, ""},
+			{`{"gamma": "g", "delta": "d"}`, "field delta in DependentSchemas (when gamma is present): must not be present"},
+			{`{"gamma": "g", "tier": "a"}`, "field tier in DependentSchemas (when gamma is present): must not be present"},
+			{`{"gamma": "g", "meta": 7}`, "field meta in DependentSchemas (when gamma is present): must be of type object"},
+			{`{"gamma": "g", "meta": {}}`, "field meta.id in DependentSchemas (when gamma is present): required"},
+			{`{"gamma": "g", "meta": {"id": 1}}`, ""},
+			{`{"delta": "d", "tier": "a", "meta": 7}`, ""},
+		})
+	})
+
 	// The end of a session is a duration, whose value may be 0; where a
 	// session has one, the entry keyed on it asks for at least 1.
 	t.Run("a nested bound on a property whose own type allows less", func(t *testing.T) {
@@ -68,6 +89,23 @@ func TestPresenceConditional(t *testing.T) {
 		// The duration itself, outside the entry, allows 0.
 		checkDecode[testPresenceDependent.Duration](t, []decodeCase{
 			{`{"value": 0}`, ""},
+		})
+
+		// YAML's .nan is no JSON number, so it is not one of type number.
+		var fromYAML testPresenceDependent.DependentSchemas
+
+		require.ErrorContains(t, yamlv3.Unmarshal([]byte("end:\n  value: .nan\n"), &fromYAML),
+			"field end.value in DependentSchemas (when end is present): must be of type number")
+	})
+
+	// A draft-06 document is read as draft-07, so its if/then/else apply.
+	t.Run("an if that only lists required in a draft-06 document", func(t *testing.T) {
+		t.Parallel()
+
+		checkDecode[testPresenceDraft06.Draft06](t, []decodeCase{
+			{`{"flag": true}`, "field extra in Draft06 (when flag is present): required"},
+			{`{"flag": true, "extra": "e"}`, ""},
+			{`{"extra": "e"}`, ""},
 		})
 	})
 
@@ -125,9 +163,18 @@ func TestPresenceConditionalWarnings(t *testing.T) {
 			"schema fidelity: type DependentSchemas does not enforce all it declares: dependentSchemas (extra) not checked",
 			"schema fidelity: type DependentSchemas does not enforce all it declares: " +
 				"dependentSchemas (label): minProperties not checked",
+			"schema fidelity: type Deny does not enforce all it declares: false schema not compiled, so any value passes",
 		}},
 		{"dependenciesDraft07", nil},
 		{"ifRequired", nil},
+		{"draft06", nil},
+		// Each reports its own gaps: the entry's, then the conditional's.
+		{"gapsBesideConditional", []string{
+			"schema fidelity: type GapsBesideConditional does not enforce all it declares: " +
+				"dependentSchemas (y): maxProperties not checked",
+			"schema fidelity: type GapsBesideConditional does not enforce all it declares: " +
+				"its own then: minProperties not checked",
+		}},
 	} {
 		warnings := generateWithWarnerCapture(t,
 			"./data/presenceConditional/"+tc.fixture+"/"+tc.fixture+".json")

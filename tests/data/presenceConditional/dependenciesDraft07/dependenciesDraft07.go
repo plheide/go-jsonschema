@@ -149,13 +149,13 @@ func rawIsType_DependenciesDraft07(v interface{}, names ...string) bool {
 }
 
 // rawNumber_DependenciesDraft07 returns the number v holds, as JSON or YAML
-// decodes one into an interface{}, as a float64. Every presence-keyed check in
-// this file calls it; it is named after the first, so that no other file of the
-// package declares it.
+// decodes one into an interface{}, as a float64. A YAML .nan or .inf is no JSON
+// number. Every presence-keyed check in this file calls it; it is named after the
+// first, so that no other file of the package declares it.
 func rawNumber_DependenciesDraft07(v interface{}) (float64, bool) {
 	switch n := v.(type) {
 	case float64:
-		return n, true
+		return n, !math.IsNaN(n) && !math.IsInf(n, 0)
 	case int:
 		return float64(n), true
 	case int64:

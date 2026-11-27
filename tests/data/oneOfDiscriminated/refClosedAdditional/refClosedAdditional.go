@@ -14,7 +14,8 @@ type Base struct {
 // A variant closed with additionalProperties: false admits only the properties of
 // the schema that closes it: not those of the schema holding the oneOf, and, for
 // an allOf variant, not those of its other elements. A message that has the
-// parent's channel matches no variant, as a validator finds.
+// parent's channel matches no variant, as a validator finds. A schema that closes
+// the variant from an allOf nested in its allOf counts as well.
 type RefClosedAdditional struct {
 	// Message corresponds to the JSON schema field "message".
 	Message *RefClosedAdditionalMessage `json:"message,omitempty,omitzero" yaml:"message,omitempty" mapstructure:"message,omitempty"`
@@ -26,6 +27,8 @@ type RefClosedAdditionalMessage struct {
 	Variant1 *RefClosedAdditionalMessageVariant1 `json:"-" yaml:"-"`
 
 	Variant2 *RefClosedAdditionalMessageVariant2 `json:"-" yaml:"-"`
+
+	Variant3 *RefClosedAdditionalMessageVariant3 `json:"-" yaml:"-"`
 }
 
 type RefClosedAdditionalMessageVariant0 struct {
@@ -172,6 +175,53 @@ func (j *RefClosedAdditionalMessageVariant2) UnmarshalYAML(value *yaml.Node) err
 	return nil
 }
 
+type RefClosedAdditionalMessageVariant3 struct {
+	// Channel corresponds to the JSON schema field "channel".
+	Channel *string `json:"channel,omitempty,omitzero" yaml:"channel,omitempty" mapstructure:"channel,omitempty"`
+
+	// Id corresponds to the JSON schema field "id".
+	Id *string `json:"id,omitempty,omitzero" yaml:"id,omitempty" mapstructure:"id,omitempty"`
+
+	// Note corresponds to the JSON schema field "note".
+	Note string `json:"note" yaml:"note" mapstructure:"note"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *RefClosedAdditionalMessageVariant3) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw RefClosedAdditionalMessageVariant3: %w", err)
+	}
+	if _, ok := raw["note"]; raw != nil && !ok {
+		return fmt.Errorf("field note in RefClosedAdditionalMessageVariant3: required")
+	}
+	type Plain RefClosedAdditionalMessageVariant3
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal RefClosedAdditionalMessageVariant3: %w", err)
+	}
+	*j = RefClosedAdditionalMessageVariant3(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RefClosedAdditionalMessageVariant3) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw RefClosedAdditionalMessageVariant3: %w", err)
+	}
+	if _, ok := raw["note"]; raw != nil && !ok {
+		return fmt.Errorf("field note in RefClosedAdditionalMessageVariant3: required")
+	}
+	type Plain RefClosedAdditionalMessageVariant3
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal RefClosedAdditionalMessageVariant3: %w", err)
+	}
+	*j = RefClosedAdditionalMessageVariant3(plain)
+	return nil
+}
+
 // MarshalJSON implements json.Marshaler. Exactly one variant
 // pointer must be non-nil; otherwise marshaling errors.
 func (j RefClosedAdditionalMessage) MarshalJSON() ([]byte, error) {
@@ -185,6 +235,9 @@ func (j RefClosedAdditionalMessage) MarshalJSON() ([]byte, error) {
 	if j.Variant2 != nil {
 		set++
 	}
+	if j.Variant3 != nil {
+		set++
+	}
 	if set != 1 {
 		return nil, fmt.Errorf("RefClosedAdditionalMessage: exactly one variant must be set, got %d", set)
 	}
@@ -196,6 +249,9 @@ func (j RefClosedAdditionalMessage) MarshalJSON() ([]byte, error) {
 	}
 	if j.Variant2 != nil {
 		return json.Marshal(j.Variant2)
+	}
+	if j.Variant3 != nil {
+		return json.Marshal(j.Variant3)
 	}
 	return nil, nil // unreachable
 }
@@ -212,6 +268,9 @@ func (j RefClosedAdditionalMessage) MarshalYAML() (interface{}, error) {
 	if j.Variant2 != nil {
 		set++
 	}
+	if j.Variant3 != nil {
+		set++
+	}
 	if set != 1 {
 		return nil, fmt.Errorf("RefClosedAdditionalMessage: exactly one variant must be set, got %d", set)
 	}
@@ -223,6 +282,9 @@ func (j RefClosedAdditionalMessage) MarshalYAML() (interface{}, error) {
 	}
 	if j.Variant2 != nil {
 		return j.Variant2, nil
+	}
+	if j.Variant3 != nil {
+		return j.Variant3, nil
 	}
 	return nil, nil // unreachable
 }
@@ -318,6 +380,30 @@ func (j *RefClosedAdditionalMessage) UnmarshalJSON(value []byte) error {
 		}
 	}
 
+	// Variant 3: RefClosedAdditionalMessageVariant3
+	{
+		shapeOK := true
+		if _, ok := raw["note"]; !ok {
+			shapeOK = false
+		}
+		for k := range raw {
+			switch k {
+			case "note":
+			default:
+				shapeOK = false
+			}
+		}
+		if shapeOK {
+			var v RefClosedAdditionalMessageVariant3
+			if err := json.Unmarshal(value, &v); err == nil {
+				j.Variant3 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
 	if matched == 0 {
 		if lastErr != nil {
 			return fmt.Errorf("RefClosedAdditionalMessage: no oneOf variant matched: %w", lastErr)
@@ -328,6 +414,7 @@ func (j *RefClosedAdditionalMessage) UnmarshalJSON(value []byte) error {
 		j.Variant0 = nil
 		j.Variant1 = nil
 		j.Variant2 = nil
+		j.Variant3 = nil
 		return fmt.Errorf("RefClosedAdditionalMessage: ambiguous input — %d oneOf variants matched", matched)
 	}
 	return nil
@@ -423,6 +510,30 @@ func (j *RefClosedAdditionalMessage) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 
+	// Variant 3: RefClosedAdditionalMessageVariant3
+	{
+		shapeOK := true
+		if _, ok := raw["note"]; !ok {
+			shapeOK = false
+		}
+		for k := range raw {
+			switch k {
+			case "note":
+			default:
+				shapeOK = false
+			}
+		}
+		if shapeOK {
+			var v RefClosedAdditionalMessageVariant3
+			if err := value.Decode(&v); err == nil {
+				j.Variant3 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
 	if matched == 0 {
 		if lastErr != nil {
 			return fmt.Errorf("RefClosedAdditionalMessage: no oneOf variant matched: %w", lastErr)
@@ -433,6 +544,7 @@ func (j *RefClosedAdditionalMessage) UnmarshalYAML(value *yaml.Node) error {
 		j.Variant0 = nil
 		j.Variant1 = nil
 		j.Variant2 = nil
+		j.Variant3 = nil
 		return fmt.Errorf("RefClosedAdditionalMessage: ambiguous input — %d oneOf variants matched", matched)
 	}
 	return nil

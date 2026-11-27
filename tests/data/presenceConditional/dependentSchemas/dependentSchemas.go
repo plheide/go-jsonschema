@@ -13,13 +13,20 @@ import "strconv"
 import "strings"
 import "unicode/utf8"
 
+type Deny interface{}
+
 // Each entry of dependentSchemas applies where its property is present, and is
 // checked on the raw input: a required list, a not of required, a narrowing to
 // some strings, to false, to a const, to string bounds, a nested bound on a
 // property whose own type allows less, a $ref to a schema that only requires and
 // narrows, and a presence count. An entry with a keyword these checks leave out is
-// checked in part, and one with nothing they take is named.
+// checked in part, and one with nothing they take is named. A $ref to false
+// forbids, as false does, and so does a const and enum with no value in common; an
+// explicit type: object is checked.
 type DependentSchemas struct {
+	// Beta corresponds to the JSON schema field "beta".
+	Beta *string `json:"beta,omitempty,omitzero" yaml:"beta,omitempty" mapstructure:"beta,omitempty"`
+
 	// Billing corresponds to the JSON schema field "billing".
 	Billing *string `json:"billing,omitempty,omitzero" yaml:"billing,omitempty" mapstructure:"billing,omitempty"`
 
@@ -29,11 +36,17 @@ type DependentSchemas struct {
 	// Code corresponds to the JSON schema field "code".
 	Code *string `json:"code,omitempty,omitzero" yaml:"code,omitempty" mapstructure:"code,omitempty"`
 
+	// Delta corresponds to the JSON schema field "delta".
+	Delta *string `json:"delta,omitempty,omitzero" yaml:"delta,omitempty" mapstructure:"delta,omitempty"`
+
 	// End corresponds to the JSON schema field "end".
 	End *Duration `json:"end,omitempty,omitzero" yaml:"end,omitempty" mapstructure:"end,omitempty"`
 
 	// Extra corresponds to the JSON schema field "extra".
 	Extra *string `json:"extra,omitempty,omitzero" yaml:"extra,omitempty" mapstructure:"extra,omitempty"`
+
+	// Gamma corresponds to the JSON schema field "gamma".
+	Gamma *string `json:"gamma,omitempty,omitzero" yaml:"gamma,omitempty" mapstructure:"gamma,omitempty"`
 
 	// Host corresponds to the JSON schema field "host".
 	Host *string `json:"host,omitempty,omitzero" yaml:"host,omitempty" mapstructure:"host,omitempty"`
@@ -43,6 +56,9 @@ type DependentSchemas struct {
 
 	// Level corresponds to the JSON schema field "level".
 	Level *string `json:"level,omitempty,omitzero" yaml:"level,omitempty" mapstructure:"level,omitempty"`
+
+	// Meta corresponds to the JSON schema field "meta".
+	Meta interface{} `json:"meta,omitempty,omitzero" yaml:"meta,omitempty" mapstructure:"meta,omitempty"`
 
 	// Mode corresponds to the JSON schema field "mode".
 	Mode *string `json:"mode,omitempty,omitzero" yaml:"mode,omitempty" mapstructure:"mode,omitempty"`
@@ -62,6 +78,9 @@ type DependentSchemas struct {
 	// Retries corresponds to the JSON schema field "retries".
 	Retries *int `json:"retries,omitempty,omitzero" yaml:"retries,omitempty" mapstructure:"retries,omitempty"`
 
+	// Tier corresponds to the JSON schema field "tier".
+	Tier *string `json:"tier,omitempty,omitzero" yaml:"tier,omitempty" mapstructure:"tier,omitempty"`
+
 	// Token corresponds to the JSON schema field "token".
 	Token *string `json:"token,omitempty,omitzero" yaml:"token,omitempty" mapstructure:"token,omitempty"`
 
@@ -77,6 +96,11 @@ func (j *DependentSchemas) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw DependentSchemas: %w", err)
+	}
+	if _, ok := raw["beta"]; ok {
+		if _, ok := raw["beta"]; ok {
+			return fmt.Errorf("field beta in DependentSchemas (when beta is present): must not be present")
+		}
 	}
 	if _, ok := raw["card"]; ok {
 		if _, ok := raw["billing"]; !ok {
@@ -107,6 +131,24 @@ func (j *DependentSchemas) UnmarshalJSON(value []byte) error {
 							return fmt.Errorf("field %s: must be >= %v", "end.value in DependentSchemas (when end is present)", 1)
 						}
 					}
+				}
+			}
+		}
+	}
+	if _, ok := raw["gamma"]; ok {
+		if _, ok := raw["delta"]; ok {
+			return fmt.Errorf("field delta in DependentSchemas (when gamma is present): must not be present")
+		}
+		if _, ok := raw["tier"]; ok {
+			return fmt.Errorf("field tier in DependentSchemas (when gamma is present): must not be present")
+		}
+		if v1, present := raw["meta"]; present {
+			if !rawIsType_DependentSchemas(v1, "object") {
+				return fmt.Errorf("field meta in DependentSchemas (when gamma is present): must be of type object")
+			}
+			if m1, isObject := v1.(map[string]interface{}); isObject {
+				if _, ok := m1["id"]; !ok {
+					return fmt.Errorf("field meta.id in DependentSchemas (when gamma is present): required")
 				}
 			}
 		}
@@ -191,6 +233,11 @@ func (j *DependentSchemas) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw DependentSchemas: %w", err)
 	}
+	if _, ok := raw["beta"]; ok {
+		if _, ok := raw["beta"]; ok {
+			return fmt.Errorf("field beta in DependentSchemas (when beta is present): must not be present")
+		}
+	}
 	if _, ok := raw["card"]; ok {
 		if _, ok := raw["billing"]; !ok {
 			return fmt.Errorf("field billing in DependentSchemas (when card is present): required")
@@ -220,6 +267,24 @@ func (j *DependentSchemas) UnmarshalYAML(value *yaml.Node) error {
 							return fmt.Errorf("field %s: must be >= %v", "end.value in DependentSchemas (when end is present)", 1)
 						}
 					}
+				}
+			}
+		}
+	}
+	if _, ok := raw["gamma"]; ok {
+		if _, ok := raw["delta"]; ok {
+			return fmt.Errorf("field delta in DependentSchemas (when gamma is present): must not be present")
+		}
+		if _, ok := raw["tier"]; ok {
+			return fmt.Errorf("field tier in DependentSchemas (when gamma is present): must not be present")
+		}
+		if v1, present := raw["meta"]; present {
+			if !rawIsType_DependentSchemas(v1, "object") {
+				return fmt.Errorf("field meta in DependentSchemas (when gamma is present): must be of type object")
+			}
+			if m1, isObject := v1.(map[string]interface{}); isObject {
+				if _, ok := m1["id"]; !ok {
+					return fmt.Errorf("field meta.id in DependentSchemas (when gamma is present): required")
 				}
 			}
 		}
@@ -450,13 +515,13 @@ func rawIsType_DependentSchemas(v interface{}, names ...string) bool {
 }
 
 // rawNumber_DependentSchemas returns the number v holds, as JSON or YAML decodes
-// one into an interface{}, as a float64. Every presence-keyed check in this file
-// calls it; it is named after the first, so that no other file of the package
-// declares it.
+// one into an interface{}, as a float64. A YAML .nan or .inf is no JSON number.
+// Every presence-keyed check in this file calls it; it is named after the first,
+// so that no other file of the package declares it.
 func rawNumber_DependentSchemas(v interface{}) (float64, bool) {
 	switch n := v.(type) {
 	case float64:
-		return n, true
+		return n, !math.IsNaN(n) && !math.IsInf(n, 0)
 	case int:
 		return float64(n), true
 	case int64:

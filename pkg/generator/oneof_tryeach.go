@@ -543,30 +543,16 @@ func (g *schemaGenerator) tryEachShape(t, variant, read *schemas.Type, arrayMode
 }
 
 // closingProperties returns the properties that a variant closed by its own
-// `additionalProperties: false` admits: those of the schema that declares it,
-// the variant where a $ref leads, or each element of the variant's allOf that
-// declares it, all of whose properties a value must keep to. ok is false where
-// no such schema closes the variant, as where the parent's
-// additionalProperties, folded into each variant, does, or where one of them
-// has patternProperties, which the shape check leaves lenient.
+// `additionalProperties: false` admits: those of each schema that declares
+// it, the variant where a $ref leads or an element of its allOf at any depth,
+// all of whose properties a value must keep to. ok is false where no such
+// schema closes the variant, as where the parent's additionalProperties,
+// folded into each variant, does, or where one of them has
+// patternProperties, which the shape check leaves lenient.
 func (g *schemaGenerator) closingProperties(variant *schemas.Type) ([]string, bool) {
-	target, doc, docFile, ok := g.followRefsQuietlyIn(variant)
-	if !ok {
-		return nil, false
-	}
+	var closing []*schemas.Type
 
-	closing := []*schemas.Type{}
-
-	if isFalseSchema(target.AdditionalProperties) {
-		closing = append(closing, target)
-	}
-
-	for _, elem := range target.AllOf {
-		elem, _, _, ok := g.followRefsQuietlyFrom(elem, doc, docFile)
-		if ok && isFalseSchema(elem.AdditionalProperties) {
-			closing = append(closing, elem)
-		}
-	}
+	g.collectClosing(variant, g.schema, g.schemaFileName, map[*schemas.Type]bool{}, &closing)
 
 	if len(closing) == 0 {
 		return nil, false
@@ -590,6 +576,29 @@ func (g *schemaGenerator) closingProperties(variant *schemas.Type) ([]string, bo
 	}
 
 	return known, true
+}
+
+// collectClosing appends to closing the schemas that close s, which doc from
+// docFile holds, with `additionalProperties: false`: s where its $refs lead,
+// and the elements of its allOf, at any depth. A $ref that leads nowhere
+// closes nothing, and seen ends a cycle.
+func (g *schemaGenerator) collectClosing(
+	s *schemas.Type, doc *schemas.Schema, docFile string, seen map[*schemas.Type]bool, closing *[]*schemas.Type,
+) {
+	target, doc, docFile, ok := g.followRefsQuietlyFrom(s, doc, docFile)
+	if !ok || seen[target] {
+		return
+	}
+
+	seen[target] = true
+
+	if isFalseSchema(target.AdditionalProperties) {
+		*closing = append(*closing, target)
+	}
+
+	for _, elem := range target.AllOf {
+		g.collectClosing(elem, doc, docFile, seen, closing)
+	}
 }
 
 // tighterMaxItems returns the smaller of the length caps two schemas imply, and

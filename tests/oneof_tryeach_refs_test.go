@@ -120,6 +120,10 @@ func TestOneOfTryEachRefVariants(t *testing.T) {
 			{`{"message": {"code": "c", "channel": "z"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
 			{`{"message": {"code": "c", "detail": "d", "channel": "z"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
 			{`{"message": {"text": "t", "id": "i"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
+			// The schema that closes the last variant is an allOf element nested in its allOf.
+			{`{"message": {"note": "n"}}`, ""},
+			{`{"message": {"note": "n", "id": "i"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
+			{`{"message": {"note": "n", "channel": "z"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
 		})
 	})
 

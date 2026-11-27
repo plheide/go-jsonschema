@@ -852,13 +852,13 @@ func (g *schemaGenerator) compileProperty(
 		return false
 	}
 
-	if isFalseSchema(p) {
+	n, ok := g.compileRawNarrowing(p, doc, docFile, 1)
+	if g.admitsNothing(p, doc, docFile) || ok && n.rejectsEvery() {
 		checks.forbidden = append(checks.forbidden, []string{name})
 
 		return true
 	}
 
-	n, ok := g.compileRawNarrowing(p, doc, docFile, 1)
 	if !ok {
 		return false
 	}

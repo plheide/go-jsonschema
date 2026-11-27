@@ -56,6 +56,24 @@ type namedNarrowing struct {
 	name string
 }
 
+// rejectsEvery reports whether no value passes n: its const and enum have no
+// value in common.
+func (n *rawNarrowing) rejectsEvery() bool {
+	return n.listed && len(n.values) == 0
+}
+
+// admitsNothing reports whether s, which doc from docFile holds, rejects every
+// value: it is the false schema, there or where its $refs lead.
+func (g *schemaGenerator) admitsNothing(s *schemas.Type, doc *schemas.Schema, docFile string) bool {
+	if s == nil {
+		return false
+	}
+
+	target, _, _, ok := g.followRefsQuietlyFrom(s, doc, docFile)
+
+	return ok && isFalseSchema(target)
+}
+
 // checksNothing reports whether n asks nothing of a value.
 func (n *rawNarrowing) checksNothing() bool {
 	return len(n.types) == 0 && !n.listed && n.number == nil && n.str == nil &&
@@ -102,9 +120,10 @@ func (n *rawNarrowing) imports() []packageImport {
 // and the property is then left unchecked, as before. A $ref is followed as
 // followRefsQuietly follows one, from doc.
 //
-// A `type: object` alone is not checked: the schema parser infers it from
-// `properties`, so it may not be the schema's own, and a value that is no
-// object then passes, as the object keywords pass it.
+// A `type: object` beside `properties` or `additionalProperties` is not
+// checked: the schema parser infers it from them, so it may not be the
+// schema's own, and a value that is no object then passes, as the object
+// keywords pass it. Without them, the schema declares it, and it is checked.
 func (g *schemaGenerator) compileRawNarrowing(
 	s *schemas.Type, doc *schemas.Schema, docFile string, depth int,
 ) (*rawNarrowing, bool) {
@@ -122,7 +141,9 @@ func (g *schemaGenerator) compileRawNarrowing(
 		rest = *s
 	)
 
-	if len(s.Type) > 0 && (len(s.Type) != 1 || s.Type[0] != schemas.TypeNameObject) {
+	inferred := len(s.Type) == 1 && s.Type[0] == schemas.TypeNameObject &&
+		(len(s.Properties) > 0 || s.AdditionalProperties != nil)
+	if len(s.Type) > 0 && !inferred {
 		n.types = slices.Clone([]string(s.Type))
 	}
 
@@ -166,13 +187,14 @@ func (g *schemaGenerator) compileRawNarrowing(
 
 	for _, name := range sortedKeys(s.Properties) {
 		p := s.Properties[name]
-		if isFalseSchema(p) {
+
+		sub, ok := g.compileRawNarrowing(p, doc, docFile, depth+1)
+		if g.admitsNothing(p, doc, docFile) || ok && sub.rejectsEvery() {
 			n.forbidden = append(n.forbidden, name)
 
 			continue
 		}
 
-		sub, ok := g.compileRawNarrowing(p, doc, docFile, depth+1)
 		if !ok {
 			return nil, false
 		}
@@ -447,7 +469,8 @@ func (e rawNarrowingEmitter) emitListed(out *codegen.Emitter, value, field strin
 	}
 
 	if len(values) == 0 {
-		// The const and the enum have no value in common, so none passes.
+		// The const and the enum have no value in common, so none passes. The
+		// compilers forbid such a property instead, so this is not reached.
 		out.Printlnf(`return fmt.Errorf("%s: must not be present")`, field)
 
 		return
@@ -520,13 +543,13 @@ func (o *output) rawValueHelpers(typeName string) (string, string) {
 func emitRawNumberHelper(number string) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("%s returns the number v holds, as JSON or YAML decodes one into an interface{}, "+
-			"as a float64. Every presence-keyed check in this file calls it; it is named after the first, "+
-			"so that no other file of the package declares it.", number)
+			"as a float64. A YAML .nan or .inf is no JSON number. Every presence-keyed check in this file "+
+			"calls it; it is named after the first, so that no other file of the package declares it.", number)
 		out.Printlnf("func %s(v interface{}) (float64, bool) {", number)
 		out.Indent(1)
 		out.Printlnf("switch n := v.(type) {")
 		out.Printlnf("case float64:")
-		out.Printlnf("return n, true")
+		out.Printlnf("return n, !math.IsNaN(n) && !math.IsInf(n, 0)")
 		out.Printlnf("case int:")
 		out.Printlnf("return float64(n), true")
 		out.Printlnf("case int64:")

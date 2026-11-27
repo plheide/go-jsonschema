@@ -225,18 +225,18 @@ func (g *schemaGenerator) allOfPresenceClauses(t *schemas.Type) []presenceClause
 }
 
 // compilePresenceClause compiles a clause keyed on keys, whose then and else
-// are as given. A then of false forbids the keys together, and an else of
-// false requires them all.
+// are as given. A then of false, written there or where its $refs lead,
+// forbids the keys together, and an else of false requires them all.
 func (g *schemaGenerator) compilePresenceClause(keys []string, then, els *schemas.Type) presenceClause {
 	c := presenceClause{keys: keys}
 
-	if isFalseSchema(then) {
+	if g.admitsNothing(then, g.schema, g.schemaFileName) {
 		c.then.forbidden = [][]string{keys}
 	} else {
 		c.then, c.thenUnchecked = g.compileBranch(then, branchOptions{presence: true})
 	}
 
-	if isFalseSchema(els) {
+	if g.admitsNothing(els, g.schema, g.schemaFileName) {
 		c.els.required = keys
 	} else {
 		c.els, c.elseUnchecked = g.compileBranch(els, branchOptions{presence: true})
