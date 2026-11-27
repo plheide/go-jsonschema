@@ -58,7 +58,7 @@
         { "if": { "properties": { "kind": { "const": "square" } } }, "then": { "required": ["side"] } }
       ],
       "if": { "required": ["label"] },
-      "then": { "required": ["color"] }
+      "then": { "minProperties": 3 }
     }
   }
 }

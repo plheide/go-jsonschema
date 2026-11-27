@@ -79,6 +79,7 @@ var (
 	_ validator = new(presenceCountValidator)
 	_ validator = new(forbiddenSetsValidator)
 	_ validator = new(dependentRequiredValidator)
+	_ validator = new(presenceConditionalValidator)
 	_ validator = new(elementsValidator)
 	_ validator = new(untypedConstValidator)
 	_ validator = new(uniqueItemsValidator)

@@ -224,6 +224,11 @@ func (g *schemaGenerator) rawMapValidators(t *schemas.Type, declName string) []v
 		validators = append(validators, &dependentRequiredValidator{declName, dependencies})
 	}
 
+	// And a subschema can apply where properties are present.
+	if clauses := g.compiledPresenceClauses(t); len(clauses) > 0 {
+		validators = append(validators, &presenceConditionalValidator{declName: declName, clauses: clauses})
+	}
+
 	return validators
 }
 
@@ -1834,7 +1839,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		// does the schema's own if/then/else where it is a branch too, and its
 		// own not of required into the forbidden sets; any other conditional
 		// of its own does not, and is reported for t.
-		if checks.conditional != nil && checks.conditional.compilesOwn {
+		if checks.conditional != nil && checks.conditional.compilesOwn || g.compilesOwnPresence(t) {
 			tCopy = *withoutOwnConditional(&tCopy)
 		}
 
@@ -1843,7 +1848,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		}
 
 		g.reportOwnConditional(t, &tCopy, scope)
-		g.reportCheckGaps(t, checks.gaps, scope)
+		g.reportCheckGaps(t, append(slices.Clone(checks.gaps), g.presenceGaps(t)...), scope)
 		g.reportUnenforcedKeywords(t, scope)
 
 		return g.generateStructType(&tCopy, scope)

@@ -6,7 +6,7 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-// Draft-07's dependencies: a list of properties is checked, a schema is not.
+// Draft-07's dependencies: a list of properties is checked, and so is a schema.
 type Draft07 struct {
 	// BillingAddress corresponds to the JSON schema field "billingAddress".
 	BillingAddress *string `json:"billingAddress,omitempty,omitzero" yaml:"billingAddress,omitempty" mapstructure:"billingAddress,omitempty"`
@@ -32,6 +32,11 @@ func (j *Draft07) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("field run in Draft07: required when shell is present")
 		}
 	}
+	if _, ok := raw["creditCard"]; ok {
+		if _, ok := raw["billingAddress"]; !ok {
+			return fmt.Errorf("field billingAddress in Draft07 (when creditCard is present): required")
+		}
+	}
 	type Plain Draft07
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -50,6 +55,11 @@ func (j *Draft07) UnmarshalYAML(value *yaml.Node) error {
 	if _, ok := raw["shell"]; ok {
 		if _, ok := raw["run"]; !ok {
 			return fmt.Errorf("field run in Draft07: required when shell is present")
+		}
+	}
+	if _, ok := raw["creditCard"]; ok {
+		if _, ok := raw["billingAddress"]; !ok {
+			return fmt.Errorf("field billingAddress in Draft07 (when creditCard is present): required")
 		}
 	}
 	type Plain Draft07

@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/presenceConditional/dependentSchemas",
+  "description": "Each entry of dependentSchemas applies where its property is present, and is checked on the raw input: a required list, a not of required, a narrowing to some strings, to false, to a const, to string bounds, a nested bound on a property whose own type allows less, a $ref to a schema that only requires and narrows, and a presence count. An entry with a keyword these checks leave out is checked in part, and one with nothing they take is named. A $ref to false forbids, as false does, and so does a const and enum with no value in common; an explicit type: object is checked.",
+  "type": "object",
+  "properties": {
+    "end": {
+      "$ref": "#/$defs/Duration"
+    },
+    "card": {
+      "type": "string"
+    },
+    "billing": {
+      "type": "string"
+    },
+    "quiet": {
+      "type": "boolean"
+    },
+    "level": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "retries": {
+      "type": "integer"
+    },
+    "unique": {
+      "type": "boolean"
+    },
+    "repeatable": {
+      "type": "boolean"
+    },
+    "code": {
+      "type": "string"
+    },
+    "proxy": {
+      "type": "string"
+    },
+    "host": {
+      "type": "string"
+    },
+    "port": {
+      "type": "integer"
+    },
+    "token": {
+      "type": "string"
+    },
+    "user": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "extra": {
+      "type": "string"
+    },
+    "beta": {
+      "type": "string"
+    },
+    "gamma": {
+      "type": "string"
+    },
+    "delta": {
+      "type": "string"
+    },
+    "tier": {
+      "type": "string"
+    },
+    "meta": {}
+  },
+  "dependentSchemas": {
+    "end": {
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "card": {
+      "required": [
+        "billing"
+      ]
+    },
+    "quiet": {
+      "not": {
+        "required": [
+          "level"
+        ]
+      }
+    },
+    "mode": {
+      "properties": {
+        "level": {
+          "enum": [
+            "low",
+            "high"
+          ]
+        }
+      }
+    },
+    "retries": {
+      "properties": {
+        "mode": false
+      }
+    },
+    "unique": {
+      "properties": {
+        "repeatable": {
+          "const": true
+        }
+      }
+    },
+    "code": {
+      "properties": {
+        "code": {
+          "minLength": 3,
+          "pattern": "^[a-z]+$"
+        }
+      }
+    },
+    "proxy": {
+      "$ref": "#/$defs/NeedsHost"
+    },
+    "token": {
+      "oneOf": [
+        {
+          "required": [
+            "user"
+          ]
+        },
+        {
+          "required": [
+            "host"
+          ]
+        }
+      ]
+    },
+    "label": {
+      "required": [
+        "code"
+      ],
+      "minProperties": 3
+    },
+    "extra": {
+      "minProperties": 2
+    },
+    "beta": {
+      "$ref": "#/$defs/Deny"
+    },
+    "gamma": {
+      "properties": {
+        "delta": {
+          "$ref": "#/$defs/Deny"
+        },
+        "tier": {
+          "const": "a",
+          "enum": [
+            "b"
+          ]
+        },
+        "meta": {
+          "type": "object",
+          "required": [
+            "id"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "Duration": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ]
+    },
+    "NeedsHost": {
+      "type": "object",
+      "required": [
+        "host"
+      ],
+      "properties": {
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "Deny": false
+  }
+}

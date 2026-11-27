@@ -635,7 +635,7 @@ func (v *primitiveCompositionValidator) desc() *validatorDesc {
 
 			case *numericValidator:
 				if check.multipleOf != nil && !check.roundToInt {
-					d.imports = append(d.imports, packageImport{qualifiedName: "math"})
+					d.imports = append(d.imports, packageImport{qualifiedName: mathPackage})
 				}
 			}
 		}

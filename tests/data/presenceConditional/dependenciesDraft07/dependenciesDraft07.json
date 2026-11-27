@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/presenceConditional/dependenciesDraft07",
+  "description": "A draft-07 dependencies: a list of properties, a schema that narrows a number with an exclusive bound and a multipleOf, and false, which forbids its property.",
+  "type": "object",
+  "properties": {
+    "a": { "type": "string" },
+    "b": { "type": "string" },
+    "c": { "type": "number" },
+    "d": { "type": "string" }
+  },
+  "dependencies": {
+    "a": ["b"],
+    "b": { "properties": { "c": { "type": "number", "exclusiveMinimum": 0, "multipleOf": 0.5 } } },
+    "d": false
+  }
+}

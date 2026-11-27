@@ -27,7 +27,7 @@
       },
       "dependencies": {
         "address": ["zip"],
-        "zip": { "required": ["address"] }
+        "zip": { "minProperties": 2 }
       }
     },
     "tags": {

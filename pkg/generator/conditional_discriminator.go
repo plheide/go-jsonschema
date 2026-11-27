@@ -89,16 +89,38 @@ func (v *conditionalDiscriminatorValidator) absentChecks(level int) bool {
 
 // branchChecks is what the validator checks of a then or else subschema: the
 // properties its `required` lists, the property sets its `not` forbids, and
-// the properties it narrows to some of their string values.
+// the properties it narrows to some of their string values. A presence-keyed
+// clause also checks what it asks of its properties' values, as leaves, and
+// presence counts.
 type branchChecks struct {
 	required  []string
 	forbidden [][]string
 	narrowed  []narrowedProperty
+	leaves    []namedNarrowing
+	counts    []presenceCount
 }
 
 // any reports whether there is something to check.
 func (c branchChecks) any() bool {
-	return len(c.required) > 0 || len(c.forbidden) > 0 || len(c.narrowed) > 0
+	return len(c.required) > 0 || len(c.forbidden) > 0 || len(c.narrowed) > 0 ||
+		len(c.leaves) > 0 || len(c.counts) > 0
+}
+
+// presenceCount is a oneOf or anyOf, in a then or else, whose branches only
+// list required: a count of the branches whose properties are all present.
+type presenceCount struct {
+	keyword  string
+	branches [][]string
+}
+
+// branchOptions are what compileBranch compiles besides the checks of a
+// value-keyed branch. A presence-keyed clause takes them all; a value-keyed
+// one keeps the checks it had.
+type branchOptions struct {
+	// presence follows a then or else that is a $ref, and compiles a property
+	// narrowed to false, what a then or else asks of its properties' values,
+	// and presence counts.
+	presence bool
 }
 
 // narrowedProperty is a property that a then or else narrows, with a `const`
@@ -486,7 +508,8 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 	// t's own if/then/else, as the schema declares it. A merged allOf or
 	// anyOf carries its elements' conditionals over, which the merge reports,
 	// so its own is left out.
-	own := (t.If != nil || t.Then != nil || t.Else != nil) && t.GetSubSchemaType() == ""
+	own := (t.If != nil || t.Then != nil || t.Else != nil) && t.GetSubSchemaType() == "" &&
+		!isPresenceConditional(&schemas.Type{If: t.If, Then: t.Then, Else: t.Else})
 
 	clauses, ok := g.conditionalClauses(t, own)
 	if !ok {
@@ -544,8 +567,9 @@ func (g *schemaGenerator) conditionalClauses(t *schemas.Type, own bool) ([]condi
 	for i, elem := range t.AllOf {
 		label := fmt.Sprintf("allOf[%d]", i)
 
-		// A not is the forbidden sets' to check; see allOfAsChecks.
-		if onlyNot(elem) {
+		// A not is the forbidden sets' to check, and a conditional keyed on
+		// presence the presence validator's; see allOfAsChecks.
+		if onlyNot(elem) || isPresenceElement(elem) {
 			continue
 		}
 
@@ -656,8 +680,8 @@ func (g *schemaGenerator) detectDiscriminatorIn(
 			continue
 		}
 
-		then, thenUnchecked := g.compileBranch(elem.Then)
-		els, elseUnchecked := g.compileBranch(elem.Else)
+		then, thenUnchecked := g.compileBranch(elem.Then, branchOptions{})
+		els, elseUnchecked := g.compileBranch(elem.Else, branchOptions{})
 
 		// A then or else that leaves nothing unchecked is a branch even with
 		// nothing to check, as it was before branches compiled on their own.
@@ -735,16 +759,30 @@ func appendNonEmpty(list []string, descriptions ...string) []string {
 // compileBranch splits a then or else subschema into what the validator
 // checks and the names of the keywords it leaves unchecked. It checks
 // `required`, a `not` that forbiddenSets reads, and a property narrowed to
-// some strings; `type: object` holds already. A subschema with a $ref
-// checks nothing: draft-07 ignores the keywords beside a $ref, so checking
-// them could reject what the schema accepts.
-func (g *schemaGenerator) compileBranch(sub *schemas.Type) (branchChecks, []string) {
+// some strings; `type: object` holds already. With opts.presence, it also
+// checks a property narrowed to false, what a raw narrowing asks of a
+// property's value, and a oneOf or anyOf of required, and it follows a
+// subschema that is a $ref with nothing beside it to its target. Otherwise a
+// subschema with a $ref checks nothing: draft-07 ignores the keywords beside
+// a $ref, so checking them could reject what the schema accepts.
+func (g *schemaGenerator) compileBranch(sub *schemas.Type, opts branchOptions) (branchChecks, []string) {
 	if sub == nil {
 		return branchChecks{}, nil
 	}
 
+	doc, docFile := g.schema, g.schemaFileName
+
 	if sub.Ref != "" {
-		return branchChecks{}, schemaKeywords(sub)
+		if !opts.presence {
+			return branchChecks{}, schemaKeywords(sub)
+		}
+
+		target, targetDoc, targetFile, ok := g.followRefsQuietlyIn(sub)
+		if !ok {
+			return branchChecks{}, schemaKeywords(sub)
+		}
+
+		sub, doc, docFile = target, targetDoc, targetFile
 	}
 
 	var (
@@ -758,6 +796,16 @@ func (g *schemaGenerator) compileBranch(sub *schemas.Type) (branchChecks, []stri
 		checks.forbidden, rest.Not = sets, nil
 	}
 
+	if opts.presence {
+		if sets, ok := requiredSets(sub.OneOf); ok {
+			checks.counts, rest.OneOf = append(checks.counts, presenceCount{keywordOneOf, sets}), nil
+		}
+
+		if sets, ok := requiredSets(sub.AnyOf); ok {
+			checks.counts, rest.AnyOf = append(checks.counts, presenceCount{keywordAnyOf, sets}), nil
+		}
+	}
+
 	if len(rest.Type) == 1 && rest.Type[0] == schemas.TypeNameObject {
 		rest.Type = nil
 	}
@@ -765,9 +813,7 @@ func (g *schemaGenerator) compileBranch(sub *schemas.Type) (branchChecks, []stri
 	rest.Properties = nil
 
 	for _, name := range sortedKeys(sub.Properties) {
-		if values, ok := g.narrowedValues(sub.Properties[name]); ok {
-			checks.narrowed = append(checks.narrowed, narrowedProperty{name, values})
-
+		if g.compileProperty(&checks, name, sub.Properties[name], doc, docFile, opts) {
 			continue
 		}
 
@@ -783,6 +829,45 @@ func (g *schemaGenerator) compileBranch(sub *schemas.Type) (branchChecks, []stri
 	}
 
 	return checks, schemaKeywords(&rest)
+}
+
+// compileProperty adds to checks what a then or else, which doc from docFile
+// holds, asks of property name, narrowed to p, and reports whether it took
+// all of it. A property narrowed to some strings is that, where the narrowing
+// is read in the document being generated. With opts.presence, a property
+// narrowed to false must be absent, and any other narrowing that
+// compileRawNarrowing takes as a whole is a leaf.
+func (g *schemaGenerator) compileProperty(
+	checks *branchChecks, name string, p *schemas.Type, doc *schemas.Schema, docFile string, opts branchOptions,
+) bool {
+	if doc == g.schema {
+		if values, ok := g.narrowedValues(p); ok {
+			checks.narrowed = append(checks.narrowed, narrowedProperty{name, values})
+
+			return true
+		}
+	}
+
+	if !opts.presence {
+		return false
+	}
+
+	n, ok := g.compileRawNarrowing(p, doc, docFile, 1)
+	if g.admitsNothing(p, doc, docFile) || ok && n.rejectsEvery() {
+		checks.forbidden = append(checks.forbidden, []string{name})
+
+		return true
+	}
+
+	if !ok {
+		return false
+	}
+
+	if !n.checksNothing() {
+		checks.leaves = append(checks.leaves, namedNarrowing{rawNarrowing: n, name: name})
+	}
+
+	return true
 }
 
 // narrowedValues returns the values a then or else allows a property, when it

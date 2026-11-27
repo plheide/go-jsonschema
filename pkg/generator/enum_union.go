@@ -215,8 +215,14 @@ func (g *schemaGenerator) followRefsQuietly(t *schemas.Type) (*schemas.Type, boo
 // schema it ends at is in, with that document's file, which that schema's own
 // $refs are read in.
 func (g *schemaGenerator) followRefsQuietlyIn(t *schemas.Type) (*schemas.Type, *schemas.Schema, string, bool) {
-	doc, docFile := g.schema, g.schemaFileName
+	return g.followRefsQuietlyFrom(t, g.schema, g.schemaFileName)
+}
 
+// followRefsQuietlyFrom is followRefsQuietlyIn for a schema that doc, from
+// docFile, holds, whose $refs are read in doc.
+func (g *schemaGenerator) followRefsQuietlyFrom(
+	t *schemas.Type, doc *schemas.Schema, docFile string,
+) (*schemas.Type, *schemas.Schema, string, bool) {
 	for hops := 0; t != nil && t.Ref != ""; hops++ {
 		var ok bool
 

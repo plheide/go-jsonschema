@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	testRefAllOfVariant "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refAllOfVariant"
+	testRefClosedAdditional "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refClosedAdditional"
 	testRefClosedOverlap "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refClosedOverlap"
 	testRefClosedParent "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refClosedParent"
 	testRefNoDiscriminator "github.com/plheide/go-jsonschema/tests/data/oneOfDiscriminated/refNoDiscriminator"
@@ -103,6 +104,26 @@ func TestOneOfTryEachRefVariants(t *testing.T) {
 			{`{"message": {"code": "c"}}`, ""},
 			{`{"message": {"code": "c", "detail": "d"}}`, ""},
 			{`{"message": {"code": "c", "channel": "z"}}`, "RefClosedParentMessage: no oneOf variant matched"},
+		})
+	})
+
+	t.Run("a variant closed by its own additionalProperties", func(t *testing.T) {
+		t.Parallel()
+
+		// A variant's additionalProperties sees only the properties of the
+		// schema that declares it, so the parent's channel, and the id of an
+		// allOf variant's other element, match no variant.
+		checkDecode[testRefClosedAdditional.RefClosedAdditional](t, []decodeCase{
+			{`{"message": {"code": "c"}}`, ""},
+			{`{"message": {"code": "c", "detail": "d"}}`, ""},
+			{`{"message": {"text": "t"}}`, ""},
+			{`{"message": {"code": "c", "channel": "z"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
+			{`{"message": {"code": "c", "detail": "d", "channel": "z"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
+			{`{"message": {"text": "t", "id": "i"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
+			// The schema that closes the last variant is an allOf element nested in its allOf.
+			{`{"message": {"note": "n"}}`, ""},
+			{`{"message": {"note": "n", "id": "i"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
+			{`{"message": {"note": "n", "channel": "z"}}`, "RefClosedAdditionalMessage: no oneOf variant matched"},
 		})
 	})
 

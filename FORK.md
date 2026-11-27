@@ -77,6 +77,13 @@ Not offered upstream yet:
   * trying each variant of a `oneOf` of objects that `$ref`s name or `allOf`s build, as one of inline objects is,
     reading a variant closed with `unevaluatedProperties: false` as closed, and trying no `oneOf` with a variant
     whose type cannot check its `not` or conditional;
+* the changes made on `main` for v0.33.0:
+  * checking `dependentSchemas`, the schemas of draft-07's `dependencies` and an `if`/`then`/`else` whose `if` only
+    lists `required` where their properties are present: `required`, a `not` or a `oneOf` or `anyOf` of `required`,
+    a property narrowed to `false`, and what a subschema asks of a property's value, at every depth, on the input as
+    written;
+  * reading a `oneOf` variant closed with `additionalProperties: false` as admitting only the properties of the
+    schema that closes it, as one closed with `unevaluatedProperties: false` is;
 * the conformance test, which runs the JSON-Schema-Test-Suite's draft-07 tests through generated code; the
   differential test, which compares generated code with a reference validator on documents built from the fixtures,
   and weekly on SchemaStore's schemas; and their harness (made on `main`);
